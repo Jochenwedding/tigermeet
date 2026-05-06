@@ -236,13 +236,6 @@
       text-shadow:0 0 25px rgba(255,140,0,.55);
     }
 
-    h2{
-      margin:16px 0 28px;
-      font-size:clamp(24px,4vw,44px);
-      color:#ffd9a1;
-      text-shadow:0 0 18px orange;
-    }
-
     .main-photo{
       width:100%;
       max-width:760px;
@@ -280,43 +273,141 @@
     #chatbot{
       display:none;
       position:fixed;
-      bottom:20px;
-      right:20px;
-      width:320px;
-      background:#111;
-      border:1px solid #333;
-      border-radius:12px;
-      padding:10px;
+      bottom:22px;
+      right:22px;
+      width:360px;
+      background:linear-gradient(180deg,#151515,#070707);
+      border:2px solid #ff9900;
+      border-radius:22px;
+      padding:14px;
       color:white;
-      font-family:Arial;
+      font-family:Arial, Helvetica, sans-serif;
       z-index:9999;
-      box-shadow:0 0 30px rgba(255,140,0,.55);
+      box-shadow:0 0 35px rgba(255,140,0,.8), inset 0 0 18px rgba(255,140,0,.12);
+      backdrop-filter:blur(10px);
+    }
+
+    #chatTitle{
+      color:#ffcc00;
+      font-size:17px;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      margin-bottom:10px;
+      text-shadow:0 0 12px orange;
+      border-bottom:1px solid rgba(255,153,0,.45);
+      padding-bottom:8px;
     }
 
     #chatlog{
-      height:220px;
+      height:260px;
       overflow:auto;
-      background:#1a1a1a;
-      padding:8px;
-      border-radius:8px;
-      margin-bottom:10px;
+      background:rgba(0,0,0,.55);
+      padding:12px;
+      border-radius:16px;
+      margin-bottom:12px;
       font-size:14px;
+      border:1px solid rgba(255,153,0,.25);
+    }
+
+    .msg-line{
+      margin-bottom:12px;
+      line-height:1.35;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .speaker-user{
+      color:#00c8ff;
+      font-weight:900;
+      font-size:13px;
+    }
+
+    .speaker-bot{
+      color:#ffcc00;
+      font-weight:900;
+      font-size:13px;
+    }
+
+    .bubble{
+      padding:9px 11px;
+      border-radius:13px;
+      max-width:95%;
+      word-wrap:break-word;
+    }
+
+    .user-bubble{
+      background:rgba(0,200,255,.16);
+      border:1px solid rgba(0,200,255,.35);
+      margin-left:auto;
+      text-align:right;
+    }
+
+    .bot-bubble{
+      background:rgba(255,153,0,.16);
+      border:1px solid rgba(255,153,0,.35);
+      margin-right:auto;
+      text-align:left;
+    }
+
+    .typing-dots{
+      display:inline-flex;
+      gap:4px;
+      align-items:center;
+      padding:4px 0;
+    }
+
+    .typing-dots span{
+      width:7px;
+      height:7px;
+      background:#ffcc00;
+      border-radius:50%;
+      display:block;
+      animation:typingBounce 1s infinite ease-in-out;
+      box-shadow:0 0 8px orange;
+    }
+
+    .typing-dots span:nth-child(2){animation-delay:.15s}
+    .typing-dots span:nth-child(3){animation-delay:.3s}
+
+    @keyframes typingBounce{
+      0%,80%,100%{transform:translateY(0);opacity:.35}
+      40%{transform:translateY(-5px);opacity:1}
+    }
+
+    .chat-row{
+      display:flex;
+      gap:8px;
     }
 
     #msg{
-      width:70%;
-      padding:8px;
-      border-radius:6px;
-      border:none;
+      width:100%;
+      padding:11px;
+      border-radius:12px;
+      border:1px solid rgba(255,153,0,.45);
+      background:#181818;
+      color:white;
+      outline:none;
+    }
+
+    #msg:focus{
+      border-color:#ffcc00;
+      box-shadow:0 0 12px rgba(255,153,0,.55);
     }
 
     .chat-send{
-      padding:8px;
+      padding:11px 14px;
       border:none;
-      border-radius:6px;
-      background:#00bfff;
-      color:white;
+      border-radius:12px;
+      background:linear-gradient(135deg,#ffcc00,#ff6600);
+      color:black;
+      font-weight:900;
       cursor:pointer;
+      box-shadow:0 0 15px rgba(255,140,0,.65);
+    }
+
+    .chat-send:hover{
+      transform:scale(1.04);
     }
 
     @media(max-width:750px){
@@ -409,11 +500,10 @@
 
     <div id="chatlog"></div>
 
-    <input id="msg" placeholder="Typ iets...">
-
-    <button class="chat-send" onclick="sendMsg()">
-      Send
-    </button>
+    <div class="chat-row">
+      <input id="msg" placeholder="Typ iets...">
+      <button class="chat-send" onclick="sendMsg()">Send</button>
+    </div>
   </div>
 
   <script>
@@ -447,6 +537,9 @@
       const music = document.getElementById("bgmusic");
       const jetSound = document.getElementById("jetSound");
       const boomSound = document.getElementById("boomSound");
+      const nameTitle = document.querySelector(".name-title");
+
+      nameTitle.innerText = `Welkom: ${visitorName}`;
 
       enterBtn.style.display = "none";
       nameInput.style.display = "none";
@@ -501,7 +594,14 @@
       chatbot.style.display = "block";
 
       if(log.innerHTML.trim() === ""){
-        log.innerHTML = `<p><b>Bot:</b> Welkom ${escapeHtml(visitorName)}. Stel uw vraag, Tiger.</p>`;
+        log.innerHTML = `
+          <div class="msg-line">
+            <span class="speaker-bot">TIGER BOT</span>
+            <div class="bubble bot-bubble">
+              RAWR Tiger welkom in Araxos, ${escapeHtml(visitorName)}! Welke zone zit je: OPS of TECH?
+            </div>
+          </div>
+        `;
       }
     }
 
@@ -530,9 +630,31 @@
 
       if (!text) return;
 
-      log.innerHTML += `<p><b>${escapeHtml(visitorName)}:</b> ${escapeHtml(text)}</p>`;
+      log.innerHTML += `
+        <div class="msg-line">
+          <span class="speaker-user">${escapeHtml(visitorName)}</span>
+          <div class="bubble user-bubble">
+            ${escapeHtml(text)}
+          </div>
+        </div>
+      `;
 
       input.value = "";
+
+      const typingId = "typing-" + Date.now();
+
+      log.innerHTML += `
+        <div class="msg-line" id="${typingId}">
+          <span class="speaker-bot">TIGER BOT</span>
+          <div class="bubble bot-bubble">
+            <span class="typing-dots">
+              <span></span><span></span><span></span>
+            </span>
+          </div>
+        </div>
+      `;
+
+      log.scrollTop = log.scrollHeight;
 
       try{
         const res = await fetch("/api/chat", {
@@ -547,10 +669,28 @@
         });
 
         const data = await res.json();
+        const typingEl = document.getElementById(typingId);
 
-        log.innerHTML += `<p><b>Bot:</b> ${escapeHtml(data.reply || "Geen antwoord ontvangen.")}</p>`;
+        if(typingEl){
+          typingEl.innerHTML = `
+            <span class="speaker-bot">TIGER BOT</span>
+            <div class="bubble bot-bubble">
+              ${escapeHtml(data.reply || "Geen antwoord ontvangen.")}
+            </div>
+          `;
+        }
+
       }catch(error){
-        log.innerHTML += `<p><b>Bot:</b> Error. De AI ligt precies in panne, gast.</p>`;
+        const typingEl = document.getElementById(typingId);
+
+        if(typingEl){
+          typingEl.innerHTML = `
+            <span class="speaker-bot">TIGER BOT</span>
+            <div class="bubble bot-bubble">
+              Error. De AI ligt precies in panne, gast.
+            </div>
+          `;
+        }
       }
 
       log.scrollTop = log.scrollHeight;
