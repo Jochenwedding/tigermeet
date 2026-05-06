@@ -1,22 +1,33 @@
 <script>
   const nameInput = document.getElementById("visitorName");
   const enterBtn = document.getElementById("enterBtn");
+  const msgInput = document.getElementById("msg");
 
-  nameInput.addEventListener("input", () => {
-    const name = nameInput.value.trim();
-    enterBtn.disabled = name.length < 2;
-  });
+  if (nameInput && enterBtn) {
+    nameInput.addEventListener("input", function () {
+      const name = nameInput.value.trim();
+      enterBtn.disabled = name.length < 2;
+    });
 
-  nameInput.addEventListener("keydown", (event) => {
-    if(event.key === "Enter" && !enterBtn.disabled){
-      enterSite();
-    }
-  });
+    nameInput.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" && !enterBtn.disabled) {
+        enterSite();
+      }
+    });
+  }
 
-  async function enterSite(){
+  if (msgInput) {
+    msgInput.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        sendMsg();
+      }
+    });
+  }
+
+  async function enterSite() {
     const visitorName = nameInput.value.trim();
 
-    if(visitorName.length < 2){
+    if (visitorName.length < 2) {
       alert("Typ eerst uw naam, gast.");
       return;
     }
@@ -32,85 +43,90 @@
     const boomSound = document.getElementById("boomSound");
     const nameTitle = document.querySelector(".name-title");
 
-    nameTitle.innerText = `Welkom: ${visitorName}`;
+    if (nameTitle) {
+      nameTitle.innerText = "Welkom: " + visitorName;
+    }
 
     enterBtn.style.display = "none";
     nameInput.style.display = "none";
 
-    try{
+    try {
       jetSound.currentTime = 0;
       jetSound.volume = 1;
       await jetSound.play();
-    }catch(e){}
+    } catch (e) {}
 
-    jet.classList.add("fly");
+    if (jet) {
+      jet.classList.add("fly");
+    }
 
-    setTimeout(() => {
-      try{
+    setTimeout(function () {
+      try {
         boomSound.currentTime = 0;
         boomSound.volume = 1;
         boomSound.play();
-      }catch(e){}
+      } catch (e) {}
 
-      explosion.classList.add("boom");
+      if (explosion) explosion.classList.add("boom");
       document.body.classList.add("shake");
 
-      setTimeout(() => {
+      setTimeout(function () {
         document.body.classList.remove("shake");
       }, 500);
     }, 500);
 
-    setTimeout(async () => {
-      enterScreen.classList.add("hidden");
-      jet.classList.remove("fly");
-      explosion.classList.remove("boom");
+    setTimeout(async function () {
+      if (enterScreen) enterScreen.classList.add("hidden");
+      if (jet) jet.classList.remove("fly");
+      if (explosion) explosion.classList.remove("boom");
 
       showChatbot(visitorName);
 
-      try{
+      try {
         music.volume = 0.9;
         music.muted = false;
         await music.play();
-      }catch(error){
-        alert("Muziek kon niet starten. Check of Araxos Baby.mp3 mee geüpload is.");
-        console.log(error);
+      } catch (error) {
+        console.log("Muziek kon niet starten:", error);
       }
     }, 4200);
   }
 
-  function showChatbot(visitorName){
+  function showChatbot(visitorName) {
     const chatbot = document.getElementById("chatbot");
     const chatTitle = document.getElementById("chatTitle");
     const log = document.getElementById("chatlog");
 
-    chatTitle.innerText = `CIS Support voor ${visitorName}`;
+    if (!chatbot || !chatTitle || !log) return;
+
+    chatTitle.innerText = "CIS Support voor " + visitorName;
     chatbot.style.display = "block";
 
-    if(log.innerHTML.trim() === ""){
-      log.innerHTML = `
-        <div class="msg-line">
-          <span class="speaker-bot">TIGER BOT</span>
-          <div class="bubble bot-bubble">
-            RAWR Tiger welkom in Araxos, ${escapeHtml(visitorName)}! Welke zone zit je: OPS of TECH?
-          </div>
-        </div>
-      `;
+    if (log.innerHTML.trim() === "") {
+      log.innerHTML =
+        '<div class="msg-line">' +
+          '<span class="speaker-bot">TIGER BOT</span>' +
+          '<div class="bubble bot-bubble">' +
+            'RAWR Tiger welkom in Araxos, ' + escapeHtml(visitorName) + '! Welke zone zit je: OPS of TECH?' +
+          '</div>' +
+        '</div>';
     }
   }
 
-  function muteMusic(){
+  function muteMusic() {
     const music = document.getElementById("bgmusic");
-    music.muted = true;
+    if (music) music.muted = true;
   }
 
-  function toggleMusic(){
+  function toggleMusic() {
     const music = document.getElementById("bgmusic");
+    if (!music) return;
 
-    if(music.muted){
+    if (music.muted) {
       music.muted = false;
       music.volume = 0.9;
       music.play();
-    }else{
+    } else {
       music.muted = true;
     }
   }
@@ -118,45 +134,43 @@
   async function sendMsg() {
     const input = document.getElementById("msg");
     const log = document.getElementById("chatlog");
+
+    if (!input || !log) return;
+
     const text = input.value.trim();
     const visitorName = localStorage.getItem("visitorName") || "onbekende bezoeker";
 
     if (!text) return;
 
     let selectedZone = localStorage.getItem("selectedZone") || "";
+    const upperText = text.toUpperCase();
 
-    if(["OPS", "TECH"].includes(text.toUpperCase())){
-      selectedZone = text.toUpperCase();
+    if (upperText === "OPS" || upperText === "TECH") {
+      selectedZone = upperText;
       localStorage.setItem("selectedZone", selectedZone);
     }
 
-    log.innerHTML += `
-      <div class="msg-line">
-        <span class="speaker-user">${escapeHtml(visitorName)}</span>
-        <div class="bubble user-bubble">
-          ${escapeHtml(text)}
-        </div>
-      </div>
-    `;
+    log.innerHTML +=
+      '<div class="msg-line">' +
+        '<span class="speaker-user">' + escapeHtml(visitorName) + '</span>' +
+        '<div class="bubble user-bubble">' + escapeHtml(text) + '</div>' +
+      '</div>';
 
     input.value = "";
 
     const typingId = "typing-" + Date.now();
 
-    log.innerHTML += `
-      <div class="msg-line" id="${typingId}">
-        <span class="speaker-bot">TIGER BOT</span>
-        <div class="bubble bot-bubble">
-          <span class="typing-dots">
-            <span></span><span></span><span></span>
-          </span>
-        </div>
-      </div>
-    `;
+    log.innerHTML +=
+      '<div class="msg-line" id="' + typingId + '">' +
+        '<span class="speaker-bot">TIGER BOT</span>' +
+        '<div class="bubble bot-bubble">' +
+          '<span class="typing-dots"><span></span><span></span><span></span></span>' +
+        '</div>' +
+      '</div>';
 
     log.scrollTop = log.scrollHeight;
 
-    try{
+    try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -172,43 +186,34 @@
       const data = await res.json();
       const typingEl = document.getElementById(typingId);
 
-      if(typingEl){
-        typingEl.innerHTML = `
-          <span class="speaker-bot">TIGER BOT</span>
-          <div class="bubble bot-bubble">
-            ${escapeHtml(data.reply || "Geen antwoord ontvangen.")}
-          </div>
-        `;
+      if (typingEl) {
+        typingEl.innerHTML =
+          '<span class="speaker-bot">TIGER BOT</span>' +
+          '<div class="bubble bot-bubble">' +
+            escapeHtml(data.reply || "Geen antwoord ontvangen.") +
+          '</div>';
       }
-
-    }catch(error){
+    } catch (error) {
       const typingEl = document.getElementById(typingId);
 
-      if(typingEl){
-        typingEl.innerHTML = `
-          <span class="speaker-bot">TIGER BOT</span>
-          <div class="bubble bot-bubble">
-            Error. De AI ligt precies in panne, gast.
-          </div>
-        `;
+      if (typingEl) {
+        typingEl.innerHTML =
+          '<span class="speaker-bot">TIGER BOT</span>' +
+          '<div class="bubble bot-bubble">' +
+            'Error. De AI ligt precies in panne, gast.' +
+          '</div>';
       }
     }
 
     log.scrollTop = log.scrollHeight;
   }
 
-  document.getElementById("msg").addEventListener("keydown", (event) => {
-    if(event.key === "Enter"){
-      sendMsg();
-    }
-  });
-
-  function escapeHtml(text){
+  function escapeHtml(text) {
     return String(text)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 </script>
