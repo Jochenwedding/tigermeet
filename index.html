@@ -1,219 +1,725 @@
-<script>
-  const nameInput = document.getElementById("visitorName");
-  const enterBtn = document.getElementById("enterBtn");
-  const msgInput = document.getElementById("msg");
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tigermeet Araxos</title>
 
-  if (nameInput && enterBtn) {
-    nameInput.addEventListener("input", function () {
-      const name = nameInput.value.trim();
-      enterBtn.disabled = name.length < 2;
-    });
-
-    nameInput.addEventListener("keydown", function (event) {
-      if (event.key === "Enter" && !enterBtn.disabled) {
-        enterSite();
-      }
-    });
-  }
-
-  if (msgInput) {
-    msgInput.addEventListener("keydown", function (event) {
-      if (event.key === "Enter") {
-        sendMsg();
-      }
-    });
-  }
-
-  async function enterSite() {
-    const visitorName = nameInput.value.trim();
-
-    if (visitorName.length < 2) {
-      alert("Typ eerst uw naam, gast.");
-      return;
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
     }
 
-    localStorage.setItem("visitorName", visitorName);
-    localStorage.removeItem("selectedZone");
-
-    const enterScreen = document.getElementById("enterScreen");
-    const jet = document.getElementById("enterJet");
-    const explosion = document.getElementById("explosion");
-    const music = document.getElementById("bgmusic");
-    const jetSound = document.getElementById("jetSound");
-    const boomSound = document.getElementById("boomSound");
-    const nameTitle = document.querySelector(".name-title");
-
-    if (nameTitle) {
-      nameTitle.innerText = "Welkom: " + visitorName;
+    body{
+      min-height:100vh;
+      overflow-x:hidden;
+      font-family:Arial, Helvetica, sans-serif;
+      color:white;
+      background:
+        linear-gradient(rgba(0,0,0,.82), rgba(0,0,0,.94)),
+        repeating-linear-gradient(
+          45deg,
+          #ff8800 0,
+          #ff8800 20px,
+          #000 20px,
+          #000 40px
+        );
     }
 
-    enterBtn.style.display = "none";
-    nameInput.style.display = "none";
+    body.shake{
+      animation:shake .45s;
+    }
 
-    try {
-      jetSound.currentTime = 0;
-      jetSound.volume = 1;
-      await jetSound.play();
-    } catch (e) {}
+    @keyframes shake{
+      0%{transform:translate(0,0)}
+      20%{transform:translate(-10px,6px)}
+      40%{transform:translate(10px,-6px)}
+      60%{transform:translate(-7px,-10px)}
+      80%{transform:translate(7px,10px)}
+      100%{transform:translate(0,0)}
+    }
 
-    if (jet) {
+    .enter-screen{
+      position:fixed;
+      inset:0;
+      z-index:1000;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      gap:22px;
+      text-align:center;
+      padding:20px;
+
+      background:
+        radial-gradient(circle, rgba(255,140,0,.3), rgba(0,0,0,.96) 70%),
+        repeating-linear-gradient(
+          45deg,
+          #ff8800 0,
+          #ff8800 20px,
+          #000 20px,
+          #000 40px
+        );
+    }
+
+    .name-title{
+      font-size:clamp(28px,5vw,56px);
+      font-weight:900;
+      text-transform:uppercase;
+      color:#ffcc00;
+      text-shadow:0 0 25px orange;
+      letter-spacing:3px;
+    }
+
+    .name-input{
+      width:min(420px,90vw);
+      padding:18px 22px;
+      border-radius:18px;
+      border:2px solid orange;
+      background:rgba(0,0,0,.82);
+      color:white;
+      font-size:22px;
+      text-align:center;
+      outline:none;
+      box-shadow:0 0 25px rgba(255,140,0,.5);
+    }
+
+    .name-input::placeholder{
+      color:#ffcf8a;
+    }
+
+    .enter-btn{
+      border:none;
+      cursor:pointer;
+      padding:30px 70px;
+      border-radius:25px;
+      font-size:36px;
+      font-weight:900;
+      letter-spacing:6px;
+      color:black;
+      background:linear-gradient(135deg,#ffcc00,#ff6600);
+      box-shadow:0 0 45px orange;
+      animation:pulseBtn 1s infinite alternate;
+    }
+
+    .enter-btn:disabled{
+      opacity:.4;
+      cursor:not-allowed;
+      animation:none;
+    }
+
+    @keyframes pulseBtn{
+      from{
+        transform:scale(1);
+      }
+      to{
+        transform:scale(1.08);
+      }
+    }
+
+    .hidden{
+      display:none !important;
+    }
+
+    .enter-jet{
+      position:fixed;
+      top:38%;
+      left:-350px;
+      width:260px;
+      z-index:2000;
+      filter:drop-shadow(0 0 25px orange);
+      display:none;
+    }
+
+    .enter-jet.fly{
+      display:block;
+      animation:flyby 3.6s ease-in forwards;
+    }
+
+    @keyframes flyby{
+      0%{
+        left:-350px;
+        top:48%;
+        transform:rotate(8deg) scale(.8);
+      }
+
+      60%{
+        left:55vw;
+        top:30%;
+        transform:rotate(8deg) scale(1.45);
+      }
+
+      100%{
+        left:120vw;
+        top:15%;
+        transform:rotate(8deg) scale(2);
+      }
+    }
+
+    .explosion{
+      position:fixed;
+      inset:0;
+      z-index:2500;
+      background:
+        radial-gradient(
+          circle,
+          rgba(255,230,120,1),
+          rgba(255,90,0,.85),
+          transparent 55%
+        );
+
+      opacity:0;
+      pointer-events:none;
+    }
+
+    .explosion.boom{
+      animation:boomFlash .7s forwards;
+    }
+
+    @keyframes boomFlash{
+      0%{
+        opacity:0;
+        transform:scale(.4);
+      }
+
+      25%{
+        opacity:1;
+        transform:scale(1);
+      }
+
+      100%{
+        opacity:0;
+        transform:scale(2.4);
+      }
+    }
+
+    .topstripe,
+    .bottomstripe{
+      position:fixed;
+      left:0;
+      width:100%;
+      height:18px;
+      z-index:20;
+
+      background:
+        repeating-linear-gradient(
+          90deg,
+          orange 0,
+          orange 28px,
+          black 28px,
+          black 56px
+        );
+    }
+
+    .topstripe{
+      top:0;
+    }
+
+    .bottomstripe{
+      bottom:0;
+    }
+
+    .tiger{
+      position:fixed;
+      left:-200px;
+      font-size:48px;
+      z-index:1;
+      animation:runTiger 14s linear infinite;
+    }
+
+    .t1{top:8%}
+    .t2{top:28%; animation-delay:4s}
+    .t3{top:60%; animation-delay:2s}
+    .t4{top:82%; animation-delay:7s}
+
+    @keyframes runTiger{
+      from{
+        transform:translateX(-250px);
+      }
+
+      to{
+        transform:translateX(calc(100vw + 300px));
+      }
+    }
+
+    main{
+      position:relative;
+      z-index:5;
+      width:min(1100px,94%);
+      margin:0 auto;
+      padding:60px 0 150px;
+      text-align:center;
+    }
+
+    .card{
+      background:rgba(0,0,0,.72);
+      border:2px solid rgba(255,150,0,.72);
+      border-radius:35px;
+      padding:35px;
+      box-shadow:
+        0 0 35px rgba(255,140,0,.5),
+        inset 0 0 25px rgba(255,140,0,.15);
+    }
+
+    .banner{
+      width:100%;
+      max-height:520px;
+      object-fit:contain;
+      background:black;
+      border-radius:28px;
+      border:2px solid orange;
+      margin-bottom:30px;
+    }
+
+    .badge{
+      display:inline-block;
+      padding:11px 24px;
+      margin-bottom:20px;
+      border-radius:999px;
+      background:linear-gradient(90deg,#ffcc00,#ff6600);
+      color:black;
+      font-weight:900;
+      letter-spacing:4px;
+    }
+
+    h1{
+      font-size:clamp(42px,7vw,85px);
+      text-transform:uppercase;
+      line-height:.95;
+      background:linear-gradient(#fff7d1,#ff9900,#cc5500);
+      -webkit-background-clip:text;
+      color:transparent;
+    }
+
+    .main-photo{
+      width:100%;
+      max-width:760px;
+      max-height:520px;
+      object-fit:contain;
+      background:black;
+      border-radius:28px;
+      border:2px solid orange;
+      margin:20px auto;
+      display:block;
+    }
+
+    .submit-btn{
+      margin-top:18px;
+      border:none;
+      cursor:pointer;
+      padding:17px 32px;
+      border-radius:18px;
+      font-size:18px;
+      font-weight:900;
+      color:black;
+      background:linear-gradient(135deg,#ffcc00,#ff6600);
+    }
+
+    #chatbot{
+      display:none;
+      position:fixed;
+      bottom:20px;
+      right:20px;
+      width:360px;
+      background:linear-gradient(180deg,#151515,#070707);
+      border:2px solid #ff9900;
+      border-radius:22px;
+      padding:14px;
+      z-index:9999;
+      box-shadow:0 0 35px rgba(255,140,0,.8);
+    }
+
+    #chatTitle{
+      color:#ffcc00;
+      margin-bottom:10px;
+      font-weight:900;
+    }
+
+    #chatlog{
+      height:260px;
+      overflow:auto;
+      background:rgba(0,0,0,.55);
+      padding:12px;
+      border-radius:16px;
+      margin-bottom:12px;
+    }
+
+    .msg-line{
+      margin-bottom:12px;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+
+    .speaker-user{
+      color:#00c8ff;
+      font-weight:900;
+      font-size:13px;
+    }
+
+    .speaker-bot{
+      color:#ffcc00;
+      font-weight:900;
+      font-size:13px;
+    }
+
+    .bubble{
+      padding:10px;
+      border-radius:14px;
+    }
+
+    .user-bubble{
+      background:rgba(0,200,255,.16);
+      border:1px solid rgba(0,200,255,.35);
+    }
+
+    .bot-bubble{
+      background:rgba(255,153,0,.16);
+      border:1px solid rgba(255,153,0,.35);
+    }
+
+    .chat-row{
+      display:flex;
+      gap:8px;
+    }
+
+    #msg{
+      width:100%;
+      padding:11px;
+      border-radius:12px;
+      border:1px solid rgba(255,153,0,.45);
+      background:#181818;
+      color:white;
+      outline:none;
+    }
+
+    .chat-send{
+      padding:11px 14px;
+      border:none;
+      border-radius:12px;
+      background:linear-gradient(135deg,#ffcc00,#ff6600);
+      color:black;
+      font-weight:900;
+      cursor:pointer;
+    }
+
+    .typing-dots{
+      display:inline-flex;
+      gap:4px;
+    }
+
+    .typing-dots span{
+      width:7px;
+      height:7px;
+      background:#ffcc00;
+      border-radius:50%;
+      animation:typingBounce 1s infinite ease-in-out;
+    }
+
+    .typing-dots span:nth-child(2){
+      animation-delay:.15s;
+    }
+
+    .typing-dots span:nth-child(3){
+      animation-delay:.3s;
+    }
+
+    @keyframes typingBounce{
+      0%,80%,100%{
+        transform:translateY(0);
+        opacity:.35;
+      }
+
+      40%{
+        transform:translateY(-5px);
+        opacity:1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <audio id="bgmusic" loop preload="auto">
+    <source src="Araxos Baby.mp3" type="audio/mpeg">
+  </audio>
+
+  <audio id="jetSound" preload="auto">
+    <source src="jet.mp3" type="audio/mpeg">
+  </audio>
+
+  <audio id="boomSound" preload="auto">
+    <source src="boom.mp3" type="audio/mpeg">
+  </audio>
+
+  <section class="enter-screen" id="enterScreen">
+
+    <div class="name-title">
+      Identify yourself, Tiger
+    </div>
+
+    <input
+      class="name-input"
+      id="visitorName"
+      type="text"
+      placeholder="Typ uw naam..."
+      maxlength="30"
+    >
+
+    <button
+      class="enter-btn"
+      id="enterBtn"
+      onclick="enterSite()"
+      disabled
+    >
+      ENTER
+    </button>
+
+  </section>
+
+  <img class="enter-jet" id="enterJet" src="jet.png" alt="">
+  <div class="explosion" id="explosion"></div>
+
+  <div class="topstripe"></div>
+  <div class="bottomstripe"></div>
+
+  <div class="tiger t1">🐯</div>
+  <div class="tiger t2">🐅</div>
+  <div class="tiger t3">🐯</div>
+  <div class="tiger t4">🐅</div>
+
+  <main>
+
+    <section class="card">
+
+      <img class="banner" src="2.jpeg" alt="">
+
+      <div class="badge">
+        TIGERMEET 2026
+      </div>
+
+      <h1>Tigermeet Araxos CIS Support</h1>
+
+      <video
+        id="simoneVideo"
+        class="main-photo"
+        autoplay
+        muted
+        loop
+        playsinline
+        controls
+      >
+        <source src="simone.mp4" type="video/mp4">
+      </video>
+
+      <button class="submit-btn" onclick="toggleMusic()">
+        🔊 Muziek aan / uit
+      </button>
+
+    </section>
+
+  </main>
+
+  <div id="chatbot">
+
+    <h3 id="chatTitle">
+      CIS Support
+    </h3>
+
+    <div id="chatlog"></div>
+
+    <div class="chat-row">
+      <input id="msg" placeholder="Typ iets...">
+      <button class="chat-send" onclick="sendMsg()">
+        Send
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+
+    const nameInput = document.getElementById("visitorName");
+    const enterBtn = document.getElementById("enterBtn");
+
+    nameInput.addEventListener("input", function(){
+      enterBtn.disabled = nameInput.value.trim().length < 2;
+    });
+
+    async function enterSite(){
+
+      const visitorName = nameInput.value.trim();
+
+      if(visitorName.length < 2){
+        alert("Typ eerst uw naam, gast.");
+        return;
+      }
+
+      localStorage.setItem("visitorName", visitorName);
+      localStorage.removeItem("selectedZone");
+
+      document.querySelector(".name-title").innerText =
+        "Welkom: " + visitorName;
+
+      nameInput.style.display = "none";
+      enterBtn.style.display = "none";
+
+      const jet = document.getElementById("enterJet");
+      const explosion = document.getElementById("explosion");
+
       jet.classList.add("fly");
+
+      setTimeout(function(){
+        explosion.classList.add("boom");
+        document.body.classList.add("shake");
+
+        setTimeout(function(){
+          document.body.classList.remove("shake");
+        },500);
+
+      },500);
+
+      setTimeout(function(){
+
+        document.getElementById("enterScreen")
+          .classList.add("hidden");
+
+        showChatbot(visitorName);
+
+      },4200);
     }
 
-    setTimeout(function () {
-      try {
-        boomSound.currentTime = 0;
-        boomSound.volume = 1;
-        boomSound.play();
-      } catch (e) {}
+    function showChatbot(visitorName){
 
-      if (explosion) explosion.classList.add("boom");
-      document.body.classList.add("shake");
+      const chatbot = document.getElementById("chatbot");
+      const log = document.getElementById("chatlog");
 
-      setTimeout(function () {
-        document.body.classList.remove("shake");
-      }, 500);
-    }, 500);
+      chatbot.style.display = "block";
 
-    setTimeout(async function () {
-      if (enterScreen) enterScreen.classList.add("hidden");
-      if (jet) jet.classList.remove("fly");
-      if (explosion) explosion.classList.remove("boom");
-
-      showChatbot(visitorName);
-
-      try {
-        music.volume = 0.9;
-        music.muted = false;
-        await music.play();
-      } catch (error) {
-        console.log("Muziek kon niet starten:", error);
-      }
-    }, 4200);
-  }
-
-  function showChatbot(visitorName) {
-    const chatbot = document.getElementById("chatbot");
-    const chatTitle = document.getElementById("chatTitle");
-    const log = document.getElementById("chatlog");
-
-    if (!chatbot || !chatTitle || !log) return;
-
-    chatTitle.innerText = "CIS Support voor " + visitorName;
-    chatbot.style.display = "block";
-
-    if (log.innerHTML.trim() === "") {
       log.innerHTML =
         '<div class="msg-line">' +
           '<span class="speaker-bot">TIGER BOT</span>' +
           '<div class="bubble bot-bubble">' +
-            'RAWR Tiger welkom in Araxos, ' + escapeHtml(visitorName) + '! Welke zone zit je: OPS of TECH?' +
+            'RAWR Tiger welkom in Araxos, ' +
+            escapeHtml(visitorName) +
+            '! Welke zone zit je: OPS of TECH?' +
           '</div>' +
         '</div>';
     }
-  }
 
-  function muteMusic() {
-    const music = document.getElementById("bgmusic");
-    if (music) music.muted = true;
-  }
+    async function sendMsg(){
 
-  function toggleMusic() {
-    const music = document.getElementById("bgmusic");
-    if (!music) return;
+      const input = document.getElementById("msg");
+      const log = document.getElementById("chatlog");
 
-    if (music.muted) {
-      music.muted = false;
-      music.volume = 0.9;
-      music.play();
-    } else {
-      music.muted = true;
-    }
-  }
+      const text = input.value.trim();
 
-  async function sendMsg() {
-    const input = document.getElementById("msg");
-    const log = document.getElementById("chatlog");
+      if(!text){
+        return;
+      }
 
-    if (!input || !log) return;
+      const visitorName =
+        localStorage.getItem("visitorName") ||
+        "onbekende bezoeker";
 
-    const text = input.value.trim();
-    const visitorName = localStorage.getItem("visitorName") || "onbekende bezoeker";
+      let selectedZone =
+        localStorage.getItem("selectedZone") || "";
 
-    if (!text) return;
+      if(
+        text.toUpperCase() === "OPS" ||
+        text.toUpperCase() === "TECH"
+      ){
+        selectedZone = text.toUpperCase();
+        localStorage.setItem("selectedZone", selectedZone);
+      }
 
-    let selectedZone = localStorage.getItem("selectedZone") || "";
-    const upperText = text.toUpperCase();
+      log.innerHTML +=
+        '<div class="msg-line">' +
+          '<span class="speaker-user">' +
+            escapeHtml(visitorName) +
+          '</span>' +
+          '<div class="bubble user-bubble">' +
+            escapeHtml(text) +
+          '</div>' +
+        '</div>';
 
-    if (upperText === "OPS" || upperText === "TECH") {
-      selectedZone = upperText;
-      localStorage.setItem("selectedZone", selectedZone);
-    }
+      input.value = "";
 
-    log.innerHTML +=
-      '<div class="msg-line">' +
-        '<span class="speaker-user">' + escapeHtml(visitorName) + '</span>' +
-        '<div class="bubble user-bubble">' + escapeHtml(text) + '</div>' +
-      '</div>';
+      const typingId = "typing-" + Date.now();
 
-    input.value = "";
-
-    const typingId = "typing-" + Date.now();
-
-    log.innerHTML +=
-      '<div class="msg-line" id="' + typingId + '">' +
-        '<span class="speaker-bot">TIGER BOT</span>' +
-        '<div class="bubble bot-bubble">' +
-          '<span class="typing-dots"><span></span><span></span><span></span></span>' +
-        '</div>' +
-      '</div>';
-
-    log.scrollTop = log.scrollHeight;
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message: text,
-          name: visitorName,
-          zone: selectedZone
-        })
-      });
-
-      const data = await res.json();
-      const typingEl = document.getElementById(typingId);
-
-      if (typingEl) {
-        typingEl.innerHTML =
+      log.innerHTML +=
+        '<div class="msg-line" id="' + typingId + '">' +
           '<span class="speaker-bot">TIGER BOT</span>' +
           '<div class="bubble bot-bubble">' +
-            escapeHtml(data.reply || "Geen antwoord ontvangen.") +
-          '</div>';
-      }
-    } catch (error) {
-      const typingEl = document.getElementById(typingId);
+            '<span class="typing-dots">' +
+              '<span></span>' +
+              '<span></span>' +
+              '<span></span>' +
+            '</span>' +
+          '</div>' +
+        '</div>';
 
-      if (typingEl) {
-        typingEl.innerHTML =
+      log.scrollTop = log.scrollHeight;
+
+      try{
+
+        const res = await fetch("/api/chat", {
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json"
+          },
+          body:JSON.stringify({
+            message:text,
+            name:visitorName,
+            zone:selectedZone
+          })
+        });
+
+        const data = await res.json();
+
+        document.getElementById(typingId).innerHTML =
           '<span class="speaker-bot">TIGER BOT</span>' +
           '<div class="bubble bot-bubble">' +
-            'Error. De AI ligt precies in panne, gast.' +
+            escapeHtml(data.reply || "Geen antwoord.") +
           '</div>';
+
+      }catch(err){
+
+        document.getElementById(typingId).innerHTML =
+          '<span class="speaker-bot">TIGER BOT</span>' +
+          '<div class="bubble bot-bubble">' +
+            'Error. AI in panne, hete tijger.' +
+          '</div>';
+      }
+
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function toggleMusic(){
+
+      const music = document.getElementById("bgmusic");
+
+      if(music.muted){
+        music.muted = false;
+        music.play();
+      }else{
+        music.muted = true;
       }
     }
 
-    log.scrollTop = log.scrollHeight;
-  }
+    function escapeHtml(text){
 
-  function escapeHtml(text) {
-    return String(text)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-</script>
+      return String(text)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+    }
+
+  </script>
+
+</body>
+</html>
