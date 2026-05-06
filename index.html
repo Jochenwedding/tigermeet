@@ -18,9 +18,7 @@
         repeating-linear-gradient(45deg,#ff8800 0,#ff8800 20px,#000 20px,#000 40px);
     }
 
-    body.shake{
-      animation:shake .45s;
-    }
+    body.shake{animation:shake .45s}
 
     @keyframes shake{
       0%{transform:translate(0,0)}
@@ -38,11 +36,39 @@
       display:flex;
       align-items:center;
       justify-content:center;
+      flex-direction:column;
+      gap:22px;
       background:
         radial-gradient(circle, rgba(255,140,0,.3), rgba(0,0,0,.96) 70%),
         repeating-linear-gradient(45deg,#ff8800 0,#ff8800 20px,#000 20px,#000 40px);
       overflow:hidden;
+      text-align:center;
+      padding:20px;
     }
+
+    .name-title{
+      font-size:clamp(28px,5vw,56px);
+      font-weight:900;
+      text-transform:uppercase;
+      color:#ffcc00;
+      text-shadow:0 0 25px orange;
+      letter-spacing:3px;
+    }
+
+    .name-input{
+      width:min(420px,90vw);
+      padding:18px 22px;
+      border-radius:18px;
+      border:2px solid orange;
+      background:rgba(0,0,0,.82);
+      color:white;
+      font-size:22px;
+      text-align:center;
+      outline:none;
+      box-shadow:0 0 25px rgba(255,140,0,.5);
+    }
+
+    .name-input::placeholder{color:#ffcf8a}
 
     .enter-btn{
       border:none;
@@ -59,12 +85,20 @@
       z-index:5;
     }
 
+    .enter-btn:disabled{
+      cursor:not-allowed;
+      opacity:.45;
+      filter:grayscale(1);
+      animation:none;
+      box-shadow:none;
+    }
+
     @keyframes pulseBtn{
       from{transform:scale(1);box-shadow:0 0 25px orange}
       to{transform:scale(1.08);box-shadow:0 0 75px #ffcc00}
     }
 
-    .hidden{display:none}
+    .hidden{display:none!important}
 
     .enter-jet{
       position:fixed;
@@ -96,9 +130,7 @@
       pointer-events:none;
     }
 
-    .explosion.boom{
-      animation:boomFlash .7s forwards;
-    }
+    .explosion.boom{animation:boomFlash .7s forwards}
 
     @keyframes boomFlash{
       0%{opacity:0;transform:scale(.4)}
@@ -245,6 +277,48 @@
       box-shadow:0 0 45px rgba(255,180,0,1);
     }
 
+    #chatbot{
+      display:none;
+      position:fixed;
+      bottom:20px;
+      right:20px;
+      width:320px;
+      background:#111;
+      border:1px solid #333;
+      border-radius:12px;
+      padding:10px;
+      color:white;
+      font-family:Arial;
+      z-index:9999;
+      box-shadow:0 0 30px rgba(255,140,0,.55);
+    }
+
+    #chatlog{
+      height:220px;
+      overflow:auto;
+      background:#1a1a1a;
+      padding:8px;
+      border-radius:8px;
+      margin-bottom:10px;
+      font-size:14px;
+    }
+
+    #msg{
+      width:70%;
+      padding:8px;
+      border-radius:6px;
+      border:none;
+    }
+
+    .chat-send{
+      padding:8px;
+      border:none;
+      border-radius:6px;
+      background:#00bfff;
+      color:white;
+      cursor:pointer;
+    }
+
     @media(max-width:750px){
       main{padding-bottom:190px}
       .card{padding:24px 18px}
@@ -253,6 +327,7 @@
       .right-photo{right:12px}
       .enter-btn{font-size:26px;padding:24px 45px}
       .enter-jet{width:190px}
+      #chatbot{width:92vw;right:4vw;bottom:20px}
     }
   </style>
 </head>
@@ -272,7 +347,18 @@
   </audio>
 
   <section class="enter-screen" id="enterScreen">
-    <button class="enter-btn" id="enterBtn" onclick="enterSite()">ENTER</button>
+    <div class="name-title">Identify yourself, Tiger</div>
+
+    <input
+      class="name-input"
+      id="visitorName"
+      type="text"
+      placeholder="Typ uw naam..."
+      autocomplete="name"
+      maxlength="30"
+    >
+
+    <button class="enter-btn" id="enterBtn" onclick="enterSite()" disabled>ENTER</button>
   </section>
 
   <img class="enter-jet" id="enterJet" src="jet.png" alt="">
@@ -295,8 +381,7 @@
 
       <div class="badge">TIGERMEET 2026</div>
 
-      <h1>Tigermeet Araxos 2026</h1>
-
+      <h1>Tigermeet Araxos CIS Support</h1>
 
       <div class="video-wrapper">
         <video
@@ -319,10 +404,44 @@
     </section>
   </main>
 
+  <div id="chatbot">
+    <h3 id="chatTitle">CIS Support</h3>
+
+    <div id="chatlog"></div>
+
+    <input id="msg" placeholder="Typ iets...">
+
+    <button class="chat-send" onclick="sendMsg()">
+      Send
+    </button>
+  </div>
+
   <script>
+    const nameInput = document.getElementById("visitorName");
+    const enterBtn = document.getElementById("enterBtn");
+
+    nameInput.addEventListener("input", () => {
+      const name = nameInput.value.trim();
+      enterBtn.disabled = name.length < 2;
+    });
+
+    nameInput.addEventListener("keydown", (event) => {
+      if(event.key === "Enter" && !enterBtn.disabled){
+        enterSite();
+      }
+    });
+
     async function enterSite(){
+      const visitorName = nameInput.value.trim();
+
+      if(visitorName.length < 2){
+        alert("Typ eerst uw naam, gast.");
+        return;
+      }
+
+      localStorage.setItem("visitorName", visitorName);
+
       const enterScreen = document.getElementById("enterScreen");
-      const enterBtn = document.getElementById("enterBtn");
       const jet = document.getElementById("enterJet");
       const explosion = document.getElementById("explosion");
       const music = document.getElementById("bgmusic");
@@ -330,6 +449,7 @@
       const boomSound = document.getElementById("boomSound");
 
       enterBtn.style.display = "none";
+      nameInput.style.display = "none";
 
       try{
         jetSound.currentTime = 0;
@@ -359,6 +479,8 @@
         jet.classList.remove("fly");
         explosion.classList.remove("boom");
 
+        showChatbot(visitorName);
+
         try{
           music.volume = 0.9;
           music.muted = false;
@@ -368,6 +490,19 @@
           console.log(error);
         }
       }, 4200);
+    }
+
+    function showChatbot(visitorName){
+      const chatbot = document.getElementById("chatbot");
+      const chatTitle = document.getElementById("chatTitle");
+      const log = document.getElementById("chatlog");
+
+      chatTitle.innerText = `CIS Support voor ${visitorName}`;
+      chatbot.style.display = "block";
+
+      if(log.innerHTML.trim() === ""){
+        log.innerHTML = `<p><b>Bot:</b> Welkom ${escapeHtml(visitorName)}. Stel uw vraag, Tiger.</p>`;
+      }
     }
 
     function muteMusic(){
@@ -386,51 +521,55 @@
         music.muted = true;
       }
     }
+
+    async function sendMsg() {
+      const input = document.getElementById("msg");
+      const log = document.getElementById("chatlog");
+      const text = input.value.trim();
+      const visitorName = localStorage.getItem("visitorName") || "onbekende bezoeker";
+
+      if (!text) return;
+
+      log.innerHTML += `<p><b>${escapeHtml(visitorName)}:</b> ${escapeHtml(text)}</p>`;
+
+      input.value = "";
+
+      try{
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: text,
+            name: visitorName
+          })
+        });
+
+        const data = await res.json();
+
+        log.innerHTML += `<p><b>Bot:</b> ${escapeHtml(data.reply || "Geen antwoord ontvangen.")}</p>`;
+      }catch(error){
+        log.innerHTML += `<p><b>Bot:</b> Error. De AI ligt precies in panne, gast.</p>`;
+      }
+
+      log.scrollTop = log.scrollHeight;
+    }
+
+    document.getElementById("msg").addEventListener("keydown", (event) => {
+      if(event.key === "Enter"){
+        sendMsg();
+      }
+    });
+
+    function escapeHtml(text){
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
   </script>
-<div id="chatbot" style="position:fixed;bottom:20px;right:20px;width:320px;background:#111;border:1px solid #333;border-radius:12px;padding:10px;color:white;font-family:Arial;z-index:9999;">
-  <h3>CIS Support</h3>
-
-  <div id="chatlog" style="height:220px;overflow:auto;background:#1a1a1a;padding:8px;border-radius:8px;margin-bottom:10px;"></div>
-
-  <input id="msg" placeholder="Typ iets..."
-    style="width:70%;padding:8px;border-radius:6px;border:none;">
-
-  <button onclick="sendMsg()"
-    style="padding:8px;border:none;border-radius:6px;background:#00bfff;color:white;">
-    Send
-  </button>
-</div>
-
-<script>
-async function sendMsg() {
-
-  const input = document.getElementById("msg");
-  const log = document.getElementById("chatlog");
-
-  const text = input.value.trim();
-
-  if (!text) return;
-
-  log.innerHTML += `<p><b>Gij:</b> ${text}</p>`;
-
-  input.value = "";
-
-  const res = await fetch("/api/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      message: text
-    })
-  });
-
-  const data = await res.json();
-
-  log.innerHTML += `<p><b>Bot:</b> ${data.reply}</p>`;
-
-  log.scrollTop = log.scrollHeight;
-}
-</script>
 </body>
 </html>
