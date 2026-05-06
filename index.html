@@ -538,188 +538,248 @@
     </div>
 
   </div>
+<script>
+  const nameInput = document.getElementById("visitorName");
+  const enterBtn = document.getElementById("enterBtn");
 
-  <script>
+  nameInput.addEventListener("input", function(){
+    enterBtn.disabled = nameInput.value.trim().length < 2;
+  });
 
-    const nameInput = document.getElementById("visitorName");
-    const enterBtn = document.getElementById("enterBtn");
+  nameInput.addEventListener("keydown", function(event){
+    if(event.key === "Enter" && !enterBtn.disabled){
+      enterSite();
+    }
+  });
 
-    nameInput.addEventListener("input", function(){
-      enterBtn.disabled = nameInput.value.trim().length < 2;
-    });
+  async function enterSite(){
+    const visitorName = nameInput.value.trim();
 
-    async function enterSite(){
+    if(visitorName.length < 2){
+      alert("Typ eerst uw naam, gast.");
+      return;
+    }
 
-      const visitorName = nameInput.value.trim();
+    localStorage.setItem("visitorName", visitorName);
+    localStorage.removeItem("selectedZone");
+    localStorage.removeItem("chatHistory");
 
-      if(visitorName.length < 2){
-        alert("Typ eerst uw naam, gast.");
-        return;
+    document.querySelector(".name-title").innerText = "Welkom: " + visitorName;
+
+    nameInput.style.display = "none";
+    enterBtn.style.display = "none";
+
+    const jet = document.getElementById("enterJet");
+    const explosion = document.getElementById("explosion");
+    const music = document.getElementById("bgmusic");
+    const jetSound = document.getElementById("jetSound");
+    const boomSound = document.getElementById("boomSound");
+
+    try{
+      jetSound.currentTime = 0;
+      jetSound.volume = 1;
+      await jetSound.play();
+    }catch(e){
+      console.log("Jet sound blocked:", e);
+    }
+
+    jet.classList.add("fly");
+
+    setTimeout(function(){
+      try{
+        boomSound.currentTime = 0;
+        boomSound.volume = 1;
+        boomSound.play();
+      }catch(e){
+        console.log("Boom sound blocked:", e);
       }
 
-      localStorage.setItem("visitorName", visitorName);
-      localStorage.removeItem("selectedZone");
-
-      document.querySelector(".name-title").innerText =
-        "Welkom: " + visitorName;
-
-      nameInput.style.display = "none";
-      enterBtn.style.display = "none";
-
-      const jet = document.getElementById("enterJet");
-      const explosion = document.getElementById("explosion");
-
-      jet.classList.add("fly");
+      explosion.classList.add("boom");
+      document.body.classList.add("shake");
 
       setTimeout(function(){
-        explosion.classList.add("boom");
-        document.body.classList.add("shake");
-
-        setTimeout(function(){
-          document.body.classList.remove("shake");
-        },500);
-
+        document.body.classList.remove("shake");
       },500);
+    },500);
 
-      setTimeout(function(){
+    setTimeout(async function(){
+      document.getElementById("enterScreen").classList.add("hidden");
+      jet.classList.remove("fly");
+      explosion.classList.remove("boom");
 
-        document.getElementById("enterScreen")
-          .classList.add("hidden");
-
-        showChatbot(visitorName);
-
-      },4200);
-    }
-
-    function showChatbot(visitorName){
-
-      const chatbot = document.getElementById("chatbot");
-      const log = document.getElementById("chatlog");
-
-      chatbot.style.display = "block";
-
-      log.innerHTML =
-        '<div class="msg-line">' +
-          '<span class="speaker-bot">TIGER BOT</span>' +
-          '<div class="bubble bot-bubble">' +
-            'RAWR Tiger welkom in Araxos, ' +
-            escapeHtml(visitorName) +
-            '! Welke zone zit je: OPS of TECH?' +
-          '</div>' +
-        '</div>';
-    }
-
-    async function sendMsg(){
-
-      const input = document.getElementById("msg");
-      const log = document.getElementById("chatlog");
-
-      const text = input.value.trim();
-
-      if(!text){
-        return;
-      }
-
-      const visitorName =
-        localStorage.getItem("visitorName") ||
-        "onbekende bezoeker";
-
-      let selectedZone =
-        localStorage.getItem("selectedZone") || "";
-
-      if(
-        text.toUpperCase() === "OPS" ||
-        text.toUpperCase() === "TECH"
-      ){
-        selectedZone = text.toUpperCase();
-        localStorage.setItem("selectedZone", selectedZone);
-      }
-
-      log.innerHTML +=
-        '<div class="msg-line">' +
-          '<span class="speaker-user">' +
-            escapeHtml(visitorName) +
-          '</span>' +
-          '<div class="bubble user-bubble">' +
-            escapeHtml(text) +
-          '</div>' +
-        '</div>';
-
-      input.value = "";
-
-      const typingId = "typing-" + Date.now();
-
-      log.innerHTML +=
-        '<div class="msg-line" id="' + typingId + '">' +
-          '<span class="speaker-bot">TIGER BOT</span>' +
-          '<div class="bubble bot-bubble">' +
-            '<span class="typing-dots">' +
-              '<span></span>' +
-              '<span></span>' +
-              '<span></span>' +
-            '</span>' +
-          '</div>' +
-        '</div>';
-
-      log.scrollTop = log.scrollHeight;
+      showChatbot(visitorName);
 
       try{
-
-        const res = await fetch("/api/chat", {
-          method:"POST",
-          headers:{
-            "Content-Type":"application/json"
-          },
-          body:JSON.stringify({
-            message:text,
-            name:visitorName,
-            zone:selectedZone
-          })
-        });
-
-        const data = await res.json();
-
-        document.getElementById(typingId).innerHTML =
-          '<span class="speaker-bot">TIGER BOT</span>' +
-          '<div class="bubble bot-bubble">' +
-            escapeHtml(data.reply || "Geen antwoord.") +
-          '</div>';
-
-      }catch(err){
-
-        document.getElementById(typingId).innerHTML =
-          '<span class="speaker-bot">TIGER BOT</span>' +
-          '<div class="bubble bot-bubble">' +
-            'Error. AI in panne, hete tijger.' +
-          '</div>';
-      }
-
-      log.scrollTop = log.scrollHeight;
-    }
-
-    function toggleMusic(){
-
-      const music = document.getElementById("bgmusic");
-
-      if(music.muted){
+        music.volume = 0.9;
         music.muted = false;
-        music.play();
-      }else{
-        music.muted = true;
+        await music.play();
+      }catch(e){
+        console.log("Music blocked:", e);
       }
+    },4200);
+  }
+
+  function showChatbot(visitorName){
+    const chatbot = document.getElementById("chatbot");
+    const log = document.getElementById("chatlog");
+
+    chatbot.style.display = "block";
+
+    const botWelcome =
+      "RAWR Tiger welkom in Araxos, " +
+      visitorName +
+      "! Welke zone zit je: OPS of TECH?";
+
+    log.innerHTML =
+      '<div class="msg-line">' +
+        '<span class="speaker-bot">TIGER BOT</span>' +
+        '<div class="bubble bot-bubble">' +
+          escapeHtml(botWelcome) +
+        '</div>' +
+      '</div>';
+
+    localStorage.setItem("chatHistory", JSON.stringify([
+      {
+        role: "assistant",
+        content: botWelcome
+      }
+    ]));
+  }
+
+  async function sendMsg(){
+    const input = document.getElementById("msg");
+    const log = document.getElementById("chatlog");
+    const text = input.value.trim();
+
+    if(!text){
+      return;
     }
 
-    function escapeHtml(text){
+    const visitorName = localStorage.getItem("visitorName") || "onbekende bezoeker";
 
-      return String(text)
-        .replace(/&/g,"&amp;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;")
-        .replace(/"/g,"&quot;")
-        .replace(/'/g,"&#039;");
+    let selectedZone = localStorage.getItem("selectedZone") || "";
+
+    if(text.toUpperCase() === "OPS" || text.toUpperCase() === "TECH"){
+      selectedZone = text.toUpperCase();
+      localStorage.setItem("selectedZone", selectedZone);
     }
 
-  </script>
+    let chatHistory = [];
+
+    try{
+      chatHistory = JSON.parse(localStorage.getItem("chatHistory") || "[]");
+    }catch(e){
+      chatHistory = [];
+    }
+
+    chatHistory.push({
+      role: "user",
+      content: text
+    });
+
+    if(chatHistory.length > 20){
+      chatHistory = chatHistory.slice(-20);
+    }
+
+    localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+
+    log.innerHTML +=
+      '<div class="msg-line">' +
+        '<span class="speaker-user">' + escapeHtml(visitorName) + '</span>' +
+        '<div class="bubble user-bubble">' +
+          escapeHtml(text) +
+        '</div>' +
+      '</div>';
+
+    input.value = "";
+
+    const typingId = "typing-" + Date.now();
+
+    log.innerHTML +=
+      '<div class="msg-line" id="' + typingId + '">' +
+        '<span class="speaker-bot">TIGER BOT</span>' +
+        '<div class="bubble bot-bubble">' +
+          '<span class="typing-dots">' +
+            '<span></span><span></span><span></span>' +
+          '</span>' +
+        '</div>' +
+      '</div>';
+
+    log.scrollTop = log.scrollHeight;
+
+    try{
+      const res = await fetch("/api/chat", {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          message:text,
+          name:visitorName,
+          zone:selectedZone,
+          history:chatHistory
+        })
+      });
+
+      const data = await res.json();
+      const botReply = data.reply || "Geen antwoord.";
+
+      document.getElementById(typingId).innerHTML =
+        '<span class="speaker-bot">TIGER BOT</span>' +
+        '<div class="bubble bot-bubble">' +
+          escapeHtml(botReply) +
+        '</div>';
+
+      chatHistory.push({
+        role: "assistant",
+        content: botReply
+      });
+
+      if(chatHistory.length > 20){
+        chatHistory = chatHistory.slice(-20);
+      }
+
+      localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+
+    }catch(err){
+      document.getElementById(typingId).innerHTML =
+        '<span class="speaker-bot">TIGER BOT</span>' +
+        '<div class="bubble bot-bubble">' +
+          'Error. AI in panne, hete tijger.' +
+        '</div>';
+    }
+
+    log.scrollTop = log.scrollHeight;
+  }
+
+  document.getElementById("msg").addEventListener("keydown", function(event){
+    if(event.key === "Enter"){
+      sendMsg();
+    }
+  });
+
+  function toggleMusic(){
+    const music = document.getElementById("bgmusic");
+
+    if(music.muted){
+      music.muted = false;
+      music.volume = 0.9;
+      music.play();
+    }else{
+      music.muted = true;
+    }
+  }
+
+  function escapeHtml(text){
+    return String(text)
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;")
+      .replace(/'/g,"&#039;");
+  }
+</script>
+ 
 
 </body>
 </html>
