@@ -358,6 +358,52 @@
 
 .hotline-btn:hover{
   transform:scale(1.03);
+  #emergencyHotline{
+  position:fixed;
+  bottom:20px;
+  left:20px;
+  z-index:99999;
+
+  padding:16px 24px;
+  border:none;
+  border-radius:18px;
+
+  background:
+    linear-gradient(135deg,#ff0000,#ff8800);
+
+  color:white;
+  font-size:16px;
+  font-weight:900;
+  letter-spacing:2px;
+
+  cursor:pointer;
+
+  box-shadow:
+    0 0 25px rgba(255,0,0,.7),
+    0 0 45px rgba(255,120,0,.5);
+
+  animation:emergencyPulse 1s infinite alternate;
+}
+
+#emergencyHotline:hover{
+  transform:scale(1.06);
+}
+
+@keyframes emergencyPulse{
+  from{
+    transform:scale(1);
+    box-shadow:
+      0 0 20px rgba(255,0,0,.5),
+      0 0 35px rgba(255,120,0,.35);
+  }
+
+  to{
+    transform:scale(1.05);
+    box-shadow:
+      0 0 35px rgba(255,0,0,.95),
+      0 0 60px rgba(255,120,0,.8);
+  }
+}
 }
   </style>
 </head>
@@ -567,7 +613,7 @@
       document.body.classList.add("shake");
 
       setTimeout(function(){
-        document.body.classList.remove("shake");
+        document..classList.remove("shake");
       },500);
     },500);
 
@@ -655,7 +701,21 @@
   }
 
   function callTigerHotline(){
-  window.open("https://teams.microsoft.com/l/call/0/0?users=4:*9827510005", "_blank");
+  const number = "*9827510005";
+
+  // 1. Teams app proberen
+  window.location.href = "msteams://teams.microsoft.com/l/call/0/0?users=4:" + encodeURIComponent(number);
+
+  // 2. Na halve seconde gewone Teams web proberen
+  setTimeout(function(){
+    window.open("https://teams.microsoft.com/l/call/0/0?users=4:" + encodeURIComponent(number), "_blank");
+  }, 500);
+
+  // 3. Na 1 seconde Windows tel-protocol proberen
+  setTimeout(function(){
+    window.location.href = "tel:" + number;
+  }, 1000);
+}
 }
   }
 
@@ -765,5 +825,8 @@
       .replace(/'/g,"&#039;");
   }
 </script>
+  <button id="emergencyHotline" onclick="callTigerHotline()">
+  🚨 EMERGENCY HOTLINE
+</button>
 </body>
 </html>
