@@ -6,36 +6,21 @@
 <title>Tigermeet Araxos</title>
 
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-}
+*{margin:0;padding:0;box-sizing:border-box}
 
 body{
   min-height:100vh;
   overflow:hidden;
   font-family:Arial, Helvetica, sans-serif;
   color:white;
-
   background:
     linear-gradient(rgba(0,0,0,.84), rgba(0,0,0,.95)),
-    repeating-linear-gradient(
-      45deg,
-      #ff8800 0,
-      #ff8800 20px,
-      #000 20px,
-      #000 40px
-    );
+    repeating-linear-gradient(45deg,#ff8800 0,#ff8800 20px,#000 20px,#000 40px);
 }
 
-.hidden{
-  display:none!important;
-}
+.hidden{display:none!important}
 
-body.shake{
-  animation:shake .45s;
-}
+body.shake{animation:shake .45s}
 
 @keyframes shake{
   0%{transform:translate(0,0)}
@@ -50,25 +35,15 @@ body.shake{
   position:fixed;
   inset:0;
   z-index:1000;
-
   display:flex;
   align-items:center;
   justify-content:center;
   flex-direction:column;
-
   gap:18px;
-
   text-align:center;
-
   background:
     radial-gradient(circle, rgba(255,140,0,.3), rgba(0,0,0,.96) 70%),
-    repeating-linear-gradient(
-      45deg,
-      #ff8800 0,
-      #ff8800 20px,
-      #000 20px,
-      #000 40px
-    );
+    repeating-linear-gradient(45deg,#ff8800 0,#ff8800 20px,#000 20px,#000 40px);
 }
 
 .name-title{
@@ -82,51 +57,30 @@ body.shake{
 
 .login-input{
   width:min(420px,88vw);
-
   padding:16px 20px;
-
   border-radius:18px;
   border:2px solid orange;
-
   background:rgba(0,0,0,.82);
-
   color:white;
   font-size:20px;
-
   text-align:center;
-
   outline:none;
-
   box-shadow:0 0 25px rgba(255,140,0,.45);
 }
 
-.login-input::placeholder{
-  color:#ffcf8a;
-}
+.login-input::placeholder{color:#ffcf8a}
 
 .enter-btn{
   border:none;
   cursor:pointer;
-
   padding:24px 60px;
-
   border-radius:24px;
-
   font-size:32px;
   font-weight:900;
   letter-spacing:5px;
-
   color:black;
-
-  background:
-    linear-gradient(
-      135deg,
-      #ffcc00,
-      #ff6600
-    );
-
+  background:linear-gradient(135deg,#ffcc00,#ff6600);
   box-shadow:0 0 45px orange;
-
   animation:pulseBtn 1s infinite alternate;
 }
 
@@ -145,13 +99,9 @@ body.shake{
   position:fixed;
   top:38%;
   left:-350px;
-
   width:260px;
-
   z-index:2000;
-
   filter:drop-shadow(0 0 25px orange);
-
   display:none;
 }
 
@@ -161,82 +111,35 @@ body.shake{
 }
 
 @keyframes flyby{
-  0%{
-    left:-350px;
-    top:48%;
-    transform:rotate(8deg) scale(.8)
-  }
-
-  60%{
-    left:55vw;
-    top:30%;
-    transform:rotate(8deg) scale(1.45)
-  }
-
-  100%{
-    left:120vw;
-    top:15%;
-    transform:rotate(8deg) scale(2)
-  }
+  0%{left:-350px;top:48%;transform:rotate(8deg) scale(.8)}
+  60%{left:55vw;top:30%;transform:rotate(8deg) scale(1.45)}
+  100%{left:120vw;top:15%;transform:rotate(8deg) scale(2)}
 }
 
 .explosion{
   position:fixed;
   inset:0;
-
   z-index:2500;
-
-  background:
-    radial-gradient(
-      circle,
-      rgba(255,230,120,1),
-      rgba(255,90,0,.85),
-      transparent 55%
-    );
-
+  background:radial-gradient(circle,rgba(255,230,120,1),rgba(255,90,0,.85),transparent 55%);
   opacity:0;
   pointer-events:none;
 }
 
-.explosion.boom{
-  animation:boomFlash .7s forwards;
-}
+.explosion.boom{animation:boomFlash .7s forwards}
 
 @keyframes boomFlash{
-  0%{
-    opacity:0;
-    transform:scale(.4)
-  }
-
-  25%{
-    opacity:1;
-    transform:scale(1)
-  }
-
-  100%{
-    opacity:0;
-    transform:scale(2.4)
-  }
+  0%{opacity:0;transform:scale(.4)}
+  25%{opacity:1;transform:scale(1)}
+  100%{opacity:0;transform:scale(2.4)}
 }
 
-.topstripe,
-.bottomstripe{
+.topstripe,.bottomstripe{
   position:fixed;
   left:0;
-
   width:100%;
   height:14px;
-
   z-index:20;
-
-  background:
-    repeating-linear-gradient(
-      90deg,
-      orange 0,
-      orange 28px,
-      black 28px,
-      black 56px
-    );
+  background:repeating-linear-gradient(90deg,orange 0,orange 28px,black 28px,black 56px);
 }
 
 .topstripe{top:0}
@@ -245,14 +148,10 @@ body.shake{
 main{
   position:relative;
   z-index:5;
-
   width:min(1120px,96%);
   height:100vh;
-
   margin:0 auto;
-
   padding:14px 0;
-
   display:flex;
   align-items:center;
   justify-content:center;
@@ -261,22 +160,14 @@ main{
 .card{
   width:100%;
   height:95vh;
-
   background:rgba(0,0,0,.76);
-
   border:2px solid rgba(255,150,0,.72);
   border-radius:28px;
-
   padding:16px 28px;
-
-  box-shadow:
-    0 0 35px rgba(255,140,0,.5),
-    inset 0 0 25px rgba(255,140,0,.15);
-
+  box-shadow:0 0 35px rgba(255,140,0,.5), inset 0 0 25px rgba(255,140,0,.15);
   display:flex;
   flex-direction:column;
   align-items:center;
-
   overflow:hidden;
 }
 
@@ -287,173 +178,149 @@ h1{
 
 .title-main{
   display:block;
-
   font-size:clamp(36px,4vw,60px);
   font-weight:900;
   line-height:.9;
-
-  background:
-    linear-gradient(
-      #fff7d1,
-      #ff9900,
-      #cc5500
-    );
-
+  background:linear-gradient(#fff7d1,#ff9900,#cc5500);
   -webkit-background-clip:text;
   color:transparent;
 }
 
 .title-sub{
   display:block;
-
   margin-top:4px;
-
   font-size:clamp(24px,2.4vw,40px);
-
   color:#ff9900;
-
   font-weight:900;
-
   letter-spacing:8px;
+}
+
+.classified-warning{
+  width:100%;
+  max-width:930px;
+  margin:0 auto 10px;
+  padding:9px 14px;
+  border:2px solid #ff2020;
+  border-radius:14px;
+  background:rgba(120,0,0,.72);
+  color:#fff;
+  font-weight:900;
+  font-size:15px;
+  letter-spacing:1px;
+  text-align:center;
+  box-shadow:0 0 22px rgba(255,0,0,.55);
 }
 
 .banner{
   width:100%;
   max-width:930px;
-
-  height:260px;
-
+  height:250px;
   object-fit:contain;
   object-position:center;
-
   background:black;
-
   border-radius:22px;
   border:2px solid orange;
-
   margin:0 auto 10px;
-
   display:block;
 }
 
 .badge{
   display:inline-block;
-
   padding:7px 18px;
-
   margin-bottom:10px;
-
   border-radius:999px;
-
-  background:
-    linear-gradient(
-      90deg,
-      #ffcc00,
-      #ff6600
-    );
-
+  background:linear-gradient(90deg,#ffcc00,#ff6600);
   color:black;
-
   font-weight:900;
-
   letter-spacing:3px;
-
   font-size:13px;
 }
 
 .main-photo{
   width:100%;
   max-width:860px;
-
-  height:340px;
-
+  height:320px;
   object-fit:contain;
   object-position:center;
-
   background:black;
-
   border-radius:22px;
   border:2px solid orange;
-
   margin:0 auto 10px;
-
   display:block;
 }
 
 .submit-btn{
   border:none;
   cursor:pointer;
-
   padding:10px 22px;
-
   border-radius:16px;
-
   font-size:15px;
   font-weight:900;
-
   color:black;
-
-  background:
-    linear-gradient(
-      135deg,
-      #ffcc00,
-      #ff6600
-    );
+  background:linear-gradient(135deg,#ffcc00,#ff6600);
 }
 
 #chatbot{
   display:none;
-
   position:fixed;
-
   bottom:20px;
   right:20px;
-
   width:360px;
-
-  background:
-    linear-gradient(
-      180deg,
-      #151515,
-      #070707
-    );
-
+  background:linear-gradient(180deg,#151515,#070707);
   border:2px solid #ff9900;
   border-radius:22px;
-
   padding:14px;
-
   z-index:9999;
-
   box-shadow:0 0 35px rgba(255,140,0,.8);
+}
+
+#chatbot.minimized{
+  width:260px;
+  padding:10px 14px;
+}
+
+#chatbot.minimized #chatlog,
+#chatbot.minimized .chat-row,
+#chatbot.minimized #hotlineBtn{
+  display:none!important;
+}
+
+.chat-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
 }
 
 #chatTitle{
   color:#ffcc00;
-  margin-bottom:10px;
+  font-weight:900;
+}
+
+.minimize-btn{
+  border:none;
+  cursor:pointer;
+  padding:5px 9px;
+  border-radius:10px;
+  background:linear-gradient(135deg,#ffcc00,#ff6600);
+  color:black;
   font-weight:900;
 }
 
 #chatlog{
   height:240px;
-
   overflow:auto;
-
   background:rgba(0,0,0,.55);
-
   padding:12px;
-
   border-radius:16px;
-
   margin-bottom:12px;
 }
 
 .msg-line{
   margin-bottom:12px;
-
   display:flex;
   flex-direction:column;
-
   gap:4px;
 }
 
@@ -491,100 +358,55 @@ h1{
 
 #msg{
   width:100%;
-
   padding:11px;
-
   border-radius:12px;
-
   border:1px solid rgba(255,153,0,.45);
-
   background:#181818;
-
   color:white;
-
   outline:none;
 }
 
 .chat-send{
   padding:11px 14px;
-
   border:none;
   border-radius:12px;
-
-  background:
-    linear-gradient(
-      135deg,
-      #ffcc00,
-      #ff6600
-    );
-
+  background:linear-gradient(135deg,#ffcc00,#ff6600);
   color:black;
   font-weight:900;
-
   cursor:pointer;
 }
 
 .hotline-btn{
   width:100%;
-
   margin-bottom:10px;
-
   padding:12px;
-
   border:none;
   border-radius:14px;
-
-  background:
-    linear-gradient(
-      135deg,
-      #ffcc00,
-      #ff3300
-    );
-
+  background:linear-gradient(135deg,#ffcc00,#ff3300);
   color:black;
   font-weight:900;
-
   cursor:pointer;
 }
 
 #emergencyHotline{
   position:fixed;
-
   bottom:20px;
   left:20px;
-
   z-index:99999;
-
   padding:14px 20px;
-
   border:none;
   border-radius:18px;
-
-  background:
-    linear-gradient(
-      135deg,
-      #ff0000,
-      #ff8800
-    );
-
+  background:linear-gradient(135deg,#ff0000,#ff8800);
   color:white;
-
   font-size:14px;
   font-weight:900;
-
   cursor:pointer;
-
   animation:emergencyPulse 1s infinite alternate;
 }
 
 @keyframes emergencyPulse{
-  from{
-    transform:scale(1);
-  }
-
-  to{
-    transform:scale(1.05);
-  }
+  from{transform:scale(1)}
+  to{transform:scale(1.05)}
 }
 
 .typing-dots{
@@ -595,39 +417,28 @@ h1{
 .typing-dots span{
   width:7px;
   height:7px;
-
   background:#ffcc00;
-
   border-radius:50%;
-
   animation:typingBounce 1s infinite ease-in-out;
 }
 
-.typing-dots span:nth-child(2){
-  animation-delay:.15s
-}
-
-.typing-dots span:nth-child(3){
-  animation-delay:.3s
-}
+.typing-dots span:nth-child(2){animation-delay:.15s}
+.typing-dots span:nth-child(3){animation-delay:.3s}
 
 @keyframes typingBounce{
-  0%,80%,100%{
-    transform:translateY(0);
-    opacity:.35
-  }
+  0%,80%,100%{transform:translateY(0);opacity:.35}
+  40%{transform:translateY(-5px);opacity:1}
+}
 
-  40%{
-    transform:translateY(-5px);
-    opacity:1
-  }
+@media(max-height:800px){
+  .banner{height:210px}
+  .main-photo{height:270px}
+  .classified-warning{font-size:13px;padding:7px 12px}
+  .card{padding:12px 24px}
 }
 
 @media(max-width:900px){
-
-  body{
-    overflow:auto;
-  }
+  body{overflow:auto}
 
   main{
     height:auto;
@@ -635,17 +446,11 @@ h1{
     padding-bottom:190px;
   }
 
-  .banner{
-    height:220px;
-  }
-
-  .main-photo{
-    height:270px;
-  }
+  .banner{height:220px}
+  .main-photo{height:270px}
 
   #chatbot{
     width:calc(100% - 24px);
-
     right:12px;
     bottom:82px;
   }
@@ -653,7 +458,6 @@ h1{
   #emergencyHotline{
     left:12px;
     right:12px;
-
     width:calc(100% - 24px);
   }
 }
@@ -675,36 +479,15 @@ h1{
 </audio>
 
 <section class="enter-screen" id="enterScreen">
+  <div class="name-title">Identify yourself, Tiger</div>
 
-  <div class="name-title">
-    Identify yourself, Tiger
-  </div>
+  <input class="login-input" id="visitorName" type="text" placeholder="Typ uw naam..." maxlength="30">
 
-  <input
-    class="login-input"
-    id="visitorName"
-    type="text"
-    placeholder="Typ uw naam..."
-    maxlength="30"
-  >
+  <input class="login-input" id="visitorPassword" type="password" placeholder="Password..." maxlength="30">
 
-  <input
-    class="login-input"
-    id="visitorPassword"
-    type="password"
-    placeholder="Password..."
-    maxlength="30"
-  >
-
-  <button
-    class="enter-btn"
-    id="enterBtn"
-    onclick="enterSite()"
-    disabled
-  >
+  <button class="enter-btn" id="enterBtn" onclick="enterSite()" disabled>
     ENTER
   </button>
-
 </section>
 
 <img class="enter-jet" id="enterJet" src="jet.png" alt="">
@@ -714,117 +497,81 @@ h1{
 <div class="bottomstripe"></div>
 
 <main>
-
 <section class="card">
 
-<h1>
-  <span class="title-main">
-    TIGERMEET ARAXOS
-  </span>
+  <h1>
+    <span class="title-main">TIGERMEET ARAXOS</span>
+    <span class="title-sub">CIS SUPPORT</span>
+  </h1>
 
-  <span class="title-sub">
-    CIS SUPPORT
-  </span>
-</h1>
+  <div class="classified-warning">
+    ⚠️ DO NOT SHARE CLASSIFIED INFORMATION
+  </div>
 
-<img
-  class="banner"
-  src="2.jpeg"
-  alt=""
->
+  <img class="banner" src="2.jpeg" alt="">
 
-<div class="badge">
-  TIGERMEET 2026
-</div>
+  <div class="badge">TIGERMEET 2026</div>
 
-<video
-  id="simoneVideo"
-  class="main-photo"
-  autoplay
-  muted
-  loop
-  playsinline
-  controls
->
-  <source src="simone.mp4" type="video/mp4">
-</video>
+  <video id="simoneVideo" class="main-photo" autoplay muted loop playsinline controls>
+    <source src="simone.mp4" type="video/mp4">
+  </video>
 
-<button
-  class="submit-btn"
-  onclick="toggleMusic()"
->
-  🔊 Muziek aan / uit
-</button>
+  <button class="submit-btn" onclick="toggleMusic()">
+    🔊 Muziek aan / uit
+  </button>
 
 </section>
-
 </main>
 
 <div id="chatbot">
-
-  <h3 id="chatTitle">
-    🐯 CIS Support
-  </h3>
+  <div class="chat-header">
+    <h3 id="chatTitle">🐯 CIS Support</h3>
+    <button class="minimize-btn" onclick="toggleChatbot()">—</button>
+  </div>
 
   <div id="chatlog"></div>
 
-  <button
-    id="hotlineBtn"
-    class="hotline-btn hidden"
-    onclick="callTigerHotline()"
-  >
+  <button id="hotlineBtn" class="hotline-btn hidden" onclick="callTigerHotline()">
     ☎ Tiger Hotline
   </button>
 
   <div class="chat-row">
     <input id="msg" placeholder="Typ iets...">
-
-    <button
-      class="chat-send"
-      onclick="sendMsg()"
-    >
-      Send
-    </button>
+    <button class="chat-send" onclick="sendMsg()">Send</button>
   </div>
-
 </div>
 
-<button
-  id="emergencyHotline"
-  class="hidden"
-  onclick="callTigerHotline()"
->
+<button id="emergencyHotline" class="hidden" onclick="callTigerHotline()">
   🚨 EMERGENCY HOTLINE
 </button>
 
 <script>
-
 const PASSWORD = "tiger31";
 
-const nameInput =
-  document.getElementById("visitorName");
-
-const passwordInput =
-  document.getElementById("visitorPassword");
-
-const enterBtn =
-  document.getElementById("enterBtn");
+const nameInput = document.getElementById("visitorName");
+const passwordInput = document.getElementById("visitorPassword");
+const enterBtn = document.getElementById("enterBtn");
 
 nameInput.addEventListener("input", checkLoginReady);
 passwordInput.addEventListener("input", checkLoginReady);
 
+nameInput.addEventListener("keydown", function(event){
+  if(event.key === "Enter" && !enterBtn.disabled){
+    enterSite();
+  }
+});
+
+passwordInput.addEventListener("keydown", function(event){
+  if(event.key === "Enter" && !enterBtn.disabled){
+    enterSite();
+  }
+});
+
 function checkLoginReady(){
+  const name = nameInput.value.trim();
+  const storedName = localStorage.getItem("tigerAuthName");
 
-  const name =
-    nameInput.value.trim();
-
-  const storedName =
-    localStorage.getItem("tigerAuthName");
-
-  if(
-    storedName &&
-    storedName === name
-  ){
+  if(storedName && storedName === name){
     enterBtn.disabled = name.length < 2;
     passwordInput.style.display = "none";
     return;
@@ -838,7 +585,6 @@ function checkLoginReady(){
 }
 
 function resetTicketFlow(visitorName){
-
   const ticket = {
     name: visitorName,
     zone: "",
@@ -850,151 +596,109 @@ function resetTicketFlow(visitorName){
     createdAt: new Date().toISOString()
   };
 
-  localStorage.setItem(
-    "tigerTicketDraft",
-    JSON.stringify(ticket)
-  );
+  localStorage.setItem("tigerTicketDraft", JSON.stringify(ticket));
+  localStorage.setItem("chatHistory", JSON.stringify([]));
+}
 
-  localStorage.setItem(
-    "chatHistory",
-    JSON.stringify([])
-  );
+function getTicket(){
+  try{
+    return JSON.parse(localStorage.getItem("tigerTicketDraft") || "{}");
+  }catch(e){
+    return {};
+  }
+}
+
+function saveTicket(ticket){
+  localStorage.setItem("tigerTicketDraft", JSON.stringify(ticket));
 }
 
 function playAudio(audio, volume){
-
   if(!audio) return;
 
   try{
-
     audio.pause();
     audio.currentTime = 0;
     audio.volume = volume;
     audio.muted = false;
-
     audio.play();
-
   }catch(err){
     console.log(err);
   }
 }
 
 function startBackgroundMusic(){
-
-  const music =
-    document.getElementById("bgmusic");
-
+  const music = document.getElementById("bgmusic");
   if(!music) return;
 
   try{
-
     music.volume = 0.9;
     music.muted = false;
-
     music.play();
-
   }catch(err){
     console.log(err);
   }
 }
 
 async function enterSite(){
-
-  const visitorName =
-    nameInput.value.trim();
-
-  const visitorPassword =
-    passwordInput.value.trim();
-
-  const storedName =
-    localStorage.getItem("tigerAuthName");
+  const visitorName = nameInput.value.trim();
+  const visitorPassword = passwordInput.value.trim();
+  const storedName = localStorage.getItem("tigerAuthName");
 
   if(visitorName.length < 2){
     alert("Typ eerst uw naam.");
     return;
   }
 
-  if(
-    storedName !== visitorName &&
-    visitorPassword !== PASSWORD
-  ){
+  if(storedName !== visitorName && visitorPassword !== PASSWORD){
     alert("Fout password.");
     return;
   }
 
-  localStorage.setItem(
-    "tigerAuthName",
-    visitorName
-  );
-
-  localStorage.setItem(
-    "visitorName",
-    visitorName
-  );
+  localStorage.setItem("tigerAuthName", visitorName);
+  localStorage.setItem("visitorName", visitorName);
 
   resetTicketFlow(visitorName);
+  logUserLogin(visitorName);
 
-  document.querySelector(".name-title").innerText =
-    "Welkom: " + visitorName;
+  document.querySelector(".name-title").innerText = "Welkom: " + visitorName;
 
   nameInput.style.display = "none";
   passwordInput.style.display = "none";
   enterBtn.style.display = "none";
 
-  const jet =
-    document.getElementById("enterJet");
-
-  const explosion =
-    document.getElementById("explosion");
-
-  const jetSound =
-    document.getElementById("jetSound");
-
-  const boomSound =
-    document.getElementById("boomSound");
+  const jet = document.getElementById("enterJet");
+  const explosion = document.getElementById("explosion");
+  const jetSound = document.getElementById("jetSound");
+  const boomSound = document.getElementById("boomSound");
 
   playAudio(jetSound, 1);
-
   jet.classList.add("fly");
 
   setTimeout(function(){
-
     playAudio(boomSound, 1);
-
     explosion.classList.add("boom");
-
     document.body.classList.add("shake");
 
     setTimeout(function(){
       document.body.classList.remove("shake");
     },500);
-
   },500);
 
   setTimeout(function(){
-
-    document
-      .getElementById("enterScreen")
-      .classList.add("hidden");
+    document.getElementById("enterScreen").classList.add("hidden");
 
     jet.classList.remove("fly");
     explosion.classList.remove("boom");
 
     showChatbot(visitorName);
-
-    document
-      .getElementById("emergencyHotline")
-      .classList.remove("hidden");
+    document.getElementById("emergencyHotline").classList.remove("hidden");
 
     startBackgroundMusic();
-
   },4200);
 }
 
 function showChatbot(visitorName){
-
-  document.getElementById("chatbot")
-    .style.display = "block";
+  document.getElementById("chatbot").style.display = "block";
 
   const botWelcome =
     "RAWR welkom in Araxos, " +
@@ -1002,12 +706,27 @@ function showChatbot(visitorName){
     ". Welke zone zit je: OPS of TECH?";
 
   addBotMessage(botWelcome);
+
+  localStorage.setItem("chatHistory", JSON.stringify([
+    { role: "assistant", content: botWelcome }
+  ]));
+}
+
+function toggleChatbot(){
+  const bot = document.getElementById("chatbot");
+  const btn = document.querySelector(".minimize-btn");
+
+  bot.classList.toggle("minimized");
+
+  if(bot.classList.contains("minimized")){
+    btn.innerText = "+";
+  }else{
+    btn.innerText = "—";
+  }
 }
 
 function addBotMessage(text){
-
-  const log =
-    document.getElementById("chatlog");
+  const log = document.getElementById("chatlog");
 
   log.innerHTML +=
     '<div class="msg-line">' +
@@ -1017,14 +736,11 @@ function addBotMessage(text){
       '</div>' +
     '</div>';
 
-  log.scrollTop =
-    log.scrollHeight;
+  log.scrollTop = log.scrollHeight;
 }
 
 function addUserMessage(name, text){
-
-  const log =
-    document.getElementById("chatlog");
+  const log = document.getElementById("chatlog");
 
   log.innerHTML +=
     '<div class="msg-line">' +
@@ -1036,41 +752,29 @@ function addUserMessage(name, text){
       '</div>' +
     '</div>';
 
-  log.scrollTop =
-    log.scrollHeight;
+  log.scrollTop = log.scrollHeight;
 }
 
 function addTyping(){
-
-  const log =
-    document.getElementById("chatlog");
-
-  const typingId =
-    "typing-" + Date.now();
+  const log = document.getElementById("chatlog");
+  const typingId = "typing-" + Date.now();
 
   log.innerHTML +=
     '<div class="msg-line" id="' + typingId + '">' +
       '<span class="speaker-bot">TIGER BOT</span>' +
       '<div class="bubble bot-bubble">' +
         '<span class="typing-dots">' +
-          '<span></span>' +
-          '<span></span>' +
-          '<span></span>' +
+          '<span></span><span></span><span></span>' +
         '</span>' +
       '</div>' +
     '</div>';
 
-  log.scrollTop =
-    log.scrollHeight;
-
+  log.scrollTop = log.scrollHeight;
   return typingId;
 }
 
 function replaceTyping(id, text){
-
-  const el =
-    document.getElementById(id);
-
+  const el = document.getElementById(id);
   if(!el) return;
 
   el.innerHTML =
@@ -1079,113 +783,136 @@ function replaceTyping(id, text){
       escapeHtml(text) +
     '</div>';
 
-  document.getElementById("chatlog")
-    .scrollTop =
-      document.getElementById("chatlog")
-      .scrollHeight;
+  document.getElementById("chatlog").scrollTop =
+    document.getElementById("chatlog").scrollHeight;
 }
 
 async function sendMsg(){
-
-  const input =
-    document.getElementById("msg");
-
-  const text =
-    input.value.trim();
+  const input = document.getElementById("msg");
+  const text = input.value.trim();
 
   if(!text) return;
 
   const visitorName =
-    localStorage.getItem("visitorName")
-    || "Tiger";
+    localStorage.getItem("visitorName") ||
+    "Tiger";
 
   addUserMessage(visitorName, text);
-
   input.value = "";
 
-  const typingId =
-    addTyping();
+  let ticket = getTicket();
+
+  if(!ticket.name){
+    ticket = {
+      name: visitorName,
+      zone: "",
+      problemType: "",
+      assetNumber: "",
+      location: "",
+      description: "",
+      step: "ask_zone",
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  const typingId = addTyping();
 
   try{
+    const res = await fetch("/api/chat", {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        message:text,
+        ticket:ticket
+      })
+    });
 
-    const res =
-      await fetch("/api/chat", {
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
-          message:text
-        })
-      });
+    const data = await res.json();
 
-    const data =
-      await res.json();
+    if(data.ticket){
+      saveTicket(data.ticket);
+    }
 
     replaceTyping(
       typingId,
       data.reply || "RAWR..."
     );
 
-  }catch(err){
+    if(data.showHotline){
+      document.getElementById("hotlineBtn").classList.remove("hidden");
+    }
 
+  }catch(err){
     replaceTyping(
       typingId,
       "RAWR error. Bel CIS."
     );
+
+    document.getElementById("hotlineBtn").classList.remove("hidden");
   }
 }
 
 function callTigerHotline(){
-
-  const hotlineNumber =
-    "*9827510005";
-
-  const fallbackUser =
-    "jochen.michels@mil.be";
+  const hotlineNumber = "*9827510005";
+  const fallbackUser = "jochen.michels@mil.be";
 
   window.location.href =
     "msteams://teams.microsoft.com/l/call/0/0?users=4:" +
     encodeURIComponent(hotlineNumber);
 
   setTimeout(function(){
+    const msg = encodeURIComponent(
+      "RAWR emergency CIS support nodig. Hotline call lukt niet."
+    );
 
     window.open(
       "https://teams.microsoft.com/l/chat/0/0?users=" +
-      encodeURIComponent(fallbackUser),
+      encodeURIComponent(fallbackUser) +
+      "&message=" +
+      msg,
       "_blank"
     );
-
   },1200);
 }
 
-document.getElementById("msg")
-.addEventListener("keydown", function(event){
+async function logUserLogin(visitorName){
+  try{
+    await fetch("/api/login", {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        name: visitorName,
+        time: new Date().toISOString()
+      })
+    });
+  }catch(err){
+    console.log("Login log failed:", err);
+  }
+}
 
+document.getElementById("msg").addEventListener("keydown", function(event){
   if(event.key === "Enter"){
     sendMsg();
   }
 });
 
 function toggleMusic(){
-
-  const music =
-    document.getElementById("bgmusic");
-
+  const music = document.getElementById("bgmusic");
   if(!music) return;
 
   if(music.paused){
-
     music.volume = 0.9;
     music.play();
-
   }else{
     music.pause();
   }
 }
 
 function escapeHtml(text){
-
   return String(text)
     .replace(/&/g,"&amp;")
     .replace(/</g,"&lt;")
