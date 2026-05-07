@@ -572,19 +572,23 @@ passwordInput.addEventListener("keydown", function(event){
 
 function checkLoginReady(){
   const name = nameInput.value.trim();
+  const password = passwordInput.value.trim();
   const storedName = localStorage.getItem("tigerAuthName");
 
+  if(name.toLowerCase() === CIS_USER){
+    passwordInput.style.display = "block";
+    enterBtn.disabled = name.length < 1 || password.length < 1;
+    return;
+  }
+
   if(storedName && storedName === name){
-    enterBtn.disabled = name.length < 2;
     passwordInput.style.display = "none";
+    enterBtn.disabled = name.length < 2;
     return;
   }
 
   passwordInput.style.display = "block";
-
-  enterBtn.disabled =
-    name.length < 2 ||
-    passwordInput.value.trim().length < 1;
+  enterBtn.disabled = name.length < 2 || password.length < 1;
 }
 
 function resetTicketFlow(visitorName){
@@ -647,17 +651,22 @@ async function enterSite(){
   const visitorPassword = passwordInput.value.trim();
   const storedName = localStorage.getItem("tigerAuthName");
 
-  if(visitorName.length < 2){
+  if(visitorName.length < 1){
     alert("Typ eerst uw naam.");
     return;
   }
 
-  if(visitorName.toLowerCase() === CIS_USER && visitorPassword.toLowerCase() === CIS_PASS){
-  localStorage.setItem("cisLoggedIn", "true");
-  window.location.href = CIS_OVERVIEW_URL;
-  return;
-}
+  if(
+    visitorName.toLowerCase() === CIS_USER &&
+    visitorPassword.toLowerCase() === CIS_PASS
+  ){
+    localStorage.setItem("cisLoggedIn", "true");
+    window.location.href = CIS_OVERVIEW_URL;
+    return;
+  }
 
+  if(visitorName.length < 2){
+    alert("Typ eerst uw naam.");
     return;
   }
 
@@ -667,7 +676,10 @@ async function enterSite(){
   }
 
   localStorage.setItem("tigerAuthName", visitorName);
-  localStorage.setItem("visitorName", visitorName");
+  localStorage.setItem("visitorName", visitorName);
+
+  resetTicketFlow(visitorName);
+  logUserLogin(visitorName);
 
   document.querySelector(".name-title").innerText = "Welkom: " + visitorName;
 
