@@ -649,16 +649,22 @@ async function enterSite(){
     return;
   }
 
+  if(visitorName.toLowerCase() === "cis" && visitorPassword === "cis"){
+    localStorage.setItem("cisLoggedIn", "true");
+
+    window.location.href =
+      "https://cissupport.jochenkaty.de/tickets-overview";
+
+    return;
+  }
+
   if(storedName !== visitorName && visitorPassword !== PASSWORD){
     alert("Fout password.");
     return;
   }
 
   localStorage.setItem("tigerAuthName", visitorName);
-  localStorage.setItem("visitorName", visitorName);
-
-  resetTicketFlow(visitorName);
-  logUserLogin(visitorName);
+  localStorage.setItem("visitorName", visitorName");
 
   document.querySelector(".name-title").innerText = "Welkom: " + visitorName;
 
