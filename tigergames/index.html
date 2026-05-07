@@ -45,7 +45,9 @@
   document.getElementById('menuBtn').onclick=()=>{running=false;if(ws)ws.close();gameScreen.classList.add('hidden');login.classList.remove('hidden')};
   document.getElementById('respawnBtn').onclick=()=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify({type:'respawn'}))};
   function startAudio(){music.volume=.42;music.play().catch(()=>showToast('Tik nog eens voor muziek'))}
-  function wsUrl(){const p=location.protocol==='https:'?'wss':'ws';return `${p}://${location.host}/tigergames/ws`}
+  function wsUrl() {
+  return "wss://tigermeet-game.jochenmichels.workers.dev";
+}
   function connect(name){
   running = true;
 
