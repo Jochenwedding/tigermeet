@@ -1,76 +1,294 @@
-async function smartAfterTicketReply(env, message, ticket) {
-  const lower = message.toLowerCase();
+export async function onRequestPost(context) {
+  const { request, env } = context;
 
-  if (
-    lower.includes("beschikbaar") ||
-    lower.includes("wie") ||
-    lower.includes("cis") ||
-    lower.includes("medewerker") ||
-    lower.includes("technieker")
-  ) {
-    return "CIS heeft Kevin, Tommy, Piccart, Bram en Jorrit in de arena. Jochen is uiteraard druk bezig, tijger. Voor spoed: druk op de Tiger Hotline.";
+  try {
+    const body = await request.json();
+
+    const message = String(body.message || "").trim();
+    let ticket = body.ticket || {};
+
+    if (!message) {
+      return Response.json({
+        reply: "RAWR Tiger welkom in Araxos. Welke zone zit je: OPS of TECH?",
+        ticket,
+        showHotline: false
+      });
+    }
+
+    ticket.name = ticket.name || "onbekende tijger";
+    ticket.step = ticket.step || "ask_zone";
+    ticket.createdAt = ticket.createdAt || new Date().toISOString();
+
+    const lower = message.toLowerCase();
+
+    if (
+      lower.includes("nieuw ticket") ||
+      lower.includes("nieuw probleem") ||
+      lower.includes("reset") ||
+      lower.includes("opnieuw beginnen")
+    ) {
+      ticket = createNewTicket(ticket.name);
+
+      return Response.json({
+        reply: "RAWR, nieuw ticket gestart. Welke zone zit je: OPS of TECH?",
+        ticket,
+        showHotline: false
+      });
+    }
+
+    if (ticket.name.toLowerCase().includes("simone") || lower.includes("simone")) {
+      ticket.step = "done";
+
+      return Response.json({
+        reply: "RAWR Simone. Trek uw plan. Maar bon, als het brandt: druk op de Tiger Hotline.",
+        ticket,
+        showHotline: true
+      });
+    }
+
+    let reply = "";
+    let showHotline = false;
+    let ticketReady = false;
+
+    if (ticket.step === "ask_zone") {
+      const zone = detectZone(lower);
+
+      if (!zone) {
+        reply = random([
+          `RAWR ${ticket.name}, eerst discipline. Welke zone zit je: OPS of TECH?`,
+          "Rustig tijger. Eerst de zone: OPS of TECH?",
+          "Araxos CIS luistert. Zit je in OPS of TECH?"
+        ]);
+      } else {
+        ticket.zone = zone;
+        ticket.step = "ask_problem";
+
+        reply = random([
+          `Zone ${zone} genoteerd. Waar zit de miserie: Netwerk, Computer, Telefonie, Printer, Radio, Crypto of Andere?`,
+          `Roger, ${zone}. Wat is kapot aan het doen: Netwerk, Computer, Telefonie, Printer, Radio, Crypto of Andere?`,
+          `Copy ${zone}, hete tijger. Kies uw drama: Netwerk, Computer, Telefonie, Printer, Radio, Crypto of Andere.`
+        ]);
+      }
+    }
+
+    else if (ticket.step === "ask_problem") {
+      const problemType = detectProblemType(lower);
+
+      if (!problemType) {
+        reply = random([
+          "RAWR, ik heb een categorie nodig: Netwerk, Computer, Telefonie, Printer, Radio, Crypto of Andere.",
+          "Tijger, kies uw slagveld: Netwerk, Computer, Telefonie, Printer, Radio, Crypto of Andere."
+        ]);
+      } else {
+        ticket.problemType = problemType;
+
+        if (["computer", "printer", "telefonie"].includes(problemType)) {
+          ticket.step = "ask_asset";
+
+          reply = random([
+            "RAWR tijger, doe rustig. CIS komt u te hulp. Geef het assetnummer van het toestel.",
+            `Copy. Geef het assetnummer van die ${problemType}, dan maken we een ticketje.`,
+            "Geen paniek. CIS komt eraan. Wat is het assetnummer van het toestel?"
+          ]);
+        }
+
+        else if (problemType === "radio") {
+          ticket.step = "ask_location";
+
+          reply = random([
+            "Roger wilco. Hulp komt eraan, over. Geef nog snel uw locatie.",
+            "Radio issue ontvangen. CIS zet de tijgerklauwen klaar. Waar zit ge exact?",
+            "Copy radio probleem. Geef uw locatie, dan sturen we iemand richting uw nest."
+          ]);
+        }
+
+        else if (problemType === "crypto") {
+          ticket.step = "ask_poc";
+          showHotline = true;
+
+          reply = random([
+            "Shhhht. Crypto niet via chat, tijger. Geef enkel een POC/telefoonnummer en bel daarna via de Tiger Hotline.",
+            "Crypto? Stilte op de lijn. Geen details typen. Geef enkel POC, dan hotline drukken.",
+            "RAWR classified vibes. Crypto niet in chat. Wie is de POC?"
+          ]);
+        }
+
+        else if (problemType === "netwerk") {
+          ticket.step = "ask_location";
+
+          reply = random([
+            "Jochen is druk bezig met werken. Geef uw locatie, dan stuurt hij een technieker zo snel mogelijk langs.",
+            "Netwerkdrama genoteerd. Jochen is druk, maar CIS beweegt. Waar zit ge?",
+            "Hold on tight. Netwerkprobleem ontvangen. Geef uw locatie voor dispatch."
+          ]);
+        }
+
+        else {
+          ticket.step = "ask_description";
+
+          reply = random([
+            "Andere miserie dus. Beschrijf kort wat er scheelt, tijger.",
+            "Copy, speciale categorie. Geef kort de symptomen.",
+            "RAWR, vertel kort wat er kapot doet."
+          ]);
+        }
+      }
+    }
+
+    else if (ticket.step === "ask_asset") {
+      ticket.assetNumber = message;
+      ticket.step = "ask_location";
+
+      reply = random([
+        "Asset genoteerd. Waar staat dat beest ergens?",
+        "Copy assetnummer. Geef nu de locatie.",
+        "Ontvangen. Waar moeten de CIS-klauwen naartoe?"
+      ]);
+    }
+
+    else if (ticket.step === "ask_location") {
+      ticket.location = message;
+      ticket.step = "ask_description";
+
+      reply = random([
+        "Locatie genoteerd. Beschrijf nog kort wat er exact gebeurt.",
+        "Copy locatie. Wat ziet ge precies? Foutmelding, geen verbinding, dood toestel?",
+        "Ontvangen. Geef nog 1 korte omschrijving van het probleem."
+      ]);
+    }
+
+    else if (ticket.step === "ask_description") {
+      ticket.description = message;
+      ticket.step = "ask_poc";
+
+      reply = random([
+        "Omschrijving genoteerd. Wie is de POC? Naam of telefoonnummer is genoeg.",
+        "Copy. Geef nog de POC voor dit ticket.",
+        "RAWR bijna klaar. Wie mogen we contacteren als POC?"
+      ]);
+    }
+
+    else if (ticket.step === "ask_poc") {
+      ticket.poc = message;
+      ticket.step = "done";
+      ticketReady = true;
+      showHotline = true;
+
+      reply = random([
+        "Ticket aangemaakt. CIS technieker is onderweg, tijger. Ge kunt altijd bellen via de Tiger Hotline knop.",
+        "RAWR, ticket staat erin. Een CIS technieker komt zo snel mogelijk langs. Hotline-knop staat klaar.",
+        "Copy that. CIS is verwittigd en een technieker is onderweg. Voor extra drama: druk op de Tiger Hotline."
+      ]);
+    }
+
+    else if (ticket.step === "done") {
+      showHotline = true;
+
+      if (
+        lower.includes("beschikbaar") ||
+        lower.includes("wie") ||
+        lower.includes("cis") ||
+        lower.includes("medewerker") ||
+        lower.includes("technieker")
+      ) {
+        reply = "CIS heeft Kevin, Tommy, Piccart, Bram en Jorrit in de arena. Jochen is uiteraard druk bezig, tijger.";
+      } else if (
+        lower.includes("crypto") ||
+        lower.includes("classified") ||
+        lower.includes("secret") ||
+        lower.includes("geheim") ||
+        lower.includes("password") ||
+        lower.includes("wachtwoord")
+      ) {
+        reply = "Shhhht, dat niet via chat. Geen classified info delen, tijger. Bel CIS via de hotline.";
+      } else {
+        reply = random([
+          "Uw ticket staat erin, tijger. Typ 'nieuw ticket' als ge nog iets wilt melden.",
+          "RAWR. Ticket ontvangen. Voor spoed: Tiger Hotline.",
+          "CIS heeft uw ticket. Hold on tight, hete tijger."
+        ]);
+      }
+    }
+
+    if (ticketReady) {
+      await saveTicket(env, ticket);
+    }
+
+    return Response.json({
+      reply,
+      ticket,
+      showHotline
+    });
+
+  } catch (err) {
+    console.log("Tiger chat error:", err);
+
+    return Response.json(
+      {
+        reply: "RAWR Tiger error. Bel de Tiger Hotline als het dringend is.",
+        showHotline: true
+      },
+      { status: 500 }
+    );
+  }
+}
+
+function createNewTicket(name) {
+  return {
+    name: name || "onbekende tijger",
+    zone: "",
+    problemType: "",
+    assetNumber: "",
+    location: "",
+    description: "",
+    poc: "",
+    step: "ask_zone",
+    createdAt: new Date().toISOString()
+  };
+}
+
+function detectZone(text) {
+  if (text.includes("ops")) return "OPS";
+  if (text.includes("tech")) return "TECH";
+  return "";
+}
+
+function detectProblemType(text) {
+  if (text.includes("netwerk") || text.includes("network") || text.includes("internet") || text.includes("wifi")) return "netwerk";
+  if (text.includes("computer") || text.includes("pc") || text.includes("laptop")) return "computer";
+  if (text.includes("telefonie") || text.includes("telefoon") || text.includes("phone") || text.includes("sip")) return "telefonie";
+  if (text.includes("printer") || text.includes("print")) return "printer";
+  if (text.includes("radio")) return "radio";
+  if (text.includes("crypto") || text.includes("crypt")) return "crypto";
+  if (text.includes("andere") || text.includes("ander") || text.includes("other")) return "andere";
+  return "";
+}
+
+function random(lines) {
+  return lines[Math.floor(Math.random() * lines.length)];
+}
+
+async function saveTicket(env, ticket) {
+  if (!env.TICKETS) {
+    console.log("Geen TICKETS KV binding gevonden.");
+    return;
   }
 
-  if (
-    lower.includes("crypto") ||
-    lower.includes("classified") ||
-    lower.includes("secret") ||
-    lower.includes("geheim") ||
-    lower.includes("wachtwoord") ||
-    lower.includes("password")
-  ) {
-    return "Shhhht, dat niet via chat. Geen classified info delen, tijger. Bel CIS via de hotline.";
-  }
+  const id = "ticket:" + Date.now() + ":" + Math.random().toString(36).slice(2, 8);
 
-  if (
-    lower.includes("nieuw ticket") ||
-    lower.includes("nieuw probleem") ||
-    lower.includes("opnieuw")
-  ) {
-    return "Typ exact 'nieuw ticket', dan start ik een nieuwe flow, hete tijger.";
-  }
+  const savedTicket = {
+    id,
+    name: ticket.name || "onbekend",
+    zone: ticket.zone || "onbekend",
+    problemType: ticket.problemType || "onbekend",
+    assetNumber: ticket.assetNumber || "n.v.t.",
+    location: ticket.location || "niet opgegeven",
+    description: ticket.description || "geen omschrijving",
+    poc: ticket.poc || "niet opgegeven",
+    createdAt: ticket.createdAt || new Date().toISOString(),
+    savedAt: new Date().toISOString(),
+    status: "open"
+  };
 
-  if (!env.AI) {
-    return "Ticket staat erin, tijger. Ik geef geen wilde fixes via chat. Voor extra hulp: Tiger Hotline.";
-  }
-
-  const systemPrompt = `
-Je bent TIGER IT SUPPORT AI op Araxos Airbase.
-
-Er is al een ticket aangemaakt.
-Je mag nu enkel korte algemene antwoorden geven.
-
-Regels:
-- Antwoord in Vlaams/Nederlands.
-- Maximaal 3 korte zinnen.
-- Geen technische instructies zoals router resetten, kabels patchen, VLAN, IP, crypto, config, firewall, server, radio settings.
-- Niet hallucineren.
-- Geen stappenplannen.
-- Geen gevoelige info vragen.
-- Geen classified info.
-- Bij echte problemen: zeg dat CIS het ticket heeft en dat ze kunnen bellen via de hotline.
-- Als ze vragen wie beschikbaar is: noem Kevin, Tommy, Piccart, Bram en Jorrit. Jochen is altijd druk bezig.
-- Blijf licht grappig met tiger vibe, maar niet te veel.
-- Zeg niet telkens letterlijk hetzelfde.
-
-Ticketcontext:
-Naam: ${ticket.name}
-Zone: ${ticket.zone}
-Probleem: ${ticket.problemType}
-Asset: ${ticket.assetNumber || "n.v.t."}
-Locatie: ${ticket.location || "onbekend"}
-Omschrijving: ${ticket.description || "geen"}
-`;
-
-  const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: message }
-    ],
-    max_tokens: 80,
-    temperature: 0.25
-  });
-
-  return aiResponse.response ||
-    "Ticket staat erin, tijger. CIS pakt het op. Voor spoed: Tiger Hotline.";
+  await env.TICKETS.put(id, JSON.stringify(savedTicket));
 }
