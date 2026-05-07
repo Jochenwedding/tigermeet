@@ -182,8 +182,14 @@
 
 .btn-solve{
   background:#7cff3a;
+  
 }
-
+.btn-delete{
+  background:#222;
+  color:#ff5555;
+  border:1px solid rgba(255,0,0,.4);
+  margin-top:8px;
+}
 .btn-reopen{
   background:#ff4545;
   color:white;
@@ -372,6 +378,29 @@ async function loadTickets(){
             ${ticket.solvedAt ? `<br><small style="color:#7cff3a">Opgelost: ${formatDate(ticket.solvedAt)}</small>` : ""}
           </td>
           <td data-label="Actie">
+
+  ${
+    solved
+    ? `
+      <button class="btn btn-reopen"
+        onclick="setStatus('${ticket.id}','open')">
+        Heropen
+      </button>
+    `
+    : `
+      <button class="btn btn-solve"
+        onclick="setStatus('${ticket.id}','opgelost')">
+        ✓ Opgelost
+      </button>
+    `
+  }
+
+  <button class="btn btn-delete"
+    onclick="deleteTicket('${ticket.id}')">
+    🗑 Delete
+  </button>
+
+</td>
             ${
               solved
               ? `<button class="btn btn-reopen" onclick="setStatus('${ticket.id}','open')">Heropen</button>`
@@ -390,10 +419,34 @@ async function loadTickets(){
 }
 
 async function setStatus(id, status){
+
   await fetch("/api/ticket-status", {
     method:"POST",
     headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({ id, status })
+  });
+
+  await loadTickets();
+}
+
+
+
+async function deleteTicket(id){
+
+  const confirmed = confirm("Delete ticket definitief?");
+
+  if(!confirmed) return;
+
+  await fetch("/api/delete-ticket", {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({ id })
+  });
+
+  await loadTickets();
+}
   });
 
   await loadTickets();
