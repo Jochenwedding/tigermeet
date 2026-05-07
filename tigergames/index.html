@@ -46,7 +46,57 @@
   document.getElementById('respawnBtn').onclick=()=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify({type:'respawn'}))};
   function startAudio(){music.volume=.42;music.play().catch(()=>showToast('Tik nog eens voor muziek'))}
   function wsUrl(){const p=location.protocol==='https:'?'wss':'ws';return `${p}://${location.host}/tigergames/ws`}
-  function connect(name){running=true;ws=new WebSocket(wsUrl());setNet('connecting...');ws.onopen=()=>{setNet('online');ws.send(JSON.stringify({type:'join',name}))};ws.onmessage=e=>{const msg=JSON.parse(e.data);if(msg.type==='welcome')myId=msg.id;if(msg.type==='state')state=msg;if(msg.type==='event')showToast(msg.text)};ws.onclose=()=>{setNet('offline - reconnecting');if(running)setTimeout(()=>connect(name),1200)};requestAnimationFrame(loop)}
+  function connect(name){
+  running = true;
+
+  const url = wsUrl();
+  setNet("connecting: " + url);
+  showToast("Connecting websocket...");
+
+  try {
+    ws = new WebSocket(url);
+  } catch(err) {
+    setNet("WS create error: " + err.message);
+    showToast("WS create error");
+    return;
+  }
+
+  ws.onopen = () => {
+    setNet("ONLINE ✅");
+    showToast("ONLINE ✅");
+    ws.send(JSON.stringify({
+      type: "join",
+      name: name
+    }));
+  };
+
+  ws.onmessage = e => {
+    try {
+      const msg = JSON.parse(e.data);
+
+      if(msg.type === "welcome") myId = msg.id;
+      if(msg.type === "state") state = msg;
+      if(msg.type === "event") showToast(msg.text);
+    } catch(err) {
+      setNet("MSG parse error: " + err.message);
+    }
+  };
+
+  ws.onerror = err => {
+    setNet("WS ERROR ❌ check backend/binding");
+    showToast("WebSocket error");
+  };
+
+  ws.onclose = e => {
+    setNet("OFFLINE ❌ code " + e.code + " reason: " + (e.reason || "none"));
+
+    if(running){
+      setTimeout(() => connect(name), 2500);
+    }
+  };
+
+  requestAnimationFrame(loop);
+}
   function sendInput(){if(!ws||ws.readyState!==1)return;const now=performance.now();if(now-lastInput<45)return;lastInput=now;ws.send(JSON.stringify({type:'input',angle,boost:boosting}))}
   function loop(){if(!running)return;sendInput();draw();requestAnimationFrame(loop)}
   function draw(){const w=innerWidth,h=innerHeight;ctx.clearRect(0,0,w,h);if(!state){drawText('Waiting for Tiger server...');return}const me=state.players.find(p=>p.id===myId);if(me){camera.x+=(me.x-camera.x)*.1;camera.y+=(me.y-camera.y)*.1;camera.zoom=Math.max(.62,1.05-(me.len||20)/450)}ctx.save();ctx.translate(w/2,h/2);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-camera.x,-camera.y);drawWorld();for(const f of state.food)drawTigerFood(f);for(const p of [...state.players].sort((a,b)=>a.len-b.len))drawSnake(p);ctx.restore();drawVignette(w,h);updateHud()}
