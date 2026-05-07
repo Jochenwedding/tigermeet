@@ -1,0 +1,11 @@
+name = "tigergames-room"
+main = "worker.js"
+compatibility_date = "2026-05-07"
+
+[[durable_objects.bindings]]
+name = "TIGER_ROOM"
+class_name = "TigerRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["TigerRoom"]
