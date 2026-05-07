@@ -1,3 +1,10 @@
+export async function onRequestGet() {
+  return Response.json({
+    ok: true,
+    message: "ticket-status API is alive. Gebruik POST om status te wijzigen."
+  });
+}
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
