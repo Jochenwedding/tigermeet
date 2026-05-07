@@ -210,14 +210,23 @@ export async function onRequestPost(context) {
       }
     }
 
+    let savedTicketId = "";
+
     if (ticketReady) {
-      await saveTicket(env, ticket);
+      savedTicketId = await saveTicket(env, ticket);
+
+      if (savedTicketId) {
+        reply += ` Ticket ID: ${savedTicketId}`;
+      } else {
+        reply += " DEBUG: ticket NIET opgeslagen, TICKETS binding niet gevonden.";
+      }
     }
 
     return Response.json({
       reply,
       ticket,
-      showHotline
+      showHotline,
+      savedTicketId
     });
 
   } catch (err) {
@@ -271,7 +280,7 @@ function random(lines) {
 async function saveTicket(env, ticket) {
   if (!env.TICKETS) {
     console.log("Geen TICKETS KV binding gevonden.");
-    return;
+    return "";
   }
 
   const id = "ticket:" + Date.now() + ":" + Math.random().toString(36).slice(2, 8);
@@ -291,4 +300,6 @@ async function saveTicket(env, ticket) {
   };
 
   await env.TICKETS.put(id, JSON.stringify(savedTicket));
+
+  return id;
 }
