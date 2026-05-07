@@ -319,22 +319,22 @@ async function loadTickets(){
     document.getElementById("refreshTime").innerText = new Date().toLocaleTimeString();
 
     if(!data.ok){
-      document.getElementById("ticketBody").innerHTML = `
-        <tr><td colspan="11" class="empty">RAWR error loading tickets.</td></tr>
-      `;
+      document.getElementById("ticketBody").innerHTML =
+        `<tr><td colspan="11" class="empty">RAWR error loading tickets.</td></tr>`;
       return;
     }
 
-    const tickets = (data.tickets || []).sort((a,b) => {
-  return new Date(b.createdAt || b.savedAt) - new Date(a.createdAt || a.savedAt);
-});
+    const tickets = (data.tickets || []).sort((a,b) =>
+      new Date(b.createdAt || b.savedAt) - new Date(a.createdAt || a.savedAt)
+    );
+
     const total = tickets.length;
-    const solved = tickets.filter(t => String(t.status).toLowerCase() === "opgelost").length;
-    const open = total - solved;
+    const solvedCount = tickets.filter(t => String(t.status).toLowerCase() === "opgelost").length;
+    const openCount = total - solvedCount;
 
     document.getElementById("totalCount").innerText = total;
-    document.getElementById("openCount").innerText = open;
-    document.getElementById("solvedCount").innerText = solved;
+    document.getElementById("openCount").innerText = openCount;
+    document.getElementById("solvedCount").innerText = solvedCount;
 
     const incomingIds = new Set(tickets.map(t => t.id));
     const newTickets = tickets.filter(t => !knownTicketIds.has(t.id));
@@ -346,9 +346,8 @@ async function loadTickets(){
     knownTicketIds = incomingIds;
 
     if(!tickets.length){
-      document.getElementById("ticketBody").innerHTML = `
-        <tr><td colspan="11" class="empty">Geen tickets momenteel, tijger.</td></tr>
-      `;
+      document.getElementById("ticketBody").innerHTML =
+        `<tr><td colspan="11" class="empty">Geen tickets momenteel, tijger.</td></tr>`;
       firstLoad = false;
       return;
     }
@@ -374,38 +373,19 @@ async function loadTickets(){
             </span>
           </td>
           <td data-label="Tijdstip">
-            ${formatDate(ticket.createdAt)}
+            ${formatDate(ticket.createdAt || ticket.savedAt)}
             ${ticket.solvedAt ? `<br><small style="color:#7cff3a">Opgelost: ${formatDate(ticket.solvedAt)}</small>` : ""}
           </td>
           <td data-label="Actie">
-
-  ${
-    solved
-    ? `
-      <button class="btn btn-reopen"
-        onclick="setStatus('${ticket.id}','open')">
-        Heropen
-      </button>
-    `
-    : `
-      <button class="btn btn-solve"
-        onclick="setStatus('${ticket.id}','opgelost')">
-        ✓ Opgelost
-      </button>
-    `
-  }
-
-  <button class="btn btn-delete"
-    onclick="deleteTicket('${ticket.id}')">
-    🗑 Delete
-  </button>
-
-</td>
             ${
               solved
               ? `<button class="btn btn-reopen" onclick="setStatus('${ticket.id}','open')">Heropen</button>`
               : `<button class="btn btn-solve" onclick="setStatus('${ticket.id}','opgelost')">✓ Opgelost</button>`
             }
+
+            <button class="btn btn-delete" onclick="deleteTicket('${ticket.id}')">
+              🗑 Delete
+            </button>
           </td>
         </tr>
       `;
@@ -415,11 +395,12 @@ async function loadTickets(){
 
   }catch(err){
     console.error(err);
+    document.getElementById("ticketBody").innerHTML =
+      `<tr><td colspan="11" class="empty">Script error. Check console.</td></tr>`;
   }
 }
 
 async function setStatus(id, status){
-
   await fetch("/api/ticket-status", {
     method:"POST",
     headers:{ "Content-Type":"application/json" },
@@ -429,24 +410,14 @@ async function setStatus(id, status){
   await loadTickets();
 }
 
-
-
 async function deleteTicket(id){
-
   const confirmed = confirm("Delete ticket definitief?");
-
   if(!confirmed) return;
 
   await fetch("/api/delete-ticket", {
     method:"POST",
-    headers:{
-      "Content-Type":"application/json"
-    },
+    headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({ id })
-  });
-
-  await loadTickets();
-}
   });
 
   await loadTickets();
