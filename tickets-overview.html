@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CIS Tickets Tigermeet</title>
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+
+    body{
+      min-height:100vh;
+      font-family:Arial,Helvetica,sans-serif;
+      color:white;
+      background:
+        radial-gradient(circle at top,#3a1f00 0,#090909 40%,#000 100%);
+      padding:28px;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background:
+        repeating-linear-gradient(45deg,rgba(255,136,0,.08) 0,rgba(255,136,0,.08) 20px,transparent 20px,transparent 45px);
+      opacity:.6;
+    }
+
+    .wrap{
+      position:relative;
+      max-width:1500px;
+      margin:auto;
+    }
+
+    .header{
+      text-align:center;
+      margin-bottom:24px;
+      padding:28px;
+      border:1px solid rgba(255,136,0,.45);
+      border-radius:26px;
+      background:rgba(10,10,10,.88);
+      box-shadow:0 0 35px rgba(255,136,0,.18);
+    }
+
+    .tiger{
+      font-size:50px;
+      margin-bottom:8px;
+    }
+
+    h1{
+      font-size:52px;
+      letter-spacing:4px;
+      font-weight:900;
+      color:#ff9500;
+      text-shadow:0 0 15px rgba(255,136,0,.6);
+    }
+
+    .sub{
+      color:#aaa;
+      letter-spacing:7px;
+      font-size:14px;
+      margin-top:8px;
+    }
+
+    .topline{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:15px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .live{
+      color:#00ff66;
+      font-weight:bold;
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+      gap:16px;
+      margin-bottom:22px;
+    }
+
+    .stat{
+      background:linear-gradient(145deg,rgba(20,20,20,.95),rgba(5,5,5,.95));
+      border:1px solid rgba(255,136,0,.35);
+      border-radius:20px;
+      padding:20px;
+      box-shadow:0 0 25px rgba(255,136,0,.10);
+    }
+
+    .stat-label{
+      color:#aaa;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      margin-bottom:8px;
+    }
+
+    .stat-value{
+      font-size:34px;
+      font-weight:900;
+      color:#ff9500;
+    }
+
+    .stat.green .stat-value{color:#7cff3a}
+    .stat.red .stat-value{color:#ff3b3b}
+
+    .table-card{
+      background:rgba(8,8,8,.92);
+      border:1px solid rgba(255,136,0,.4);
+      border-radius:24px;
+      overflow:hidden;
+      box-shadow:0 0 35px rgba(255,136,0,.15);
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+    }
+
+    th{
+      text-align:left;
+      padding:16px;
+      color:#ff9500;
+      font-size:13px;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      border-bottom:1px solid rgba(255,136,0,.25);
+      background:rgba(255,136,0,.06);
+    }
+
+    td{
+      padding:16px;
+      border-bottom:1px solid rgba(255,255,255,.07);
+      vertical-align:top;
+      font-size:14px;
+    }
+
+    tr.open-row{
+      background:rgba(255,0,0,.08);
+    }
+
+    tr.solved-row{
+      background:rgba(0,255,80,.07);
+      opacity:.8;
+    }
+
+    .badge{
+      display:inline-block;
+      padding:6px 12px;
+      border-radius:999px;
+      font-weight:bold;
+      font-size:12px;
+      text-transform:uppercase;
+    }
+
+    .badge.open{
+      background:rgba(255,0,0,.18);
+      color:#ff4b4b;
+      border:1px solid rgba(255,0,0,.45);
+    }
+
+    .badge.solved{
+      background:rgba(0,255,80,.18);
+      color:#7cff3a;
+      border:1px solid rgba(0,255,80,.45);
+    }
+
+    .btn{
+      border:0;
+      padding:9px 13px;
+      border-radius:999px;
+      cursor:pointer;
+      font-weight:900;
+      color:black;
+    }
+
+    .btn-solve{
+      background:#7cff3a;
+    }
+
+    .btn-reopen{
+      background:#ff4545;
+      color:white;
+    }
+
+    .id{
+      color:#777;
+      font-size:11px;
+      margin-top:5px;
+    }
+
+    .desc{
+      max-width:330px;
+      line-height:1.4;
+    }
+
+    .empty{
+      padding:35px;
+      text-align:center;
+      color:#aaa;
+    }
+
+    .new-ticket{
+      animation:boom .9s ease;
+    }
+
+    @keyframes boom{
+      0%{transform:scale(.98);filter:brightness(2)}
+      40%{transform:scale(1.01)}
+      100%{transform:scale(1);filter:brightness(1)}
+    }
+
+    @media(max-width:900px){
+      h1{font-size:34px}
+      table,thead,tbody,tr,th,td{display:block}
+      thead{display:none}
+      tr{margin:14px;border:1px solid rgba(255,136,0,.25);border-radius:18px;overflow:hidden}
+      td{border-bottom:1px solid rgba(255,255,255,.06)}
+      td::before{
+        content:attr(data-label);
+        display:block;
+        color:#ff9500;
+        font-size:11px;
+        text-transform:uppercase;
+        margin-bottom:5px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<audio id="boomSound" src="/boom.mp3" preload="auto"></audio>
+
+<div class="wrap">
+
+  <div class="header">
+    <div class="tiger">🐯</div>
+    <h1>CIS TICKETS</h1>
+    <div class="sub">TIGERMEET</div>
+  </div>
+
+  <div class="topline">
+    <div class="live">● LIVE STATUS: SYNCED</div>
+    <div>Laatste update: <b id="refreshTime">--</b></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Totaal tickets</div>
+      <div class="stat-value" id="totalCount">0</div>
+    </div>
+
+    <div class="stat red">
+      <div class="stat-label">Niet opgelost</div>
+      <div class="stat-value" id="openCount">0</div>
+    </div>
+
+    <div class="stat green">
+      <div class="stat-label">Opgelost</div>
+      <div class="stat-value" id="solvedCount">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Auto refresh</div>
+      <div class="stat-value" style="font-size:24px;">5 sec</div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Probleem</th>
+          <th>Naam</th>
+          <th>Zone</th>
+          <th>Asset</th>
+          <th>Locatie</th>
+          <th>Omschrijving</th>
+          <th>POC</th>
+          <th>Status</th>
+          <th>Tijdstip</th>
+          <th>Actie</th>
+        </tr>
+      </thead>
+
+      <tbody id="ticketBody">
+        <tr>
+          <td colspan="11" class="empty">Tickets laden...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+let knownTicketIds = new Set();
+let firstLoad = true;
+
+async function loadTickets(){
+  try{
+    const res = await fetch("/api/tickets?ts=" + Date.now());
+    const data = await res.json();
+
+    document.getElementById("refreshTime").innerText = new Date().toLocaleTimeString();
+
+    if(!data.ok){
+      document.getElementById("ticketBody").innerHTML = `
+        <tr><td colspan="11" class="empty">RAWR error loading tickets.</td></tr>
+      `;
+      return;
+    }
+
+    const tickets = data.tickets || [];
+    const total = tickets.length;
+    const solved = tickets.filter(t => String(t.status).toLowerCase() === "opgelost").length;
+    const open = total - solved;
+
+    document.getElementById("totalCount").innerText = total;
+    document.getElementById("openCount").innerText = open;
+    document.getElementById("solvedCount").innerText = solved;
+
+    const incomingIds = new Set(tickets.map(t => t.id));
+    const newTickets = tickets.filter(t => !knownTicketIds.has(t.id));
+
+    if(!firstLoad && newTickets.length > 0){
+      playBoom();
+    }
+
+    knownTicketIds = incomingIds;
+
+    if(!tickets.length){
+      document.getElementById("ticketBody").innerHTML = `
+        <tr><td colspan="11" class="empty">Geen tickets momenteel, tijger.</td></tr>
+      `;
+      firstLoad = false;
+      return;
+    }
+
+    document.getElementById("ticketBody").innerHTML = tickets.map((ticket, index) => {
+      const status = String(ticket.status || "open").toLowerCase();
+      const solved = status === "opgelost";
+      const isNew = !firstLoad && newTickets.some(t => t.id === ticket.id);
+
+      return `
+        <tr class="${solved ? "solved-row" : "open-row"} ${isNew ? "new-ticket" : ""}">
+          <td data-label="#">#${tickets.length - index}<div class="id">${escapeHtml(ticket.id || "")}</div></td>
+          <td data-label="Probleem"><b>${escapeHtml(ticket.problemType || "Onbekend")}</b></td>
+          <td data-label="Naam">${escapeHtml(ticket.name || "-")}</td>
+          <td data-label="Zone">${escapeHtml(ticket.zone || "-")}</td>
+          <td data-label="Asset">${escapeHtml(ticket.assetNumber || "-")}</td>
+          <td data-label="Locatie">${escapeHtml(ticket.location || "-")}</td>
+          <td data-label="Omschrijving"><div class="desc">${escapeHtml(ticket.description || "-")}</div></td>
+          <td data-label="POC">${escapeHtml(ticket.poc || "-")}</td>
+          <td data-label="Status">
+            <span class="badge ${solved ? "solved" : "open"}">
+              ${solved ? "OPGELOST" : "OPEN"}
+            </span>
+          </td>
+          <td data-label="Tijdstip">
+            ${formatDate(ticket.createdAt)}
+            ${ticket.solvedAt ? `<br><small style="color:#7cff3a">Opgelost: ${formatDate(ticket.solvedAt)}</small>` : ""}
+          </td>
+          <td data-label="Actie">
+            ${
+              solved
+              ? `<button class="btn btn-reopen" onclick="setStatus('${ticket.id}','open')">Heropen</button>`
+              : `<button class="btn btn-solve" onclick="setStatus('${ticket.id}','opgelost')">✓ Opgelost</button>`
+            }
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    firstLoad = false;
+
+  }catch(err){
+    console.error(err);
+  }
+}
+
+async function setStatus(id, status){
+  await fetch("/api/ticket-status", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ id, status })
+  });
+
+  await loadTickets();
+}
+
+function playBoom(){
+  const boom = document.getElementById("boomSound");
+  try{
+    boom.currentTime = 0;
+    boom.play().catch(() => {});
+  }catch(e){}
+}
+
+document.addEventListener("click", () => {
+  const boom = document.getElementById("boomSound");
+  boom.play().then(() => {
+    boom.pause();
+    boom.currentTime = 0;
+  }).catch(() => {});
+}, { once:true });
+
+function escapeHtml(value){
+  return String(value)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function formatDate(value){
+  if(!value) return "-";
+  return new Date(value).toLocaleString();
+}
+
+loadTickets();
+setInterval(loadTickets, 5000);
+</script>
+
+</body>
+</html>
