@@ -7,4 +7,4 @@ class_name = "TigerRoom"
 
 [[migrations]]
 tag = "v1"
-new_sqlite_classes = ["TigerRoom"]
+new_classes = ["TigerRoom"]
