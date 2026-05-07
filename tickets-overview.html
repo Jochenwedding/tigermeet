@@ -455,6 +455,9 @@ function formatDate(value){
 
 loadTickets();
 setInterval(loadTickets, 5000);
+  if(localStorage.getItem("cisLoggedIn") !== "true"){
+  window.location.href = "/";
+}
 </script>
 
 </body>
