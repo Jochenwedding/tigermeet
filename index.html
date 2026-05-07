@@ -547,6 +547,9 @@ h1{
 
 <script>
 const PASSWORD = "tiger31";
+const CIS_USER = "cis";
+const CIS_PASS = "cis";
+const CIS_OVERVIEW_URL = "https://cissupport.jochenkaty.de/tickets-overview";
 
 const nameInput = document.getElementById("visitorName");
 const passwordInput = document.getElementById("visitorPassword");
@@ -649,11 +652,11 @@ async function enterSite(){
     return;
   }
 
-  if(visitorName.toLowerCase() === "cis" && visitorPassword === "cis"){
-    localStorage.setItem("cisLoggedIn", "true");
-
-    window.location.href =
-      "https://cissupport.jochenkaty.de/tickets-overview";
+  if(visitorName.toLowerCase() === CIS_USER && visitorPassword.toLowerCase() === CIS_PASS){
+  localStorage.setItem("cisLoggedIn", "true");
+  window.location.href = CIS_OVERVIEW_URL;
+  return;
+}
 
     return;
   }
