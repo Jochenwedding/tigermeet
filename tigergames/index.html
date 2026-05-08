@@ -9,7 +9,6 @@
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050505;color:white;font-family:Arial,Helvetica,sans-serif;touch-action:none;user-select:none}
     body{background:radial-gradient(circle at top,rgba(255,136,0,.28),transparent 38%),linear-gradient(135deg,#050505,#111,#000)}
-
     .screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;z-index:10;overflow-y:auto}
     .hidden{display:none!important}
 
@@ -31,47 +30,20 @@
     .logo{font-size:54px;filter:drop-shadow(0 0 20px rgba(255,136,0,.85))}
     h1{margin:2px 0;color:#ff8a00;font-size:clamp(36px,8vw,58px);letter-spacing:2px;text-shadow:0 0 22px rgba(255,136,0,.75)}
 
-    .versionBadge{
-      display:inline-block;
-      margin:0 0 10px;
-      padding:5px 11px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:800;
-      letter-spacing:.4px;
-      color:#ffd36a;
-      background:rgba(255,136,0,.10);
-      border:1px solid rgba(255,136,0,.32);
-      box-shadow:0 0 14px rgba(255,136,0,.16);
-    }
-
+    .versionBadge{display:inline-block;margin:0 0 10px;padding:5px 11px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.4px;color:#ffd36a;background:rgba(255,136,0,.10);border:1px solid rgba(255,136,0,.32);box-shadow:0 0 14px rgba(255,136,0,.16)}
     .tag{color:#ddd;line-height:1.42;margin:8px 0 14px;font-size:14px}
 
-    input,.nationSelect{
-      width:100%;
-      padding:15px 16px;
-      border-radius:17px;
-      border:1px solid rgba(255,136,0,.45);
-      background:#111;
-      color:white;
-      font-size:18px;
-      text-align:center;
-      outline:none;
-    }
-
-    .nationSelect{
-      margin-top:10px;
-      font-size:16px;
-      cursor:pointer;
-    }
-
+    input,.nationSelect{width:100%;padding:15px 16px;border-radius:17px;border:1px solid rgba(255,136,0,.45);background:#111;color:white;font-size:18px;text-align:center;outline:none}
+    .nationSelect{margin-top:10px;font-size:16px;cursor:pointer}
     input:focus,.nationSelect:focus{border-color:#ffc14d;box-shadow:0 0 18px rgba(255,136,0,.28)}
+
     button{border:0;border-radius:999px;padding:15px 22px;font-weight:900;color:#111;background:linear-gradient(135deg,#ffd36a,#ff8a00 60%,#ff5700);box-shadow:0 0 22px rgba(255,136,0,.35);cursor:pointer}
     button:active{transform:scale(.97)}
     .big{width:100%;font-size:18px;margin-top:12px}
     .small{font-size:12px;color:#888;margin-top:11px}
 
     .loginTop{margin-top:14px;padding:12px;border-radius:18px;background:rgba(0,0,0,.45);border:1px solid rgba(255,136,0,.28);text-align:left}
+    .countryTopBox{margin-top:10px;padding:10px}
     .loginTopTitle{text-align:center;color:#ffb13b;font-weight:900;margin-bottom:7px}
     .loginRow{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px}
     .loginRow:last-child{border-bottom:0}
@@ -96,7 +68,6 @@
 
     .buttons{position:absolute;top:92px;left:10px;z-index:5;display:flex;gap:8px;flex-wrap:wrap}
     .buttons button{pointer-events:auto;padding:10px 12px;font-size:12px}
-
     .net{position:absolute;right:12px;bottom:10px;z-index:5;background:rgba(0,0,0,.38);border:1px solid rgba(255,136,0,.18);border-radius:999px;padding:6px 10px;font-size:10px;color:#aaa;pointer-events:none;opacity:.55}
     .controls{position:absolute;inset:0;z-index:5;pointer-events:none}
     .joy{position:absolute;left:18px;bottom:18px;width:154px;height:154px;border-radius:50%;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.17);pointer-events:auto}
@@ -118,10 +89,10 @@
     <div class="card">
       <div class="logo">🐯</div>
       <h1>Tigergames Online</h1>
-      <div class="versionBadge">Beta Release V1.0 · Jochen Michels</div>
+      <div class="versionBadge">Beta Release V1.0 · Jo Chen</div>
 
       <p class="tag">
-        Feed yourself on other countries. Belgium is the best. Make your legacy, become the biggest tiger of them all and RAWR your way to the top.
+        Feed yourself on other countries.Make your legacy, become the biggest tiger of them all and ROAR your way to the top. Who has the biggest snake?
       </p>
 
       <input id="playerName" maxlength="16" placeholder="Naam / callsign" autocomplete="off" />
@@ -149,13 +120,19 @@
         </div>
       </div>
 
-      <p class="small">Joystick links, boost rechts. Muziek start na klikken/touch.</p>
+      <div class="loginTop countryTopBox">
+        <div class="loginTopTitle">🌍 TOP 3 NATIONS</div>
+        <div id="countryTopRows">
+          <div class="small" style="text-align:center">Nation stats laden...</div>
+        </div>
+      </div>
+
+      <p class="small">Joystick left. Boost right. Eat flags to grow bigger. Eat other tigers by going for the head. Avoid borders and hitting yourself as you grow into the biggest baddest tiger.</p>
     </div>
   </section>
 
   <section id="gameScreen" class="hidden">
     <canvas id="game"></canvas>
-
     <div class="net" id="net">connecting...</div>
 
     <div class="hud">
@@ -192,7 +169,6 @@
 (() => {
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
-
   const login = document.getElementById("login");
   const gameScreen = document.getElementById("gameScreen");
   const music = document.getElementById("music");
@@ -236,7 +212,7 @@
 
   addEventListener("resize", resize);
   resize();
-  preloadTop5();
+  preloadLoginStats();
 
   document.getElementById("playBtn").onclick = () => {
     const name = (document.getElementById("playerName").value.trim() || "Unknown Tiger").slice(0, 16);
@@ -265,7 +241,7 @@
     gameScreen.classList.add("hidden");
     login.classList.remove("hidden");
     renderPlayers.clear();
-    preloadTop5();
+    preloadLoginStats();
   };
 
   document.getElementById("respawnBtn").onclick = () => {
@@ -275,20 +251,21 @@
   musicBtn.onclick = () => {
     musicEnabled = !musicEnabled;
     musicBtn.textContent = musicEnabled ? "MUSIC ON" : "MUSIC OFF";
-
     if (musicEnabled) startAudio();
     else music.pause();
   };
 
-  function preloadTop5() {
+  function preloadLoginStats() {
     try {
       previewWs = new WebSocket(wsUrl());
 
       previewWs.onmessage = e => {
         try {
           const msg = JSON.parse(e.data);
-          if (msg.type === "welcome" && msg.top10) {
-            drawLoginTop5(msg.top10);
+
+          if (msg.type === "welcome") {
+            if (msg.top10) drawLoginTop5(msg.top10);
+            if (msg.countryTop3) drawCountryTop3(msg.countryTop3);
             previewWs.close();
           }
         } catch {}
@@ -297,10 +274,14 @@
       previewWs.onerror = () => {
         document.getElementById("loginTopRows").innerHTML =
           `<div class="small" style="text-align:center">Top 5 niet bereikbaar</div>`;
+        document.getElementById("countryTopRows").innerHTML =
+          `<div class="small" style="text-align:center">Nation stats niet bereikbaar</div>`;
       };
     } catch {
       document.getElementById("loginTopRows").innerHTML =
         `<div class="small" style="text-align:center">Top 5 niet bereikbaar</div>`;
+      document.getElementById("countryTopRows").innerHTML =
+        `<div class="small" style="text-align:center">Nation stats niet bereikbaar</div>`;
     }
   }
 
@@ -326,14 +307,29 @@
     }).join("");
   }
 
+  function drawCountryTop3(list) {
+    const rows = document.getElementById("countryTopRows");
+
+    if (!rows) return;
+
+    if (!list || !list.length) {
+      rows.innerHTML = `<div class="small" style="text-align:center">Nog geen nation scores.</div>`;
+      return;
+    }
+
+    rows.innerHTML = list.slice(0, 3).map((c, i) => `
+      <div class="loginRow">
+        <span>${i + 1}</span>
+        <span>${c.flag || flagOf(c.nation)} ${esc(c.name || c.nation)}</span>
+        <b>${Math.round(c.score || 0)}</b>
+      </div>
+    `).join("");
+  }
+
   async function startAudio() {
     try {
       music.volume = 0.42;
-
-      if (music.paused) {
-        await music.play();
-      }
-
+      if (music.paused) await music.play();
       musicBtn.textContent = "MUSIC ON";
     } catch {
       showToast("Tik nog eens voor muziek");
@@ -342,7 +338,6 @@
 
   function playRoar() {
     const now = performance.now();
-
     if (now - lastRoar < 650) return;
     lastRoar = now;
 
@@ -380,11 +375,13 @@
         if (msg.type === "welcome") {
           myId = msg.id;
           if (msg.top10) drawLoginTop5(msg.top10);
+          if (msg.countryTop3) drawCountryTop3(msg.countryTop3);
         }
 
         if (msg.type === "state") {
           state = msg;
           ingestState(msg);
+          if (msg.countryTop3) drawCountryTop3(msg.countryTop3);
         }
 
         if (msg.type === "event") showToast(msg.text);
@@ -465,9 +462,7 @@
 
       const tb = t.body || [];
 
-      if (!r.body) {
-        r.body = tb.map(b => ({ x: b.x, y: b.y }));
-      }
+      if (!r.body) r.body = tb.map(b => ({ x: b.x, y: b.y }));
 
       const max = Math.min(r.body.length, tb.length);
 
@@ -524,10 +519,7 @@
     }
 
     const players = [...renderPlayers.values()].sort((a, b) => (a.len || 0) - (b.len || 0));
-
-    for (const p of players) {
-      drawTigerDragonSnake(p, view);
-    }
+    for (const p of players) drawTigerDragonSnake(p, view);
 
     ctx.restore();
 
