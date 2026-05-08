@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tigergames Admin</title>
+
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      background:
+        radial-gradient(circle at top,rgba(255,136,0,.25),transparent 35%),
+        linear-gradient(135deg,#050505,#111,#000);
+      color:white;
+      font-family:Arial,Helvetica,sans-serif;
+      padding:22px;
+    }
+    h1{color:#ff8a00;margin:0 0 8px;text-shadow:0 0 18px rgba(255,136,0,.45)}
+    .sub{color:#aaa;margin-bottom:20px}
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+      gap:18px;
+    }
+    .card{
+      background:rgba(10,10,10,.82);
+      border:1px solid rgba(255,136,0,.35);
+      border-radius:20px;
+      padding:16px;
+      box-shadow:0 15px 45px rgba(0,0,0,.45);
+    }
+    .title{
+      color:#ffc14d;
+      font-weight:900;
+      margin-bottom:10px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:13px;
+    }
+    th,td{
+      padding:8px 6px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      text-align:left;
+      vertical-align:top;
+    }
+    th{color:#ff8a00;font-size:12px}
+    .pill{
+      display:inline-block;
+      padding:5px 9px;
+      border-radius:999px;
+      background:rgba(255,136,0,.14);
+      border:1px solid rgba(255,136,0,.35);
+      color:#ffd36a;
+      font-size:12px;
+      margin-right:6px;
+    }
+    button{
+      border:0;
+      border-radius:999px;
+      padding:10px 14px;
+      font-weight:900;
+      color:#111;
+      background:linear-gradient(135deg,#ffd36a,#ff8a00 60%,#ff5700);
+      cursor:pointer;
+      margin-bottom:16px;
+    }
+    .error{color:#ff6b6b;font-weight:900}
+    .muted{color:#888}
+    .ua{
+      max-width:260px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      color:#999;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>🐯 Tigergames Admin</h1>
+  <div class="sub">
+    Online spelers, bekende spelers en login attempts.
+  </div>
+
+  <button onclick="loadAdmin()">REFRESH</button>
+
+  <div id="status" class="sub">Loading...</div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="title">
+        <span>🟢 Online now</span>
+        <span id="onlineCount" class="pill">0</span>
+      </div>
+      <div id="onlineBox"></div>
+    </div>
+
+    <div class="card">
+      <div class="title">
+        <span>🏆 Top 10</span>
+      </div>
+      <div id="topBox"></div>
+    </div>
+
+    <div class="card">
+      <div class="title">
+        <span>🐾 Known players</span>
+      </div>
+      <div id="playersBox"></div>
+    </div>
+
+    <div class="card">
+      <div class="title">
+        <span>👀 Login attempts</span>
+      </div>
+      <div id="attemptsBox"></div>
+    </div>
+  </div>
+
+<script>
+const API = "https://tigermeet-game.jochenmichels.workers.dev/admin";
+
+function token() {
+  return new URLSearchParams(location.search).get("token") || "";
+}
+
+async function loadAdmin() {
+  const status = document.getElementById("status");
+  status.textContent = "Loading...";
+
+  try {
+    const res = await fetch(API + "?token=" + encodeURIComponent(token()));
+    const data = await res.json();
+
+    if (!data.ok) {
+      status.innerHTML = `<span class="error">${esc(data.error || "Unauthorized")}</span>`;
+      return;
+    }
+
+    status.textContent = "Last refresh: " + new Date(data.now).toLocaleString();
+    document.getElementById("onlineCount").textContent = data.onlineCount || 0;
+
+    renderOnline(data.online || []);
+    renderTop(data.top10 || []);
+    renderPlayers(data.knownPlayers || []);
+    renderAttempts(data.loginAttempts || []);
+
+  } catch (e) {
+    status.innerHTML = `<span class="error">Failed to load admin data</span>`;
+  }
+}
+
+function renderOnline(list) {
+  if (!list.length) {
+    document.getElementById("onlineBox").innerHTML = `<div class="muted">Niemand online.</div>`;
+    return;
+  }
+
+  document.getElementById("onlineBox").innerHTML = `
+    <table>
+      <tr><th>Name</th><th>Score</th><th>Len</th></tr>
+      ${list.map(p => `
+        <tr>
+          <td>${esc(p.name)}</td>
+          <td>${Math.round(p.score || 0)}</td>
+          <td>${p.len || 0}</td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
+}
+
+function renderTop(list) {
+  if (!list.length) {
+    document.getElementById("topBox").innerHTML = `<div class="muted">Nog geen scores.</div>`;
+    return;
+  }
+
+  document.getElementById("topBox").innerHTML = `
+    <table>
+      <tr><th>#</th><th>Name</th><th>Score</th></tr>
+      ${list.map((p, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${i === 0 ? "🐯 " : ""}${esc(p.name)}</td>
+          <td>${Math.round(p.score || 0)}</td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
+}
+
+function renderPlayers(list) {
+  if (!list.length) {
+    document.getElementById("playersBox").innerHTML = `<div class="muted">Nog geen spelers.</div>`;
+    return;
+  }
+
+  document.getElementById("playersBox").innerHTML = `
+    <table>
+      <tr><th>Name</th><th>Times</th><th>Last seen</th></tr>
+      ${list.map(p => `
+        <tr>
+          <td>${esc(p.name)}</td>
+          <td>${p.times || 1}</td>
+          <td>${fmt(p.lastSeen)}</td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
+}
+
+function renderAttempts(list) {
+  if (!list.length) {
+    document.getElementById("attemptsBox").innerHTML = `<div class="muted">Nog geen attempts.</div>`;
+    return;
+  }
+
+  document.getElementById("attemptsBox").innerHTML = `
+    <table>
+      <tr><th>Name</th><th>Time</th><th>IP</th></tr>
+      ${list.map(a => `
+        <tr>
+          <td>${esc(a.name)}</td>
+          <td>${fmt(a.at)}</td>
+          <td>${esc(a.ip || "unknown")}</td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
+}
+
+function fmt(ts) {
+  if (!ts) return "-";
+  return new Date(ts).toLocaleString();
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, m => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;"
+  }[m]));
+}
+
+loadAdmin();
+setInterval(loadAdmin, 10000);
+</script>
+</body>
+</html>
