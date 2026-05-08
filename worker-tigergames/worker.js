@@ -344,7 +344,7 @@ export class TigerRoom {
 
       // Minder data, maar genoeg voor smooth dragon-body
       body: p.body
-        .filter((_, i) => i % 5 === 0)
+        .filter((_, i) => i % 3 === 0)
         .map(b => ({
           x: Math.round(b.x * 10) / 10,
           y: Math.round(b.y * 10) / 10
