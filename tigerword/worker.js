@@ -2328,6 +2328,12 @@ export class TigerWordRoom {
     this.state = state;
     this.env = env;
     this.sessions = new Map();
+     this.highscores = {};
+
+this.state.blockConcurrencyWhile(async () => {
+  this.highscores = await this.state.storage.get("highscores") || {};
+});
+     
 
     this.game = {
       phase: "waiting",
@@ -2379,6 +2385,11 @@ export class TigerWordRoom {
       id,
       phase: this.game.phase
     });
+     this.send(ws, this.getLobbyInfo());
+this.send(ws, {
+  type: "highscores",
+  highscores: this.getHighscores()
+});
 
     ws.addEventListener("message", (event) => {
       let data;
@@ -2412,6 +2423,16 @@ export class TigerWordRoom {
       if (data.type === "newRound") {
         this.newRound(session);
       }
+       if (data.type === "getLobbyInfo") {
+  this.send(session.ws, this.getLobbyInfo());
+}
+
+if (data.type === "getHighscores") {
+  this.send(session.ws, {
+    type: "highscores",
+    highscores: this.getHighscores()
+  });
+}
     });
 
     ws.addEventListener("close", () => {
@@ -2598,6 +2619,7 @@ export class TigerWordRoom {
       const place = this.game.finishOrder.length;
       const points = place === 1 ? 500 : place === 2 ? 300 : place === 3 ? 150 : 75;
       player.score += points;
+       this.addHighscore(player.name, points, false);
 
       this.broadcast({
         type: "playerSolved",
@@ -2628,7 +2650,11 @@ export class TigerWordRoom {
     const everyoneDone = players.every(p => p.solved || p.guesses.length >= 6);
 
     if (everyoneDone) {
+       for (const p of players) {
+  this.addHighscore(p.name, 0, true);
+}
       this.game.phase = "roundover";
+       
 
       if (this.game.finishOrder.length === 0 && this.game.leaderId) {
         const leader = this.sessions.get(this.game.leaderId);
@@ -2723,13 +2749,58 @@ export class TigerWordRoom {
   }
 
   getScoreboard() {
-    const playerScores = Object.values(this.game.players).map(p => ({
-      name: p.name,
-      score: p.score,
-      solved: p.solved,
-      guesses: p.guesses.length
-    }));
+  const playerScores = Object.values(this.game.players).map(p => ({
+    name: p.name,
+    score: p.score,
+    solved: p.solved,
+    guesses: p.guesses.length
+  }));
 
+  return playerScores.sort((a, b) => b.score - a.score);
+}
+
+getLobbyInfo() {
+  return {
+    type: "lobbyInfo",
+    phase: this.game.phase,
+    players: this.getPublicPlayers(),
+    playerCount: Object.keys(this.game.players).length,
+    hasLeader: !!this.game.leaderId,
+    hasSecret: !!this.game.secret,
+    maxPlayersTotal: this.game.maxPlayersTotal
+  };
+}
+
+getHighscores() {
+  return Object.values(this.highscores)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 20);
+}
+
+addHighscore(name, points, gamePlayed) {
+  const key = String(name || "UNKNOWN").toUpperCase();
+
+  if (!this.highscores[key]) {
+    this.highscores[key] = {
+      name: key,
+      score: 0,
+      games: 0
+    };
+  }
+
+  this.highscores[key].score += points;
+
+  if (gamePlayed) {
+    this.highscores[key].games += 1;
+  }
+
+  this.state.storage.put("highscores", this.highscores);
+
+  this.broadcast({
+    type: "highscores",
+    highscores: this.getHighscores()
+  });
+}
     return playerScores.sort((a, b) => b.score - a.score);
   }
 
