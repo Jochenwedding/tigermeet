@@ -132,3 +132,9 @@ function broadcastPlayers() {
   });
 
 }
+export class TigerWordRoom {
+  constructor(state, env) {
+    this.state = state;
+    this.env = env;
+  }
+}
