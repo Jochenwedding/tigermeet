@@ -1,5 +1,12 @@
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
+
+    if (url.pathname === "/admin" || url.pathname === "/admin/") {
+      const id = env.TIGER_ROOM.idFromName("main-arena");
+      return env.TIGER_ROOM.get(id).fetch(request);
+    }
+
     if (request.headers.get("Upgrade") !== "websocket") {
       return new Response("Expected websocket", { status: 426 });
     }
@@ -18,6 +25,8 @@ const MAX_FOOD_SEND = 150;
 
 const TOP_KEY = "top10_v2";
 const BESTS_KEY = "player_bests_v1";
+const PLAYERS_KEY = "known_players_v1";
+const ATTEMPTS_KEY = "login_attempts_v1";
 
 const COLORS = [
   "#ff8a00",
@@ -48,28 +57,45 @@ export class TigerRoom {
 
     this.top10 = [];
     this.playerBests = [];
+    this.knownPlayers = [];
+    this.loginAttempts = [];
 
     this.state.blockConcurrencyWhile(async () => {
       const storedTop = (await this.state.storage.get(TOP_KEY)) || [];
       const storedBests = (await this.state.storage.get(BESTS_KEY)) || [];
+      const storedPlayers = (await this.state.storage.get(PLAYERS_KEY)) || [];
+      const storedAttempts = (await this.state.storage.get(ATTEMPTS_KEY)) || [];
 
       this.top10 = normalizeTop10(storedTop);
 
-      // Als BESTS_KEY nog leeg is, migreren we top10 naar playerBests.
       this.playerBests = normalizePlayerBests(
         storedBests.length ? storedBests : this.top10
       );
 
       this.top10 = normalizeTop10(this.playerBests);
+      this.knownPlayers = Array.isArray(storedPlayers) ? storedPlayers : [];
+      this.loginAttempts = Array.isArray(storedAttempts) ? storedAttempts : [];
     });
   }
 
   async fetch(request) {
+    const url = new URL(request.url);
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders() });
+    }
+
+    if (url.pathname === "/admin" || url.pathname === "/admin/") {
+      return this.adminResponse(request);
+    }
+
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
 
     server.accept();
     server.id = crypto.randomUUID();
+    server.ip = request.headers.get("CF-Connecting-IP") || "unknown";
+    server.ua = request.headers.get("User-Agent") || "unknown";
 
     server.addEventListener("message", evt => this.onMessage(server, evt.data));
     server.addEventListener("close", () => this.onClose(server));
@@ -90,7 +116,37 @@ export class TigerRoom {
     });
   }
 
-  onMessage(ws, raw) {
+  adminResponse(request) {
+    const url = new URL(request.url);
+    const token = url.searchParams.get("token") || "";
+
+    if (!this.env.ADMIN_TOKEN || token !== this.env.ADMIN_TOKEN) {
+      return json({ ok: false, error: "Unauthorized tiger move" }, 401);
+    }
+
+    const online = [...this.players.values()].map(p => ({
+      name: p.name,
+      nation: p.nation || "OTHER",
+      flag: flagOf(p.nation || "OTHER"),
+      score: Math.round(p.score || 0),
+      alive: !!p.alive,
+      len: p.body ? p.body.length : 0
+    })).sort((a, b) => b.score - a.score);
+
+    return json({
+      ok: true,
+      game: "Tigergames Online",
+      now: Date.now(),
+      onlineCount: online.length,
+      online,
+      top10: this.top10,
+      countryTop3: this.countryTop3(),
+      knownPlayers: this.knownPlayers.slice(0, 200),
+      loginAttempts: this.loginAttempts.slice(0, 200)
+    });
+  }
+
+  async onMessage(ws, raw) {
     let msg;
 
     try {
@@ -102,6 +158,9 @@ export class TigerRoom {
     if (msg.type === "join") {
       const name = safeName(msg.name || "Tiger");
       const nation = safeNation(msg.nation || "OTHER");
+
+      await this.logLoginAttempt(name, nation, ws);
+      await this.rememberPlayer(name, nation);
 
       const p = this.createPlayer(ws.id, name, nation);
 
@@ -164,6 +223,52 @@ export class TigerRoom {
 
     this.players.delete(ws);
     this.inputs.delete(ws.id);
+  }
+
+  async rememberPlayer(name, nation = "OTHER") {
+    name = safeName(name);
+    nation = safeNation(nation);
+
+    const existing = this.knownPlayers.find(
+      x => safeName(x.name).toLowerCase() === name.toLowerCase()
+    );
+
+    if (existing) {
+      existing.nation = nation;
+      existing.flag = flagOf(nation);
+      existing.lastSeen = Date.now();
+      existing.times = Number(existing.times || 0) + 1;
+    } else {
+      this.knownPlayers.push({
+        name,
+        nation,
+        flag: flagOf(nation),
+        firstSeen: Date.now(),
+        lastSeen: Date.now(),
+        times: 1
+      });
+    }
+
+    this.knownPlayers.sort((a, b) => b.lastSeen - a.lastSeen);
+    this.knownPlayers = this.knownPlayers.slice(0, 200);
+
+    await this.state.storage.put(PLAYERS_KEY, this.knownPlayers);
+  }
+
+  async logLoginAttempt(name, nation, ws) {
+    nation = safeNation(nation);
+
+    this.loginAttempts.unshift({
+      name: safeName(name),
+      nation,
+      flag: flagOf(nation),
+      at: Date.now(),
+      ip: ws.ip || "unknown",
+      ua: String(ws.ua || "unknown").slice(0, 160)
+    });
+
+    this.loginAttempts = this.loginAttempts.slice(0, 200);
+    await this.state.storage.put(ATTEMPTS_KEY, this.loginAttempts);
   }
 
   createPlayer(id, name, nation = "OTHER") {
@@ -664,4 +769,22 @@ function angleDiff(a, b) {
     Math.sin(b - a),
     Math.cos(b - a)
   );
+}
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data, null, 2), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      ...corsHeaders()
+    }
+  });
+}
+
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
+  };
 }
