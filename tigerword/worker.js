@@ -2308,7 +2308,6 @@ const WORDS = new Set([
   "zebra",
   "zesty",
   "zonal",
-]);
 ].map(w => w.toUpperCase()));
 export default {
   async fetch(request, env) {
