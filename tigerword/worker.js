@@ -2328,12 +2328,11 @@ export class TigerWordRoom {
     this.state = state;
     this.env = env;
     this.sessions = new Map();
-     this.highscores = {};
+    this.highscores = {};
 
-this.state.blockConcurrencyWhile(async () => {
-  this.highscores = await this.state.storage.get("highscores") || {};
-});
-     
+    this.state.blockConcurrencyWhile(async () => {
+      this.highscores = await this.state.storage.get("highscores") || {};
+    });
 
     this.game = {
       phase: "waiting",
@@ -2347,9 +2346,7 @@ this.state.blockConcurrencyWhile(async () => {
   }
 
   async fetch(request) {
-    const upgradeHeader = request.headers.get("Upgrade");
-
-    if (upgradeHeader !== "websocket") {
+    if (request.headers.get("Upgrade") !== "websocket") {
       return new Response("Expected websocket", { status: 400 });
     }
 
@@ -2380,59 +2377,35 @@ this.state.blockConcurrencyWhile(async () => {
 
     this.sessions.set(id, session);
 
-    this.send(ws, {
-      type: "connected",
-      id,
-      phase: this.game.phase
-    });
-     this.send(ws, this.getLobbyInfo());
-this.send(ws, {
-  type: "highscores",
-  highscores: this.getHighscores()
-});
+    this.send(ws, { type: "connected", id, phase: this.game.phase });
+    this.send(ws, this.getLobbyInfo());
+    this.send(ws, { type: "highscores", highscores: this.getHighscores() });
 
     ws.addEventListener("message", (event) => {
       let data;
-
       try {
         data = JSON.parse(event.data);
       } catch {
         return;
       }
 
-      if (data.type === "join") {
-        this.join(session, data);
+      if (data.type === "join") this.join(session, data);
+      if (data.type === "setSecret") this.setSecret(session, data.word);
+      if (data.type === "startGame") this.startGame(session);
+      if (data.type === "typing") this.handleTyping(session, data.value);
+      if (data.type === "guess") this.handleGuess(session, data.guess);
+      if (data.type === "newRound") this.newRound(session);
+
+      if (data.type === "getLobbyInfo") {
+        this.send(session.ws, this.getLobbyInfo());
       }
 
-      if (data.type === "setSecret") {
-        this.setSecret(session, data.word);
+      if (data.type === "getHighscores") {
+        this.send(session.ws, {
+          type: "highscores",
+          highscores: this.getHighscores()
+        });
       }
-
-      if (data.type === "startGame") {
-        this.startGame(session);
-      }
-
-      if (data.type === "typing") {
-        this.handleTyping(session, data.value);
-      }
-
-      if (data.type === "guess") {
-        this.handleGuess(session, data.guess);
-      }
-
-      if (data.type === "newRound") {
-        this.newRound(session);
-      }
-       if (data.type === "getLobbyInfo") {
-  this.send(session.ws, this.getLobbyInfo());
-}
-
-if (data.type === "getHighscores") {
-  this.send(session.ws, {
-    type: "highscores",
-    highscores: this.getHighscores()
-  });
-}
     });
 
     ws.addEventListener("close", () => {
@@ -2441,24 +2414,20 @@ if (data.type === "getHighscores") {
   }
 
   join(session, data) {
-    const currentCount = [...this.sessions.values()].filter(s => s.joined).length;
+    const joinedCount = [...this.sessions.values()].filter(s => s.joined).length;
 
-    if (!session.joined && currentCount >= this.game.maxPlayersTotal) {
+    if (!session.joined && joinedCount >= this.game.maxPlayersTotal) {
       this.send(session.ws, {
         type: "error",
-        message: "Lobby zit vol. Max 4 spelers totaal."
+        message: "Lobby zit vol. Max 4 totaal."
       });
       return;
     }
 
-    const role = data.role === "leader" ? "leader" : "player";
+    let role = data.role === "leader" ? "leader" : "player";
 
     if (role === "leader" && this.game.leaderId && this.game.leaderId !== session.id) {
-      this.send(session.ws, {
-        type: "error",
-        message: "Er is al een leader."
-      });
-      return;
+      role = "player";
     }
 
     session.name = String(data.name || "Player").slice(0, 18);
@@ -2467,18 +2436,23 @@ if (data.type === "getHighscores") {
 
     if (role === "leader") {
       this.game.leaderId = session.id;
+      delete this.game.players[session.id];
     }
 
-    if (role === "player" && !this.game.players[session.id]) {
-      this.game.players[session.id] = {
-        id: session.id,
-        name: session.name,
-        guesses: [],
-        current: "",
-        solved: false,
-        score: this.game.players[session.id]?.score || 0,
-        lastResult: null
-      };
+    if (role === "player") {
+      if (!this.game.players[session.id]) {
+        this.game.players[session.id] = {
+          id: session.id,
+          name: session.name,
+          guesses: [],
+          current: "",
+          solved: false,
+          score: 0,
+          lastResult: null
+        };
+      } else {
+        this.game.players[session.id].name = session.name;
+      }
     }
 
     this.broadcastState();
@@ -2547,10 +2521,7 @@ if (data.type === "getHighscores") {
 
       if (this.game.countdown <= 0) {
         this.game.phase = "playing";
-        this.broadcast({
-          type: "go",
-          message: "GO!"
-        });
+        this.broadcast({ type: "go", message: "GO!" });
         this.broadcastState();
         return;
       }
@@ -2569,7 +2540,10 @@ if (data.type === "getHighscores") {
     const player = this.game.players[session.id];
     if (!player || player.solved) return;
 
-    player.current = String(value || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5);
+    player.current = String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z]/g, "")
+      .slice(0, 5);
 
     this.broadcastLeader();
   }
@@ -2602,11 +2576,7 @@ if (data.type === "getHighscores") {
 
     const result = this.evaluateGuess(guess, this.game.secret);
 
-    player.guesses.push({
-      word: guess,
-      result
-    });
-
+    player.guesses.push({ word: guess, result });
     player.current = "";
     player.lastResult = { word: guess, result };
 
@@ -2618,8 +2588,9 @@ if (data.type === "getHighscores") {
 
       const place = this.game.finishOrder.length;
       const points = place === 1 ? 500 : place === 2 ? 300 : place === 3 ? 150 : 75;
+
       player.score += points;
-       this.addHighscore(player.name, points, false);
+      this.addHighscore(player.name, points, false);
 
       this.broadcast({
         type: "playerSolved",
@@ -2638,32 +2609,27 @@ if (data.type === "getHighscores") {
 
     this.broadcastLeader();
     this.broadcastState();
-
     this.checkRoundEnd();
   }
 
   checkRoundEnd() {
     const players = Object.values(this.game.players);
-
     if (!players.length) return;
 
     const everyoneDone = players.every(p => p.solved || p.guesses.length >= 6);
 
     if (everyoneDone) {
-       for (const p of players) {
-  this.addHighscore(p.name, 0, true);
-}
-      this.game.phase = "roundover";
-       
+      for (const p of players) {
+        this.addHighscore(p.name, 0, true);
+      }
 
-      if (this.game.finishOrder.length === 0 && this.game.leaderId) {
-        const leader = this.sessions.get(this.game.leaderId);
-        if (leader) {
-          this.broadcast({
-            type: "leaderWin",
-            message: "Niemand heeft het geraden. Leader wint deze ronde."
-          });
-        }
+      this.game.phase = "roundover";
+
+      if (this.game.finishOrder.length === 0) {
+        this.broadcast({
+          type: "leaderWin",
+          message: "Niemand heeft het geraden. Leader wint deze ronde."
+        });
       }
 
       this.broadcast({
@@ -2693,10 +2659,7 @@ if (data.type === "getHighscores") {
       p.lastResult = null;
     }
 
-    this.broadcast({
-      type: "newRound"
-    });
-
+    this.broadcast({ type: "newRound" });
     this.broadcastState();
   }
 
@@ -2710,6 +2673,17 @@ if (data.type === "getHighscores") {
     }
 
     delete this.game.players[session.id];
+
+    const joinedLeft = [...this.sessions.values()].filter(s => s.joined);
+
+    if (joinedLeft.length === 0) {
+      this.game.phase = "waiting";
+      this.game.leaderId = null;
+      this.game.secret = null;
+      this.game.players = {};
+      this.game.countdown = 0;
+      this.game.finishOrder = [];
+    }
 
     this.broadcastState();
   }
@@ -2749,59 +2723,63 @@ if (data.type === "getHighscores") {
   }
 
   getScoreboard() {
-  const playerScores = Object.values(this.game.players).map(p => ({
-    name: p.name,
-    score: p.score,
-    solved: p.solved,
-    guesses: p.guesses.length
-  }));
+    return Object.values(this.game.players)
+      .map(p => ({
+        name: p.name,
+        score: p.score,
+        solved: p.solved,
+        guesses: p.guesses.length
+      }))
+      .sort((a, b) => b.score - a.score);
+  }
 
-  return playerScores.sort((a, b) => b.score - a.score);
-}
+  getLobbyInfo() {
+    const joinedPlayers = this.getPublicPlayers();
 
-getLobbyInfo() {
-  return {
-    type: "lobbyInfo",
-    phase: this.game.phase,
-    players: this.getPublicPlayers(),
-    playerCount: Object.keys(this.game.players).length,
-    hasLeader: !!this.game.leaderId,
-    hasSecret: !!this.game.secret,
-    maxPlayersTotal: this.game.maxPlayersTotal
-  };
-}
-
-getHighscores() {
-  return Object.values(this.highscores)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 20);
-}
-
-addHighscore(name, points, gamePlayed) {
-  const key = String(name || "UNKNOWN").toUpperCase();
-
-  if (!this.highscores[key]) {
-    this.highscores[key] = {
-      name: key,
-      score: 0,
-      games: 0
+    return {
+      type: "lobbyInfo",
+      active: joinedPlayers.length > 0,
+      phase: this.game.phase,
+      players: joinedPlayers,
+      playerCount: Object.keys(this.game.players).length,
+      totalJoined: joinedPlayers.length,
+      hasLeader: !!this.game.leaderId,
+      leaderAvailable: !this.game.leaderId,
+      playerSlotsAvailable: joinedPlayers.length < this.game.maxPlayersTotal,
+      hasSecret: !!this.game.secret,
+      maxPlayersTotal: this.game.maxPlayersTotal
     };
   }
 
-  this.highscores[key].score += points;
-
-  if (gamePlayed) {
-    this.highscores[key].games += 1;
+  getHighscores() {
+    return Object.values(this.highscores)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 20);
   }
 
-  this.state.storage.put("highscores", this.highscores);
+  addHighscore(name, points, gamePlayed) {
+    const key = String(name || "UNKNOWN").toUpperCase();
 
-  this.broadcast({
-    type: "highscores",
-    highscores: this.getHighscores()
-  });
-}
-    return playerScores.sort((a, b) => b.score - a.score);
+    if (!this.highscores[key]) {
+      this.highscores[key] = {
+        name: key,
+        score: 0,
+        games: 0
+      };
+    }
+
+    this.highscores[key].score += points;
+
+    if (gamePlayed) {
+      this.highscores[key].games += 1;
+    }
+
+    this.state.storage.put("highscores", this.highscores);
+
+    this.broadcast({
+      type: "highscores",
+      highscores: this.getHighscores()
+    });
   }
 
   broadcastState() {
@@ -2810,13 +2788,17 @@ addHighscore(name, points, gamePlayed) {
       phase: this.game.phase,
       players: this.getPublicPlayers(),
       playerCount: Object.keys(this.game.players).length,
+      totalJoined: this.getPublicPlayers().length,
       hasLeader: !!this.game.leaderId,
+      leaderAvailable: !this.game.leaderId,
+      playerSlotsAvailable: this.getPublicPlayers().length < this.game.maxPlayersTotal,
       hasSecret: !!this.game.secret,
       countdown: this.game.countdown,
       scoreboard: this.getScoreboard()
     };
 
     this.broadcast(publicState);
+    this.broadcast(this.getLobbyInfo());
     this.broadcastLeader();
   }
 
