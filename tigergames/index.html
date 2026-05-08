@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Tiger.io</title>
+  <title>Tigergames Online</title>
 
   <style>
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -11,11 +11,11 @@
     body{background:radial-gradient(circle at top,rgba(255,136,0,.28),transparent 38%),linear-gradient(135deg,#050505,#111,#000)}
     .screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
     .hidden{display:none!important}
-    .card{width:min(580px,94vw);padding:26px;border-radius:30px;text-align:center;background:linear-gradient(180deg,rgba(25,25,25,.96),rgba(5,5,5,.97));border:1px solid rgba(255,136,0,.58);box-shadow:0 0 65px rgba(255,136,0,.22),0 25px 85px rgba(0,0,0,.82);position:relative;overflow:hidden}
+    .card{width:min(590px,94vw);padding:26px;border-radius:30px;text-align:center;background:linear-gradient(180deg,rgba(25,25,25,.96),rgba(5,5,5,.97));border:1px solid rgba(255,136,0,.58);box-shadow:0 0 65px rgba(255,136,0,.22),0 25px 85px rgba(0,0,0,.82);position:relative;overflow:hidden}
     .card:before{content:"";position:absolute;inset:-70px;background:repeating-linear-gradient(45deg,transparent 0,transparent 18px,rgba(255,136,0,.08) 18px,rgba(255,136,0,.08) 38px)}
     .card>*{position:relative}
     .logo{font-size:64px;filter:drop-shadow(0 0 20px rgba(255,136,0,.85))}
-    h1{margin:4px 0;color:#ff8a00;font-size:clamp(46px,11vw,76px);letter-spacing:2px;text-shadow:0 0 22px rgba(255,136,0,.75)}
+    h1{margin:4px 0;color:#ff8a00;font-size:clamp(40px,9vw,68px);letter-spacing:2px;text-shadow:0 0 22px rgba(255,136,0,.75)}
     .tag{color:#ddd;line-height:1.45;margin:10px 0 18px}
     input{width:100%;padding:17px 18px;border-radius:17px;border:1px solid rgba(255,136,0,.45);background:#111;color:white;font-size:19px;text-align:center;outline:none}
     input:focus{border-color:#ffc14d;box-shadow:0 0 18px rgba(255,136,0,.28)}
@@ -43,16 +43,16 @@
     .dot{width:11px;height:11px;border-radius:50%;box-shadow:0 0 10px currentColor}
     .rname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .rscore{font-weight:900}
-    .buttons{position:absolute;top:92px;left:10px;z-index:5;display:flex;gap:8px}
+    .buttons{position:absolute;top:92px;left:10px;z-index:5;display:flex;gap:8px;flex-wrap:wrap}
     .buttons button{pointer-events:auto;padding:10px 12px;font-size:12px}
-    .net{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:5;background:rgba(0,0,0,.7);border:1px solid rgba(255,136,0,.4);border-radius:999px;padding:8px 12px;font-size:12px;color:#ddd;pointer-events:none}
+    .net{position:absolute;right:12px;bottom:10px;z-index:5;background:rgba(0,0,0,.38);border:1px solid rgba(255,136,0,.18);border-radius:999px;padding:6px 10px;font-size:10px;color:#aaa;pointer-events:none;opacity:.55}
     .controls{position:absolute;inset:0;z-index:5;pointer-events:none}
     .joy{position:absolute;left:18px;bottom:18px;width:154px;height:154px;border-radius:50%;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.17);pointer-events:auto}
     .stick{position:absolute;left:50%;top:50%;width:64px;height:64px;margin-left:-32px;margin-top:-32px;border-radius:50%;background:rgba(255,136,0,.86);box-shadow:0 0 26px rgba(255,136,0,.45)}
     .boost{position:absolute;right:20px;bottom:34px;width:108px;height:108px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#ffe07b,#ff8700);color:#111;font-weight:900;box-shadow:0 0 30px rgba(255,136,0,.45);pointer-events:auto;border:3px solid rgba(255,255,255,.28)}
     .toast{position:absolute;left:50%;top:54px;transform:translateX(-50%);z-index:7;background:rgba(0,0,0,.75);border:1px solid rgba(255,136,0,.45);border-radius:999px;padding:9px 14px;font-size:13px;color:#eee;opacity:0;transition:.2s opacity;pointer-events:none}
     .toast.show{opacity:1}
-    @media(max-width:720px){.mine{min-width:135px}.score{font-size:23px}.box{padding:9px}.buttons{top:84px}.board{width:46vw}.logo{font-size:50px}h1{font-size:44px}}
+    @media(max-width:720px){.mine{min-width:135px}.score{font-size:23px}.box{padding:9px}.buttons{top:84px}.board{width:46vw}.logo{font-size:50px}h1{font-size:40px}.net{display:none}}
   </style>
 </head>
 
@@ -60,8 +60,8 @@
   <section id="login" class="screen">
     <div class="card">
       <div class="logo">🐯</div>
-      <h1>Tiger.io</h1>
-      <p class="tag">Multiplayer tiger-dragon arena. Eet vlaggen, pak resten van dode spelers en word de grootste tijger van Araxos.</p>
+      <h1>Tigergames Online</h1>
+      <p class="tag">Feed yourself on other countries. Belgium is the best. Make your legacy, become the biggest tiger of them all and RAWR your way to the top.</p>
 
       <input id="playerName" maxlength="16" placeholder="Naam / callsign" autocomplete="off" />
       <button class="big" id="playBtn">ENTER TIGER ARENA</button>
@@ -98,6 +98,7 @@
     <div class="buttons">
       <button id="respawnBtn">RESPAWN</button>
       <button id="menuBtn">MENU</button>
+      <button id="musicBtn">MUSIC ON</button>
     </div>
 
     <div class="controls">
@@ -118,6 +119,7 @@
   const login = document.getElementById("login");
   const gameScreen = document.getElementById("gameScreen");
   const music = document.getElementById("music");
+  const musicBtn = document.getElementById("musicBtn");
 
   const WORLD = 4200;
 
@@ -125,16 +127,15 @@
   let previewWs = null;
   let myId = null;
   let state = null;
+  let renderPlayers = new Map();
+
   let running = false;
   let lastInput = 0;
   let angle = 0;
   let boosting = false;
+  let musicEnabled = true;
 
-  const camera = {
-    x: WORLD / 2,
-    y: WORLD / 2,
-    zoom: 1
-  };
+  const camera = { x: WORLD / 2, y: WORLD / 2, zoom: 1 };
 
   const saved = localStorage.getItem("tigergames_name") || "";
   document.getElementById("playerName").value = saved;
@@ -151,12 +152,10 @@
 
   addEventListener("resize", resize);
   resize();
-
   preloadTop10();
 
   document.getElementById("playBtn").onclick = () => {
     const name = (document.getElementById("playerName").value.trim() || "Unknown Tiger").slice(0, 16);
-
     localStorage.setItem("tigergames_name", name);
 
     if (previewWs) {
@@ -167,7 +166,7 @@
     login.classList.add("hidden");
     gameScreen.classList.remove("hidden");
 
-    startAudio();
+    if (musicEnabled) startAudio();
     connect(name);
   };
 
@@ -176,13 +175,20 @@
     if (ws) ws.close();
     gameScreen.classList.add("hidden");
     login.classList.remove("hidden");
+    renderPlayers.clear();
     preloadTop10();
   };
 
   document.getElementById("respawnBtn").onclick = () => {
-    if (ws && ws.readyState === 1) {
-      ws.send(JSON.stringify({ type: "respawn" }));
-    }
+    if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: "respawn" }));
+  };
+
+  musicBtn.onclick = () => {
+    musicEnabled = !musicEnabled;
+    musicBtn.textContent = musicEnabled ? "MUSIC ON" : "MUSIC OFF";
+
+    if (musicEnabled) startAudio();
+    else music.pause();
   };
 
   function preloadTop10() {
@@ -210,31 +216,31 @@
   }
 
   function drawLoginTop10(top10) {
-  const rows = document.getElementById("loginTopRows");
+    const rows = document.getElementById("loginTopRows");
 
-  if (!top10 || !top10.length) {
-    rows.innerHTML = `<div class="small" style="text-align:center">Nog geen highscores. Word de eerste TigerKing.</div>`;
-    return;
+    if (!top10 || !top10.length) {
+      rows.innerHTML = `<div class="small" style="text-align:center">Nog geen highscores. Word de eerste TigerKing.</div>`;
+      return;
+    }
+
+    rows.innerHTML = top10.slice(0, 10).map((p, i) => {
+      const king = i === 0;
+      return `
+        <div class="loginRow ${king ? "king" : ""}">
+          <span>${i + 1}</span>
+          <span>${king ? "🐯 " + esc(p.name) + " : you are the TigerKing" : esc(p.name)}</span>
+          <b>${Math.round(p.score)}</b>
+        </div>
+      `;
+    }).join("");
   }
 
-  rows.innerHTML = top10.slice(0, 10).map((p, i) => {
-    const king = i === 0;
-
-    return `
-      <div class="loginRow ${king ? "king" : ""}">
-        <span>${i + 1}</span>
-        <span>${king ? "🐯 " + esc(p.name) + " : you are the TigerKing" : esc(p.name)}</span>
-        <b>${Math.round(p.score)}</b>
-      </div>
-    `;
-  }).join("");
-}
-
-async function startAudio() { music.volume = 0.42;
-
+  async function startAudio() {
+    music.volume = 0.42;
     try {
       music.src = "/Araxos%20Baby.mp3";
       await music.play();
+      musicBtn.textContent = "MUSIC ON";
     } catch {
       showToast("Tik nog eens voor muziek");
     }
@@ -242,14 +248,13 @@ async function startAudio() { music.volume = 0.42;
 
   function connect(name) {
     running = true;
-
-    setNet("connecting...");
+    setNet("ONLINE");
     showToast("Connecting websocket...");
 
     try {
       ws = new WebSocket(wsUrl());
-    } catch (err) {
-      setNet("WS create error");
+    } catch {
+      setNet("WS ERROR");
       showToast("WS create error");
       return;
     }
@@ -257,11 +262,7 @@ async function startAudio() { music.volume = 0.42;
     ws.onopen = () => {
       setNet("ONLINE ✅");
       showToast("ONLINE ✅");
-
-      ws.send(JSON.stringify({
-        type: "join",
-        name
-      }));
+      ws.send(JSON.stringify({ type: "join", name }));
     };
 
     ws.onmessage = e => {
@@ -275,55 +276,101 @@ async function startAudio() { music.volume = 0.42;
 
         if (msg.type === "state") {
           state = msg;
+          ingestState(msg);
         }
 
-        if (msg.type === "event") {
-          showToast(msg.text);
-        }
-      } catch (err) {
+        if (msg.type === "event") showToast(msg.text);
+      } catch {
         setNet("MSG parse error");
       }
     };
 
     ws.onerror = () => {
-      setNet("WS ERROR ❌");
+      setNet("WS ERROR");
       showToast("WebSocket error");
     };
 
     ws.onclose = e => {
-      setNet("OFFLINE ❌ " + e.code);
-
-      if (running) {
-        setTimeout(() => connect(name), 2500);
-      }
+      setNet("OFFLINE " + e.code);
+      if (running) setTimeout(() => connect(name), 2500);
     };
 
     requestAnimationFrame(loop);
+  }
+
+  function ingestState(msg) {
+    const seen = new Set();
+
+    for (const p of msg.players || []) {
+      seen.add(p.id);
+
+      let r = renderPlayers.get(p.id);
+
+      if (!r) {
+        r = JSON.parse(JSON.stringify(p));
+        r.sx = p.x;
+        r.sy = p.y;
+        r.sangle = p.angle || 0;
+        r.sbody = (p.body || []).map(b => ({ x: b.x, y: b.y }));
+        renderPlayers.set(p.id, r);
+      }
+
+      r.target = p;
+    }
+
+    for (const id of renderPlayers.keys()) {
+      if (!seen.has(id)) renderPlayers.delete(id);
+    }
   }
 
   function sendInput() {
     if (!ws || ws.readyState !== 1) return;
 
     const now = performance.now();
-
-    if (now - lastInput < 45) return;
+    if (now - lastInput < 40) return;
 
     lastInput = now;
 
-    ws.send(JSON.stringify({
-      type: "input",
-      angle,
-      boost: boosting
-    }));
+    ws.send(JSON.stringify({ type: "input", angle, boost: boosting }));
   }
 
   function loop() {
     if (!running) return;
-
     sendInput();
+    smoothPlayers();
     draw();
-
     requestAnimationFrame(loop);
+  }
+
+  function smoothPlayers() {
+    for (const r of renderPlayers.values()) {
+      const t = r.target || r;
+
+      r.x = lerp(r.x ?? t.x, t.x, 0.28);
+      r.y = lerp(r.y ?? t.y, t.y, 0.28);
+      r.angle = lerpAngle(r.angle ?? t.angle, t.angle || 0, 0.25);
+      r.score = t.score;
+      r.name = t.name;
+      r.color = t.color;
+      r.alive = t.alive;
+      r.radius = lerp(r.radius ?? t.radius, t.radius, 0.22);
+      r.len = t.len;
+
+      const tb = t.body || [];
+      if (!r.body) r.body = tb.map(b => ({ x: b.x, y: b.y }));
+
+      const max = Math.min(r.body.length, tb.length);
+      for (let i = 0; i < max; i++) {
+        r.body[i].x = lerp(r.body[i].x, tb[i].x, 0.25);
+        r.body[i].y = lerp(r.body[i].y, tb[i].y, 0.25);
+      }
+
+      if (tb.length > r.body.length) {
+        for (let i = r.body.length; i < tb.length; i++) r.body.push({ x: tb[i].x, y: tb[i].y });
+      }
+
+      if (r.body.length > tb.length) r.body.length = tb.length;
+    }
   }
 
   function draw() {
@@ -337,11 +384,11 @@ async function startAudio() { music.volume = 0.42;
       return;
     }
 
-    const me = state.players.find(p => p.id === myId);
+    const me = renderPlayers.get(myId);
 
     if (me) {
-      camera.x += (me.x - camera.x) * 0.13;
-      camera.y += (me.y - camera.y) * 0.13;
+      camera.x += (me.x - camera.x) * 0.12;
+      camera.y += (me.y - camera.y) * 0.12;
       camera.zoom += (Math.max(0.64, 1.08 - (me.len || 20) / 470) - camera.zoom) * 0.06;
     }
 
@@ -353,19 +400,16 @@ async function startAudio() { music.volume = 0.42;
     drawWorld();
 
     const view = {
-      x1: camera.x - w / camera.zoom / 2 - 120,
-      y1: camera.y - h / camera.zoom / 2 - 120,
-      x2: camera.x + w / camera.zoom / 2 + 120,
-      y2: camera.y + h / camera.zoom / 2 + 120
+      x1: camera.x - w / camera.zoom / 2 - 160,
+      y1: camera.y - h / camera.zoom / 2 - 160,
+      x2: camera.x + w / camera.zoom / 2 + 160,
+      y2: camera.y + h / camera.zoom / 2 + 160
     };
 
-    for (const f of state.food) {
-      if (inView(f.x, f.y, view)) drawFlagFood(f);
-    }
+    for (const f of state.food || []) if (inView(f.x, f.y, view)) drawFlagFood(f);
 
-    for (const p of [...state.players].sort((a, b) => a.len - b.len)) {
-      drawTigerDragonSnake(p, view);
-    }
+    const players = [...renderPlayers.values()].sort((a, b) => (a.len || 0) - (b.len || 0));
+    for (const p of players) drawTigerDragonSnake(p, view);
 
     ctx.restore();
 
@@ -380,18 +424,12 @@ async function startAudio() { music.volume = 0.42;
     ctx.strokeStyle = "rgba(255,136,0,.045)";
     ctx.lineWidth = 1;
 
-    for (let x = 0; x < WORLD; x += 140) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, WORLD);
-      ctx.stroke();
+    for (let x = 0; x < WORLD; x += 160) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, WORLD); ctx.stroke();
     }
 
-    for (let y = 0; y < WORLD; y += 140) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(WORLD, y);
-      ctx.stroke();
+    for (let y = 0; y < WORLD; y += 160) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD, y); ctx.stroke();
     }
 
     ctx.strokeStyle = "rgba(255,136,0,.78)";
@@ -414,36 +452,56 @@ async function startAudio() { music.volume = 0.42;
     if (!p.alive) return;
 
     const body = p.body || [];
-
     ctx.save();
 
-    for (let i = body.length - 1; i >= 0; i -= 1) {
+    // Extra volle basislijn onder de bolletjes
+    if (body.length > 1) {
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "rgba(255,118,0,.92)";
+      ctx.lineWidth = Math.max(18, p.radius * 1.45);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      for (const b of body) {
+        if (inView(b.x, b.y, view)) ctx.lineTo(b.x, b.y);
+      }
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(20,10,0,.95)";
+      ctx.lineWidth = Math.max(5, p.radius * 0.32);
+      ctx.setLineDash([18, 18]);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      for (const b of body) {
+        if (inView(b.x, b.y, view)) ctx.lineTo(b.x, b.y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    for (let i = body.length - 1; i >= 0; i--) {
       const b = body[i];
       if (!inView(b.x, b.y, view)) continue;
 
       const t = 1 - i / Math.max(1, body.length);
-      const size = Math.max(9, p.radius * (0.62 + t * 0.58));
+      const size = Math.max(10, p.radius * (0.78 + t * 0.66));
 
       ctx.beginPath();
       ctx.fillStyle = "#ff8a00";
-      ctx.shadowColor = "rgba(255,136,0,.55)";
-      ctx.shadowBlur = 14;
+      ctx.shadowColor = "rgba(255,136,0,.42)";
+      ctx.shadowBlur = 10;
       ctx.arc(b.x, b.y, size, 0, Math.PI * 2);
       ctx.fill();
-
       ctx.shadowBlur = 0;
 
       if (i % 2 === 0) {
         ctx.save();
         ctx.translate(b.x, b.y);
         ctx.rotate((i * 0.75) + (p.angle || 0));
-
         ctx.fillStyle = "#070707";
-        ctx.fillRect(-size * 0.72, -size * 0.16, size * 1.42, size * 0.26);
-
-        ctx.fillStyle = "rgba(255,220,80,.75)";
-        ctx.fillRect(-size * 0.34, size * 0.18, size * 0.68, size * 0.12);
-
+        ctx.fillRect(-size * 0.82, -size * 0.18, size * 1.64, size * 0.30);
+        ctx.fillStyle = "rgba(255,220,80,.65)";
+        ctx.fillRect(-size * 0.36, size * 0.22, size * 0.72, size * 0.13);
         ctx.restore();
       }
     }
@@ -459,18 +517,17 @@ async function startAudio() { music.volume = 0.42;
     ctx.translate(p.x, p.y);
     ctx.rotate(p.angle || 0);
 
-    const r = p.radius;
+    const r = p.radius * 1.08;
 
     ctx.shadowColor = "#ff8a00";
     ctx.shadowBlur = 22;
 
     ctx.fillStyle = "#ff8a00";
     ctx.beginPath();
-    ctx.ellipse(0, 0, r * 1.6, r * 1.08, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, r * 1.72, r * 1.14, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.shadowBlur = 0;
-
     ctx.fillStyle = "#050505";
 
     ctx.beginPath();
@@ -524,24 +581,24 @@ async function startAudio() { music.volume = 0.42;
   function drawName(p) {
     ctx.font = "bold 13px Arial";
     ctx.textAlign = "center";
-
     ctx.fillStyle = "rgba(0,0,0,.8)";
-    ctx.fillText(p.name, p.x, p.y - p.radius - 16);
-
+    ctx.fillText(p.name, p.x, p.y - p.radius - 18);
     ctx.fillStyle = "#fff";
-    ctx.fillText(p.name, p.x, p.y - p.radius - 17);
+    ctx.fillText(p.name, p.x, p.y - p.radius - 19);
   }
 
   function updateHud() {
-    const players = [...state.players].filter(p => p.alive).sort((a, b) => b.score - a.score);
-    const me = players.find(p => p.id === myId) || state.players.find(p => p.id === myId);
+    if (!state) return;
+
+    const players = [...renderPlayers.values()].filter(p => p.alive).sort((a, b) => b.score - a.score);
+    const me = renderPlayers.get(myId);
 
     if (me) {
       document.getElementById("meName").textContent = me.name;
-      document.getElementById("meScore").textContent = Math.round(me.score);
+      document.getElementById("meScore").textContent = Math.round(me.score || 0);
 
       const rank = players.findIndex(p => p.id === myId) + 1;
-      document.getElementById("meMeta").textContent = `Lengte ${me.len} · Rank #${rank > 0 ? rank : "-"}`;
+      document.getElementById("meMeta").textContent = `Lengte ${me.len || 0} · Rank #${rank > 0 ? rank : "-"}`;
     }
 
     document.getElementById("liveRows").innerHTML =
@@ -553,20 +610,15 @@ async function startAudio() { music.volume = 0.42;
       <div class="row">
         <span class="dot" style="background:${c};color:${c}"></span>
         <span class="rname">#${i + 1} ${esc(n)}</span>
-        <span class="rscore">${Math.round(s)}</span>
+        <span class="rscore">${Math.round(s || 0)}</span>
       </div>
     `;
   }
 
   function drawVignette(w, h) {
-    const g = ctx.createRadialGradient(
-      w / 2, h / 2, Math.min(w, h) * 0.25,
-      w / 2, h / 2, Math.max(w, h) * 0.72
-    );
-
+    const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.25, w / 2, h / 2, Math.max(w, h) * 0.72);
     g.addColorStop(0, "rgba(0,0,0,0)");
     g.addColorStop(1, "rgba(0,0,0,.58)");
-
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, w, h);
   }
@@ -590,7 +642,6 @@ async function startAudio() { music.volume = 0.42;
     const e = document.getElementById("toast");
     e.textContent = t;
     e.classList.add("show");
-
     clearTimeout(showToast.t);
     showToast.t = setTimeout(() => e.classList.remove("show"), 1400);
   }
@@ -602,6 +653,14 @@ async function startAudio() { music.volume = 0.42;
       ">": "&gt;",
       '"': "&quot;"
     }[m]));
+  }
+
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  function lerpAngle(a, b, t) {
+    return a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * t;
   }
 
   function setDirFromScreen(x, y) {
@@ -616,7 +675,6 @@ async function startAudio() { music.volume = 0.42;
 
   addEventListener("keydown", e => {
     const k = e.key.toLowerCase();
-
     if (k === "w" || k === "arrowup") angle = -Math.PI / 2;
     if (k === "s" || k === "arrowdown") angle = Math.PI / 2;
     if (k === "a" || k === "arrowleft") angle = Math.PI;
@@ -643,7 +701,7 @@ async function startAudio() { music.volume = 0.42;
   boost.addEventListener("touchstart", e => {
     e.preventDefault();
     boosting = true;
-    startAudio();
+    if (musicEnabled) startAudio();
   }, { passive: false });
 
   boost.addEventListener("touchend", e => {
@@ -651,7 +709,9 @@ async function startAudio() { music.volume = 0.42;
     boosting = false;
   }, { passive: false });
 
-  document.body.addEventListener("touchstart", startAudio, { passive: true, once: true });
+  document.body.addEventListener("touchstart", () => {
+    if (musicEnabled) startAudio();
+  }, { passive: true, once: true });
 
   function joyMove(e) {
     e.preventDefault();
