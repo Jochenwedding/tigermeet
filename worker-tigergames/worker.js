@@ -15,11 +15,23 @@ const FOOD_TARGET = 140;
 const TICK_MS = 33;
 const BROADCAST_MS = 50;
 const MAX_FOOD_SEND = 150;
+
 const TOP_KEY = "top10_v2";
+const BESTS_KEY = "player_bests_v1";
 
-const COLORS = ["#ff8a00", "#ffb000", "#ff6a00", "#d96b00", "#ff3b30", "#ffe14a"];
+const COLORS = [
+  "#ff8a00",
+  "#ffb000",
+  "#ff6a00",
+  "#d96b00",
+  "#ff3b30",
+  "#ffe14a"
+];
 
-const FLAGS = ["🇨🇿","🇵🇱","🇩🇪","🇭🇺","🇨🇭","🇮🇹","🇬🇧","🇫🇷","🇪🇸","🇬🇷"];
+const FLAGS = [
+  "🇨🇿", "🇵🇱", "🇩🇪", "🇭🇺", "🇨🇭",
+  "🇮🇹", "🇬🇧", "🇫🇷", "🇪🇸", "🇬🇷"
+];
 
 export class TigerRoom {
   constructor(state, env) {
@@ -35,9 +47,20 @@ export class TigerRoom {
     this.tickHandle = null;
 
     this.top10 = [];
+    this.playerBests = [];
 
     this.state.blockConcurrencyWhile(async () => {
-      this.top10 = normalizeTop10((await this.state.storage.get(TOP_KEY)) || []);
+      const storedTop = (await this.state.storage.get(TOP_KEY)) || [];
+      const storedBests = (await this.state.storage.get(BESTS_KEY)) || [];
+
+      this.top10 = normalizeTop10(storedTop);
+
+      // Als BESTS_KEY nog leeg is, migreren we top10 naar playerBests.
+      this.playerBests = normalizePlayerBests(
+        storedBests.length ? storedBests : this.top10
+      );
+
+      this.top10 = normalizeTop10(this.playerBests);
     });
   }
 
@@ -57,22 +80,33 @@ export class TigerRoom {
       id: server.id,
       game: "Tigergames Online",
       world: WORLD,
-      top10: this.top10
+      top10: this.top10,
+      countryTop3: this.countryTop3()
     }));
 
-    return new Response(null, { status: 101, webSocket: client });
+    return new Response(null, {
+      status: 101,
+      webSocket: client
+    });
   }
 
   onMessage(ws, raw) {
     let msg;
-    try { msg = JSON.parse(raw); } catch { return; }
+
+    try {
+      msg = JSON.parse(raw);
+    } catch {
+      return;
+    }
 
     if (msg.type === "join") {
       const name = safeName(msg.name || "Tiger");
       const nation = safeNation(msg.nation || "OTHER");
+
       const p = this.createPlayer(ws.id, name, nation);
 
       this.players.set(ws, p);
+
       this.inputs.set(ws.id, {
         angle: Math.random() * Math.PI * 2,
         boost: false
@@ -90,6 +124,7 @@ export class TigerRoom {
 
     if (msg.type === "input") {
       const p = this.players.get(ws);
+
       if (!p || !p.alive) return;
 
       this.inputs.set(p.id, {
@@ -102,9 +137,14 @@ export class TigerRoom {
 
     if (msg.type === "respawn") {
       const old = this.players.get(ws);
+
       if (!old) return;
 
-      this.players.set(ws, this.createPlayer(old.id, old.name, old.nation));
+      this.players.set(
+        ws,
+        this.createPlayer(old.id, old.name, old.nation)
+      );
+
       this.inputs.set(old.id, {
         angle: Math.random() * Math.PI * 2,
         boost: false
@@ -118,7 +158,9 @@ export class TigerRoom {
   onClose(ws) {
     const p = this.players.get(ws);
 
-    if (p) this.saveTop(p.name, Math.round(p.score), p.nation);
+    if (p) {
+      this.saveTop(p.name, Math.round(p.score), p.nation);
+    }
 
     this.players.delete(ws);
     this.inputs.delete(ws.id);
@@ -161,7 +203,9 @@ export class TigerRoom {
     this.lastTick = Date.now();
     this.lastBroadcast = 0;
 
-    this.tickHandle = setInterval(() => this.tick(), TICK_MS);
+    this.tickHandle = setInterval(() => {
+      this.tick();
+    }, TICK_MS);
   }
 
   tick() {
@@ -178,7 +222,9 @@ export class TigerRoom {
     this.seedFood();
 
     for (const p of this.players.values()) {
-      if (p.alive) this.updatePlayer(p, dt);
+      if (p.alive) {
+        this.updatePlayer(p, dt);
+      }
     }
 
     this.handleEating();
@@ -199,7 +245,11 @@ export class TigerRoom {
     p.angle += angleDiff(p.angle, input.angle) * Math.min(1, dt * 9.5);
 
     const canBoost = input.boost && p.body.length > 28;
-    const speed = 205 + Math.max(0, 55 - p.body.length * 0.14) + (canBoost ? 135 : 0);
+
+    const speed =
+      205 +
+      Math.max(0, 55 - p.body.length * 0.14) +
+      (canBoost ? 135 : 0);
 
     if (canBoost && Math.random() < 0.22) {
       const tail = p.body.pop();
@@ -216,8 +266,17 @@ export class TigerRoom {
       p.score = Math.max(0, p.score - 0.035);
     }
 
-    p.x = clamp(p.x + Math.cos(p.angle) * speed * dt, 20, WORLD - 20);
-    p.y = clamp(p.y + Math.sin(p.angle) * speed * dt, 20, WORLD - 20);
+    p.x = clamp(
+      p.x + Math.cos(p.angle) * speed * dt,
+      20,
+      WORLD - 20
+    );
+
+    p.y = clamp(
+      p.y + Math.sin(p.angle) * speed * dt,
+      20,
+      WORLD - 20
+    );
 
     p.body.unshift({
       x: p.x,
@@ -230,7 +289,11 @@ export class TigerRoom {
       p.body.pop();
     }
 
-    p.radius = clamp(11 + Math.sqrt(p.body.length) * 1.04, 13, 30);
+    p.radius = clamp(
+      11 + Math.sqrt(p.body.length) * 1.04,
+      13,
+      30
+    );
   }
 
   handleEating() {
@@ -240,7 +303,10 @@ export class TigerRoom {
       for (let i = this.food.length - 1; i >= 0; i--) {
         const f = this.food[i];
 
-        if (dist2(p.x, p.y, f.x, f.y) < (p.radius + f.r + 8) ** 2) {
+        if (
+          dist2(p.x, p.y, f.x, f.y) <
+          (p.radius + f.r + 8) ** 2
+        ) {
           p.score += f.v;
           this.food.splice(i, 1);
         }
@@ -252,7 +318,12 @@ export class TigerRoom {
     const all = [...this.players.values()].filter(p => p.alive);
 
     for (const p of all) {
-      if (p.x <= 22 || p.x >= WORLD - 22 || p.y <= 22 || p.y >= WORLD - 22) {
+      if (
+        p.x <= 22 ||
+        p.x >= WORLD - 22 ||
+        p.y <= 22 ||
+        p.y >= WORLD - 22
+      ) {
         this.kill(p, null, "border");
         continue;
       }
@@ -260,7 +331,10 @@ export class TigerRoom {
       for (let i = 18; i < p.body.length; i += 4) {
         const seg = p.body[i];
 
-        if (dist2(p.x, p.y, seg.x, seg.y) < (p.radius + 7) ** 2) {
+        if (
+          dist2(p.x, p.y, seg.x, seg.y) <
+          (p.radius + 7) ** 2
+        ) {
           this.kill(p, p, "self");
           break;
         }
@@ -274,7 +348,10 @@ export class TigerRoom {
         for (let i = 8; i < other.body.length; i += 4) {
           const seg = other.body[i];
 
-          if (dist2(p.x, p.y, seg.x, seg.y) < (p.radius + 9) ** 2) {
+          if (
+            dist2(p.x, p.y, seg.x, seg.y) <
+            (p.radius + 9) ** 2
+          ) {
             this.kill(p, other, "player");
             break;
           }
@@ -309,11 +386,19 @@ export class TigerRoom {
 
     let text = `${flagOf(dead.nation)} ${dead.name} died 💀`;
 
-    if (reason === "self") text = `${flagOf(dead.nation)} ${dead.name} ate his own tiger tail 🐯`;
-    else if (reason === "border") text = `${flagOf(dead.nation)} ${dead.name} left the Tiger zone 💀`;
-    else if (killer) text = `${flagOf(killer.nation)} ${killer.name} destroyed ${flagOf(dead.nation)} ${dead.name} 🐯`;
+    if (reason === "self") {
+      text = `${flagOf(dead.nation)} ${dead.name} ate his own tiger tail 🐯`;
+    } else if (reason === "border") {
+      text = `${flagOf(dead.nation)} ${dead.name} left the Tiger zone 💀`;
+    } else if (killer) {
+      text = `${flagOf(killer.nation)} ${killer.name} destroyed ${flagOf(dead.nation)} ${dead.name} 🐯`;
+    }
 
-    this.broadcast({ type: "event", text });
+    this.broadcast({
+      type: "event",
+      text
+    });
+
     this.broadcastState(true);
   }
 
@@ -369,6 +454,7 @@ export class TigerRoom {
       players,
       food,
       top10: this.top10,
+      countryTop3: this.countryTop3(),
       force
     }));
   }
@@ -394,20 +480,20 @@ export class TigerRoom {
 
     if (!score || score < 1) return;
 
-    const existing = this.top10.find(
+    const existingBest = this.playerBests.find(
       x => safeName(x.name).toLowerCase() === name.toLowerCase()
     );
 
-    if (existing) {
-      if (score > existing.score) {
-        existing.score = score;
-        existing.nation = nation;
-        existing.at = Date.now();
-      } else if (!existing.nation) {
-        existing.nation = nation;
+    if (existingBest) {
+      if (score > Number(existingBest.score || 0)) {
+        existingBest.score = score;
+        existingBest.nation = nation;
+        existingBest.at = Date.now();
+      } else if (!existingBest.nation || existingBest.nation === "OTHER") {
+        existingBest.nation = nation;
       }
     } else {
-      this.top10.push({
+      this.playerBests.push({
         name,
         nation,
         score,
@@ -415,9 +501,34 @@ export class TigerRoom {
       });
     }
 
-    this.top10 = normalizeTop10(this.top10);
+    this.playerBests = normalizePlayerBests(this.playerBests);
+    this.top10 = normalizeTop10(this.playerBests);
 
+    await this.state.storage.put(BESTS_KEY, this.playerBests);
     await this.state.storage.put(TOP_KEY, this.top10);
+  }
+
+  countryTop3() {
+    const totals = new Map();
+
+    for (const p of this.playerBests || []) {
+      const nation = safeNation(p.nation || "OTHER");
+      const score = Math.round(Number(p.score || 0));
+
+      if (!score) continue;
+
+      totals.set(nation, (totals.get(nation) || 0) + score);
+    }
+
+    return [...totals.entries()]
+      .map(([nation, score]) => ({
+        nation,
+        flag: flagOf(nation),
+        name: countryName(nation),
+        score
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
   }
 }
 
@@ -432,6 +543,12 @@ function makeFood(x, y, r, v) {
 }
 
 function normalizeTop10(list) {
+  return normalizePlayerBests(list)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
+}
+
+function normalizePlayerBests(list) {
   const clean = Array.isArray(list) ? list : [];
   const byName = new Map();
 
@@ -452,21 +569,43 @@ function normalizeTop10(list) {
         score,
         at: Number(item.at || Date.now())
       });
+    } else if (old.nation === "OTHER" && nation !== "OTHER") {
+      old.nation = nation;
+      byName.set(key, old);
     }
   }
 
   return [...byName.values()]
     .sort((a, b) => b.score - a.score)
-    .slice(0, 10);
+    .slice(0, 500);
 }
 
 function safeName(v) {
-  return String(v).replace(/[<>"&]/g, "").trim().slice(0, 16) || "Tiger";
+  return (
+    String(v)
+      .replace(/[<>"&]/g, "")
+      .trim()
+      .slice(0, 16) || "Tiger"
+  );
 }
 
 function safeNation(v) {
   const n = String(v || "OTHER").toUpperCase();
-  const allowed = ["BE", "CZ", "HU", "CH", "IT", "ES", "DE", "GR", "PL", "UK", "OTHER"];
+
+  const allowed = [
+    "BE",
+    "CZ",
+    "HU",
+    "CH",
+    "IT",
+    "ES",
+    "DE",
+    "GR",
+    "PL",
+    "UK",
+    "OTHER"
+  ];
+
   return allowed.includes(n) ? n : "OTHER";
 }
 
@@ -488,6 +627,24 @@ function flagOf(nation) {
   return flags[safeNation(nation)] || "🏳️";
 }
 
+function countryName(nation) {
+  const names = {
+    BE: "Belgium",
+    CZ: "Czech Republic",
+    HU: "Hungary",
+    CH: "Switzerland",
+    IT: "Italy",
+    ES: "Spain",
+    DE: "Germany",
+    GR: "Greece",
+    PL: "Poland",
+    UK: "UK",
+    OTHER: "Other"
+  };
+
+  return names[safeNation(nation)] || "Other";
+}
+
 function rand(a, b) {
   return a + Math.random() * (b - a);
 }
@@ -503,5 +660,8 @@ function dist2(x1, y1, x2, y2) {
 }
 
 function angleDiff(a, b) {
-  return Math.atan2(Math.sin(b - a), Math.cos(b - a));
+  return Math.atan2(
+    Math.sin(b - a),
+    Math.cos(b - a)
+  );
 }
