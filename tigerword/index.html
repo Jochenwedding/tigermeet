@@ -8,73 +8,429 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;min-height:100%;overflow-x:hidden;background:#050505;color:white;font-family:Arial,Helvetica,sans-serif}
-body{background:radial-gradient(circle at top,rgba(255,140,0,.22),transparent 35%),linear-gradient(160deg,#050505,#111,#000)}
+body{
+background:
+radial-gradient(circle at top,rgba(255,140,0,.22),transparent 35%),
+linear-gradient(160deg,#050505,#111,#000)
+}
+
 .hidden{display:none!important}
-.screen{width:100%;max-width:520px;margin:auto;padding:14px}
-.title{text-align:center;margin:18px 0}
-.title h1{color:#ff9900;font-size:38px;letter-spacing:2px}
-.title p{color:#aaa;margin-top:5px;font-size:14px}
-.card{background:rgba(255,255,255,.055);border:1px solid rgba(255,153,0,.25);border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 0 22px rgba(255,140,0,.08)}
-input,button,select{width:100%;border:none;outline:none;border-radius:13px;padding:14px;font-size:16px}
-input,select{background:#111;color:white;border:1px solid #333;margin-top:8px;text-transform:uppercase}
-button{background:#ff8800;color:#111;font-weight:bold;cursor:pointer;margin-top:10px}
-button.secondary{background:#222;color:white;border:1px solid #444}
-button.danger{background:#772222;color:white;border:1px solid #aa4444}
-button:active{transform:scale(.98)}
-.small{font-size:12px;color:#999;text-align:center;margin-top:8px;line-height:1.35}
-.status{text-align:center;color:#ff9900;min-height:22px;margin:10px 0;font-weight:bold;font-size:14px}
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
-.badge{background:#151515;border:1px solid #333;border-radius:999px;padding:7px 10px;color:#ccc;font-size:12px}
-.quitBtn{width:auto;padding:8px 12px;margin:0;font-size:12px;background:#222;color:#ddd;border:1px solid #444}
-.players{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.playerPill{background:#141414;border:1px solid #333;border-radius:999px;padding:6px 9px;font-size:11px;color:#ccc}
-.playerPill.you{border-color:#ff9900;color:white}
-.playerPill.leader{color:#ff9900}
-.lobbyCard{border-color:rgba(255,153,0,.45)}
-.lobbyTop{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
-.lobbyTitle{color:#ff9900;font-weight:bold;font-size:18px}
-.lobbyMeta{font-size:12px;color:#aaa}
-.lobbyPlayers{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.emptyLobby{color:#777;font-size:13px;text-align:center;padding:10px}
-.phaseBox{text-align:center;background:#101010;border:1px solid #333;border-radius:16px;padding:14px;margin-bottom:12px}
-.phaseBig{font-size:38px;color:#ff9900;font-weight:bold}
-.phaseSmall{font-size:13px;color:#aaa;margin-top:5px}
-.board{display:grid;gap:7px;margin:14px auto 12px;justify-content:center}
-.row{display:grid;grid-template-columns:repeat(5,54px);gap:7px}
-.tile{width:54px;height:54px;border-radius:8px;border:2px solid #333;background:#171717;display:flex;align-items:center;justify-content:center;font-size:27px;font-weight:bold;text-transform:uppercase}
-.tile.filled{border-color:#555}
-.correct{background:#31c76a!important;border-color:#31c76a!important;color:white!important}
-.present{background:#d8b11e!important;border-color:#d8b11e!important;color:#111!important}
-.absent{background:#333!important;border-color:#333!important;color:#777!important}
-.keyboard{display:grid;gap:6px;margin-top:12px}
-.keyrow{display:flex;justify-content:center;gap:5px}
-.key{min-width:31px;height:46px;border:none;border-radius:8px;background:#222;color:white;font-weight:bold;font-size:13px;margin:0;padding:0}
-.key.big{min-width:58px;font-size:11px}
-.key.absent{background:#333!important;color:#777!important}
-.key.present{background:#d8b11e!important;color:#111!important}
-.key.correct{background:#31c76a!important;color:white!important}
-.leaderGrid{display:grid;gap:12px}
-.spectatorCard{background:#111;border:1px solid #333;border-radius:16px;padding:12px}
-.spectatorTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.spectatorTop h3{font-size:15px;color:#ff9900}
-.currentTyping{font-family:monospace;color:#aaa;font-size:13px}
-.miniRows{display:grid;gap:5px}
-.miniRow{display:grid;grid-template-columns:repeat(5,34px);gap:5px}
-.miniTile{width:34px;height:34px;border-radius:6px;border:1px solid #333;background:#181818;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:bold}
-.scoreList{display:grid;gap:8px}
-.scoreItem{display:flex;justify-content:space-between;align-items:center;background:#111;border:1px solid #333;border-radius:12px;padding:10px;font-size:14px}
-.highscoreItem{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;background:#111;border:1px solid #333;border-radius:12px;padding:10px;font-size:14px}
-.rank{color:#ff9900;font-weight:bold}
-.hsName{font-weight:bold}
-.hsMeta{font-size:12px;color:#aaa;text-align:right}
-.shake{animation:shake .22s}
-@keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}100%{transform:translateX(0)}}
+
+.screen{
+width:100%;
+max-width:520px;
+margin:auto;
+padding:14px
+}
+
+.title{
+text-align:center;
+margin:18px 0
+}
+
+.title h1{
+color:#ff9900;
+font-size:38px;
+letter-spacing:2px
+}
+
+.title p{
+color:#aaa;
+margin-top:5px;
+font-size:14px
+}
+
+.card{
+background:rgba(255,255,255,.055);
+border:1px solid rgba(255,153,0,.25);
+border-radius:18px;
+padding:14px;
+margin-bottom:12px;
+box-shadow:0 0 22px rgba(255,140,0,.08)
+}
+
+input,button,select{
+width:100%;
+border:none;
+outline:none;
+border-radius:13px;
+padding:14px;
+font-size:16px
+}
+
+input,select{
+background:#111;
+color:white;
+border:1px solid #333;
+margin-top:8px;
+text-transform:uppercase
+}
+
+button{
+background:#ff8800;
+color:#111;
+font-weight:bold;
+cursor:pointer;
+margin-top:10px
+}
+
+button.secondary{
+background:#222;
+color:white;
+border:1px solid #444
+}
+
+button.danger{
+background:#772222;
+color:white;
+border:1px solid #aa4444
+}
+
+button:disabled{
+opacity:.45;
+cursor:not-allowed
+}
+
+button:active{
+transform:scale(.98)
+}
+
+.small{
+font-size:12px;
+color:#999;
+text-align:center;
+margin-top:8px;
+line-height:1.35
+}
+
+.status{
+text-align:center;
+color:#ff9900;
+min-height:22px;
+margin:10px 0;
+font-weight:bold;
+font-size:14px
+}
+
+.topbar{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:10px;
+margin-bottom:10px
+}
+
+.badge{
+background:#151515;
+border:1px solid #333;
+border-radius:999px;
+padding:7px 10px;
+color:#ccc;
+font-size:12px
+}
+
+.quitBtn{
+width:auto;
+padding:8px 12px;
+margin:0;
+font-size:12px;
+background:#222;
+color:#ddd;
+border:1px solid #444
+}
+
+.players{
+display:flex;
+flex-wrap:wrap;
+gap:6px;
+margin-bottom:10px
+}
+
+.playerPill{
+background:#141414;
+border:1px solid #333;
+border-radius:999px;
+padding:6px 9px;
+font-size:11px;
+color:#ccc
+}
+
+.playerPill.you{
+border-color:#ff9900;
+color:white
+}
+
+.playerPill.leader{
+color:#ff9900
+}
+
+.lobbyCard{
+border-color:rgba(255,153,0,.45)
+}
+
+.lobbyTop{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:10px;
+margin-bottom:10px
+}
+
+.lobbyTitle{
+color:#ff9900;
+font-weight:bold;
+font-size:18px
+}
+
+.lobbyMeta{
+font-size:12px;
+color:#aaa
+}
+
+.lobbyPlayers{
+display:flex;
+flex-wrap:wrap;
+gap:6px;
+margin-top:10px
+}
+
+.emptyLobby{
+color:#777;
+font-size:13px;
+text-align:center;
+padding:10px
+}
+
+.phaseBox{
+text-align:center;
+background:#101010;
+border:1px solid #333;
+border-radius:16px;
+padding:14px;
+margin-bottom:12px
+}
+
+.phaseBig{
+font-size:38px;
+color:#ff9900;
+font-weight:bold
+}
+
+.phaseSmall{
+font-size:13px;
+color:#aaa;
+margin-top:5px
+}
+
+.board{
+display:grid;
+gap:7px;
+margin:14px auto 12px;
+justify-content:center
+}
+
+.row{
+display:grid;
+grid-template-columns:repeat(5,54px);
+gap:7px
+}
+
+.tile{
+width:54px;
+height:54px;
+border-radius:8px;
+border:2px solid #333;
+background:#171717;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:27px;
+font-weight:bold;
+text-transform:uppercase
+}
+
+.tile.filled{
+border-color:#555
+}
+
+.correct{
+background:#31c76a!important;
+border-color:#31c76a!important;
+color:white!important
+}
+
+.present{
+background:#d8b11e!important;
+border-color:#d8b11e!important;
+color:#111!important
+}
+
+.absent{
+background:#333!important;
+border-color:#333!important;
+color:#777!important
+}
+
+.keyboard{
+display:grid;
+gap:6px;
+margin-top:12px
+}
+
+.keyrow{
+display:flex;
+justify-content:center;
+gap:5px
+}
+
+.key{
+min-width:31px;
+height:46px;
+border:none;
+border-radius:8px;
+background:#222;
+color:white;
+font-weight:bold;
+font-size:13px;
+margin:0;
+padding:0
+}
+
+.key.big{
+min-width:58px;
+font-size:11px
+}
+
+.key.absent{
+background:#333!important;
+color:#777!important
+}
+
+.key.present{
+background:#d8b11e!important;
+color:#111!important
+}
+
+.key.correct{
+background:#31c76a!important;
+color:white!important
+}
+
+.leaderGrid{
+display:grid;
+gap:12px
+}
+
+.spectatorCard{
+background:#111;
+border:1px solid #333;
+border-radius:16px;
+padding:12px
+}
+
+.spectatorTop{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:8px
+}
+
+.spectatorTop h3{
+font-size:15px;
+color:#ff9900
+}
+
+.currentTyping{
+font-family:monospace;
+color:#aaa;
+font-size:13px
+}
+
+.miniRows{
+display:grid;
+gap:5px
+}
+
+.miniRow{
+display:grid;
+grid-template-columns:repeat(5,34px);
+gap:5px
+}
+
+.miniTile{
+width:34px;
+height:34px;
+border-radius:6px;
+border:1px solid #333;
+background:#181818;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:17px;
+font-weight:bold
+}
+
+.scoreList{
+display:grid;
+gap:8px
+}
+
+.scoreItem{
+display:flex;
+justify-content:space-between;
+align-items:center;
+background:#111;
+border:1px solid #333;
+border-radius:12px;
+padding:10px;
+font-size:14px
+}
+
+.highscoreItem{
+display:grid;
+grid-template-columns:34px 1fr auto;
+gap:8px;
+align-items:center;
+background:#111;
+border:1px solid #333;
+border-radius:12px;
+padding:10px;
+font-size:14px
+}
+
+.rank{
+color:#ff9900;
+font-weight:bold
+}
+
+.hsName{
+font-weight:bold
+}
+
+.hsMeta{
+font-size:12px;
+color:#aaa;
+text-align:right
+}
+
+.shake{
+animation:shake .22s
+}
+
+@keyframes shake{
+0%{transform:translateX(0)}
+25%{transform:translateX(-5px)}
+50%{transform:translateX(5px)}
+75%{transform:translateX(-3px)}
+100%{transform:translateX(0)}
+}
+
 @media(max-width:390px){
-  .screen{padding:10px}
-  .row{grid-template-columns:repeat(5,49px);gap:6px}
-  .tile{width:49px;height:49px;font-size:24px}
-  .key{min-width:28px;height:43px;font-size:12px}
-  .key.big{min-width:52px;font-size:10px}
+.screen{padding:10px}
+.row{grid-template-columns:repeat(5,49px);gap:6px}
+.tile{width:49px;height:49px;font-size:24px}
+.key{min-width:28px;height:43px;font-size:12px}
+.key.big{min-width:52px;font-size:10px}
 }
 </style>
 </head>
@@ -82,648 +438,170 @@ button:active{transform:scale(.98)}
 <body>
 
 <div id="menuScreen" class="screen">
-  <div class="title">
-    <h1>🐯 TIGERWORD</h1>
-    <p>1 lobby · leader kiest woord · players racen</p>
-  </div>
 
-  <div class="card lobbyCard" onclick="focusJoinCard()">
-    <div class="lobbyTop">
-      <div>
-        <div class="lobbyTitle">ACTIVE LOBBY</div>
-        <div class="lobbyMeta" id="lobbyMeta">Loading lobby...</div>
-      </div>
-      <div class="badge" id="lobbyPhase">WAITING</div>
-    </div>
+<div class="title">
+<h1>🐯 TIGERWORD</h1>
+<p>Leader kiest woord · players racen</p>
+</div>
 
-    <div class="lobbyPlayers" id="lobbyPlayers">
-      <div class="emptyLobby">Nog niemand in lobby...</div>
-    </div>
+<div class="card lobbyCard">
 
-    <button onclick="focusJoinCard();event.stopPropagation()">JOIN THIS LOBBY</button>
-  </div>
+<div class="lobbyTop">
+<div>
+<div class="lobbyTitle" id="lobbyTitle">LOADING...</div>
+<div class="lobbyMeta" id="lobbyMeta">Connecting...</div>
+</div>
 
-  <div class="card" id="joinCard">
-    <label>Naam</label>
-    <input id="nameInput" value="JOCHEN" maxlength="18" />
+<div class="badge" id="lobbyPhase">WAITING</div>
+</div>
 
-    <label style="display:block;margin-top:12px;">Rol</label>
-    <select id="roleSelect">
-      <option value="player">PLAYER</option>
-      <option value="leader">LEADER</option>
-    </select>
+<div class="lobbyPlayers" id="lobbyPlayers">
+<div class="emptyLobby">Loading lobby...</div>
+</div>
 
-    <button onclick="joinLobby()">JOIN LOBBY</button>
-    <button class="secondary" onclick="showHighscores()">HIGHSCORES</button>
-    <div class="status" id="menuStatus">Connecting...</div>
-    <div class="small">Max 4 totaal. Leader kiest een bestaand Engels 5-letter woord.</div>
-  </div>
+<button id="mainLobbyBtn">
+LOADING...
+</button>
 
-  <div class="card hidden" id="highscoreCard">
-    <h3 style="color:#ff9900;margin-bottom:10px;">🏆 Highscores</h3>
-    <div class="scoreList" id="highscoreList">
-      <div class="small">Nog geen highscores.</div>
-    </div>
-    <button class="secondary" onclick="hideHighscores()">TERUG</button>
-  </div>
+</div>
+
+<div class="card" id="joinCard">
+
+<label>Naam</label>
+<input id="nameInput" value="JOCHEN" maxlength="18" />
+
+<label style="display:block;margin-top:12px;">Rol</label>
+
+<select id="roleSelect">
+<option value="player">PLAYER</option>
+<option value="leader">LEADER</option>
+</select>
+
+<button id="joinBtn" onclick="joinLobby()">
+JOIN LOBBY
+</button>
+
+<button class="secondary" onclick="showHighscores()">
+HIGHSCORES
+</button>
+
+<div class="status" id="menuStatus">
+Connecting...
+</div>
+
+<div class="small">
+Max 4 totaal. Leader kiest een bestaand Engels 5-letter woord.
+</div>
+
+</div>
+
+<div class="card hidden" id="highscoreCard">
+
+<h3 style="color:#ff9900;margin-bottom:10px;">
+🏆 Highscores
+</h3>
+
+<div class="scoreList" id="highscoreList">
+<div class="small">Nog geen highscores.</div>
+</div>
+
+<button class="secondary" onclick="hideHighscores()">
+TERUG
+</button>
+
+</div>
 </div>
 
 <div id="gameScreen" class="screen hidden">
-  <div class="topbar">
-    <div class="badge" id="roleBadge">PLAYER</div>
-    <div class="badge" id="phaseBadge">WAITING</div>
-    <button class="quitBtn" onclick="quitGame()">QUIT</button>
-  </div>
 
-  <div class="players" id="players"></div>
+<div class="topbar">
 
-  <div class="phaseBox" id="phaseBox">
-    <div class="phaseBig" id="phaseBig">WAIT</div>
-    <div class="phaseSmall" id="phaseSmall">Wachten op lobby...</div>
-  </div>
+<div class="badge" id="roleBadge">
+PLAYER
+</div>
 
-  <div class="status" id="status"></div>
+<div class="badge" id="phaseBadge">
+WAITING
+</div>
 
-  <div id="leaderPanel" class="hidden">
-    <div class="card">
-      <label>Secret word</label>
-      <input id="secretInput" maxlength="5" placeholder="APPLE" />
-      <button onclick="setSecret()">SET WORD</button>
-      <button onclick="startGame()">START / FORCE START</button>
-      <button class="secondary" onclick="newRound()">NEW ROUND</button>
-      <div class="small">Start kan zodra minstens 1 player joined en secret word geldig is.</div>
-    </div>
+<button class="quitBtn" onclick="quitGame()">
+QUIT
+</button>
 
-    <div class="leaderGrid" id="leaderGrid"></div>
-  </div>
+</div>
 
-  <div id="playerPanel">
-    <div class="board" id="board"></div>
-    <div class="keyboard" id="keyboard"></div>
-  </div>
+<div class="players" id="players"></div>
 
-  <div id="scorePanel" class="card hidden">
-    <h3 style="color:#ff9900;margin-bottom:10px;">Score overzicht</h3>
-    <div class="scoreList" id="scoreList"></div>
-    <button class="secondary" onclick="returnToWaiting()">WACHT OP VOLGENDE RONDE</button>
-  </div>
+<div class="phaseBox">
+
+<div class="phaseBig" id="phaseBig">
+WAIT
+</div>
+
+<div class="phaseSmall" id="phaseSmall">
+Wachten op lobby...
+</div>
+
+</div>
+
+<div class="status" id="status"></div>
+
+<div id="leaderPanel" class="hidden">
+
+<div class="card">
+
+<label>Secret word</label>
+
+<input id="secretInput" maxlength="5" placeholder="APPLE" />
+
+<button onclick="setSecret()">
+SET WORD
+</button>
+
+<button onclick="startGame()">
+START GAME
+</button>
+
+<button class="secondary" onclick="newRound()">
+NEW ROUND
+</button>
+
+<div class="small">
+Leader controls the round.
+</div>
+
+</div>
+
+<div class="leaderGrid" id="leaderGrid"></div>
+
+</div>
+
+<div id="playerPanel">
+
+<div class="board" id="board"></div>
+
+<div class="keyboard" id="keyboard"></div>
+
+</div>
+
+<div id="scorePanel" class="card hidden">
+
+<h3 style="color:#ff9900;margin-bottom:10px;">
+Score overzicht
+</h3>
+
+<div class="scoreList" id="scoreList"></div>
+
+<button class="secondary" onclick="returnToWaiting()">
+WACHT OP VOLGENDE RONDE
+</button>
+
+</div>
+
 </div>
 
 <script>
-const WORKER_WS = "wss://tigermeet2.jochenmichels.workers.dev/ws";
-
-let socket;
-let socketReady = false;
-let myId = null;
-let myRole = "player";
-let myName = "";
-let phase = "waiting";
-
-let currentGuess = "";
-let guesses = [];
-let maxGuesses = 6;
-let keyboardState = {};
-let lastScoreboard = [];
-let latestLobbyInfo = null;
-let latestHighscores = [];
-
-function connectSocket(){
-  socket = new WebSocket(WORKER_WS);
-
-  socket.onopen = () => {
-    socketReady = true;
-    setMenuStatus("Connected 🐯");
-    send({type:"getLobbyInfo"});
-    send({type:"getHighscores"});
-  };
-
-  socket.onclose = () => {
-    socketReady = false;
-    setStatus("Disconnected.");
-    setMenuStatus("Disconnected.");
-    updateLobbyPreview(null);
-  };
-
-  socket.onerror = () => {
-    setMenuStatus("Connection error.");
-  };
-
-  socket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log("SERVER:", data);
-
-    if(data.type === "connected"){
-      myId = data.id;
-    }
-
-    if(data.type === "lobbyInfo"){
-      latestLobbyInfo = data;
-      updateLobbyPreview(data);
-    }
-
-    if(data.type === "highscores"){
-      latestHighscores = data.highscores || [];
-      renderHighscores();
-    }
-
-    if(data.type === "state"){
-      phase = data.phase;
-      lastScoreboard = data.scoreboard || [];
-
-      latestLobbyInfo = {
-        type:"lobbyInfo",
-        phase:data.phase,
-        players:data.players || [],
-        playerCount:data.playerCount || 0,
-        hasLeader:data.hasLeader,
-        hasSecret:data.hasSecret,
-        maxPlayersTotal:4
-      };
-
-      updateLobbyPreview(latestLobbyInfo);
-      renderState(data);
-    }
-
-    if(data.type === "countdown"){
-      showCountdown(data.value);
-    }
-
-    if(data.type === "go"){
-      setStatus("GO! Raad zo snel mogelijk.");
-      showPhase("GO", "Ronde gestart.");
-    }
-
-    if(data.type === "secretSet"){
-      setStatus(data.message);
-      setMenuStatus(data.message);
-    }
-
-    if(data.type === "invalidGuess" || data.type === "error"){
-      shakeBoard();
-      setStatus(data.message);
-      setMenuStatus(data.message);
-    }
-
-    if(data.type === "guessResult"){
-      applyGuessResult(data);
-    }
-
-    if(data.type === "playerSolved"){
-      setStatus(`${data.name} gevonden! #${data.place} +${data.points}`);
-    }
-
-    if(data.type === "leaderView"){
-      renderLeaderView(data);
-    }
-
-    if(data.type === "roundOver"){
-      showRoundOver(data);
-    }
-
-    if(data.type === "newRound"){
-      resetLocalRound();
-      hideScorePanel();
-    }
-  };
-}
-
-connectSocket();
-
-function send(data){
-  if(!socketReady){
-    setStatus("Nog niet verbonden.");
-    setMenuStatus("Nog niet verbonden.");
-    return;
-  }
-  socket.send(JSON.stringify(data));
-}
-
-function focusJoinCard(){
-  document.getElementById("joinCard").scrollIntoView({behavior:"smooth",block:"center"});
-}
-
-function updateLobbyPreview(info){
-  const meta = document.getElementById("lobbyMeta");
-  const phaseEl = document.getElementById("lobbyPhase");
-  const playersEl = document.getElementById("lobbyPlayers");
-
-  if(!info){
-    meta.innerText = "Offline / disconnected";
-    phaseEl.innerText = "OFFLINE";
-    playersEl.innerHTML = `<div class="emptyLobby">Geen connectie met lobby.</div>`;
-    return;
-  }
-
-  const players = info.players || [];
-  const max = info.maxPlayersTotal || 4;
-
-  phaseEl.innerText = String(info.phase || "waiting").toUpperCase();
-  meta.innerText = `${players.length}/${max} joined · ${info.hasSecret ? "word set" : "no word yet"}`;
-
-  if(players.length === 0){
-    playersEl.innerHTML = `<div class="emptyLobby">Nog niemand in lobby...</div>`;
-    return;
-  }
-
-  playersEl.innerHTML = "";
-
-  players.forEach(p=>{
-    playersEl.innerHTML += `
-      <div class="playerPill ${p.role === "leader" ? "leader" : ""}">
-        ${escapeHtml(p.name)} · ${escapeHtml(p.role)}
-      </div>
-    `;
-  });
-}
-
-function showHighscores(){
-  document.getElementById("highscoreCard").classList.remove("hidden");
-  send({type:"getHighscores"});
-  renderHighscores();
-  document.getElementById("highscoreCard").scrollIntoView({behavior:"smooth",block:"center"});
-}
-
-function hideHighscores(){
-  document.getElementById("highscoreCard").classList.add("hidden");
-}
-
-function renderHighscores(){
-  const list = document.getElementById("highscoreList");
-  if(!list) return;
-
-  list.innerHTML = "";
-
-  if(!latestHighscores.length){
-    list.innerHTML = `<div class="small">Nog geen highscores.</div>`;
-    return;
-  }
-
-  latestHighscores.forEach((h,i)=>{
-    list.innerHTML += `
-      <div class="highscoreItem">
-        <div class="rank">#${i+1}</div>
-        <div class="hsName">${escapeHtml(h.name)}</div>
-        <div class="hsMeta">${h.score} pts<br>${h.games} games</div>
-      </div>
-    `;
-  });
-}
-
-document.getElementById("roleSelect").addEventListener("change", e => {
-  myRole = e.target.value;
-});
-
-function joinLobby(){
-  myName = document.getElementById("nameInput").value.trim().toUpperCase() || "PLAYER";
-  myRole = document.getElementById("roleSelect").value;
-
-  send({
-    type:"join",
-    name:myName,
-    role:myRole
-  });
-
-  document.getElementById("menuScreen").classList.add("hidden");
-  document.getElementById("gameScreen").classList.remove("hidden");
-  document.getElementById("roleBadge").innerText = myRole.toUpperCase();
-
-  document.getElementById("leaderPanel").classList.toggle("hidden", myRole !== "leader");
-  document.getElementById("playerPanel").classList.toggle("hidden", myRole !== "player");
-
-  renderBoard();
-  renderKeyboard();
-}
-
-function quitGame(){
-  const ok = confirm("Zeker quitten? Ge verlaat de lobby en de ronde.");
-  if(!ok) return;
-  location.reload();
-}
-
-function setSecret(){
-  const word = document.getElementById("secretInput").value.trim().toUpperCase();
-  send({type:"setSecret", word});
-}
-
-function startGame(){
-  send({type:"startGame"});
-}
-
-function newRound(){
-  send({type:"newRound"});
-}
-
-function returnToWaiting(){
-  hideScorePanel();
-}
-
-function renderState(state){
-  document.getElementById("phaseBadge").innerText = state.phase.toUpperCase();
-  renderPlayers(state.players || []);
-
-  if(state.phase === "waiting"){
-    showPhase("WAIT", state.hasSecret ? "Woord gekozen. Wachten op start." : "Wachten op leader en secret word.");
-  }
-
-  if(state.phase === "countdown"){
-    showPhase(String(state.countdown), "Start countdown...");
-  }
-
-  if(state.phase === "playing"){
-    showPhase("PLAY", "Snelste juiste antwoord wint.");
-  }
-
-  if(state.phase === "roundover"){
-    showPhase("DONE", "Ronde gedaan.");
-  }
-}
-
-function renderPlayers(players){
-  const div = document.getElementById("players");
-  div.innerHTML = "";
-
-  players.forEach(p=>{
-    div.innerHTML += `
-      <div class="playerPill ${p.id === myId ? "you" : ""} ${p.role === "leader" ? "leader" : ""}">
-        ${escapeHtml(p.name)} · ${escapeHtml(p.role)}
-      </div>
-    `;
-  });
-}
-
-function showPhase(big, small){
-  document.getElementById("phaseBig").innerText = big;
-  document.getElementById("phaseSmall").innerText = small;
-}
-
-function showCountdown(value){
-  showPhase(value > 0 ? String(value) : "GO", value > 0 ? "Ready..." : "Start!");
-}
-
-function pressKey(letter){
-  if(myRole !== "player") return;
-  if(phase !== "playing") return;
-  if(currentGuess.length >= 5) return;
-
-  currentGuess += letter;
-  renderBoard();
-
-  send({
-    type:"typing",
-    value:currentGuess
-  });
-}
-
-function backspace(){
-  if(myRole !== "player") return;
-  if(phase !== "playing") return;
-
-  currentGuess = currentGuess.slice(0,-1);
-  renderBoard();
-
-  send({
-    type:"typing",
-    value:currentGuess
-  });
-}
-
-function submitGuess(){
-  if(myRole !== "player") return;
-  if(phase !== "playing") {
-    shakeBoard();
-    return setStatus("Nog niet gestart.");
-  }
-
-  if(currentGuess.length !== 5){
-    shakeBoard();
-    return setStatus("5 letters nodig.");
-  }
-
-  send({
-    type:"guess",
-    guess:currentGuess
-  });
-}
-
-function applyGuessResult(data){
-  guesses.push({
-    word:data.guess,
-    result:data.result
-  });
-
-  updateKeyboard(data.guess, data.result);
-  currentGuess = "";
-
-  renderBoard();
-  renderKeyboard();
-
-  if(data.solved){
-    setStatus("RAWR! Gevonden.");
-  }
-}
-
-function renderBoard(){
-  const board = document.getElementById("board");
-  board.innerHTML = "";
-
-  for(let r=0;r<maxGuesses;r++){
-    const row = document.createElement("div");
-    row.className = "row";
-
-    const saved = guesses[r];
-    const word = saved ? saved.word : (r === guesses.length ? currentGuess : "");
-
-    for(let c=0;c<5;c++){
-      const tile = document.createElement("div");
-      tile.className = "tile";
-
-      const letter = word[c] || "";
-      tile.innerText = letter;
-
-      if(letter) tile.classList.add("filled");
-
-      if(saved){
-        tile.classList.add(saved.result[c]);
-      }
-
-      row.appendChild(tile);
-    }
-
-    board.appendChild(row);
-  }
-}
-
-function renderKeyboard(){
-  const rows = ["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"];
-  const keyboard = document.getElementById("keyboard");
-  keyboard.innerHTML = "";
-
-  rows.forEach((letters,rowIndex)=>{
-    const row = document.createElement("div");
-    row.className = "keyrow";
-
-    if(rowIndex === 2){
-      row.appendChild(makeKey("ENTER","big",submitGuess));
-    }
-
-    letters.split("").forEach(letter=>{
-      const btn = makeKey(letter,"",()=>pressKey(letter));
-      if(keyboardState[letter]) btn.classList.add(keyboardState[letter]);
-      row.appendChild(btn);
-    });
-
-    if(rowIndex === 2){
-      row.appendChild(makeKey("⌫","big",backspace));
-    }
-
-    keyboard.appendChild(row);
-  });
-}
-
-function makeKey(text, extra, action){
-  const btn = document.createElement("button");
-  btn.className = "key " + extra;
-  btn.innerText = text;
-  btn.onclick = action;
-  return btn;
-}
-
-function updateKeyboard(word, result){
-  for(let i=0;i<word.length;i++){
-    const letter = word[i];
-    const state = result[i];
-    const current = keyboardState[letter];
-
-    if(current === "correct") continue;
-    if(current === "present" && state === "absent") continue;
-
-    keyboardState[letter] = state;
-  }
-}
-
-function renderLeaderView(data){
-  if(myRole !== "leader") return;
-
-  const grid = document.getElementById("leaderGrid");
-  grid.innerHTML = "";
-
-  if(!data.players || data.players.length === 0){
-    grid.innerHTML = `<div class="spectatorCard"><h3>Wachten op players...</h3></div>`;
-    return;
-  }
-
-  data.players.forEach(p=>{
-    const card = document.createElement("div");
-    card.className = "spectatorCard";
-
-    let rowsHtml = "";
-
-    for(let r=0;r<6;r++){
-      const guess = p.guesses[r];
-      const word = guess ? guess.word : (r === p.guesses.length ? p.current : "");
-      const result = guess ? guess.result : [];
-
-      rowsHtml += `<div class="miniRow">`;
-
-      for(let c=0;c<5;c++){
-        const letter = word[c] || "";
-        const cls = result[c] || "";
-        rowsHtml += `<div class="miniTile ${cls}">${escapeHtml(letter)}</div>`;
-      }
-
-      rowsHtml += `</div>`;
-    }
-
-    card.innerHTML = `
-      <div class="spectatorTop">
-        <h3>${escapeHtml(p.name)} ${p.solved ? "✅" : ""}</h3>
-        <div class="currentTyping">${escapeHtml(p.current || "")}</div>
-      </div>
-      <div class="miniRows">${rowsHtml}</div>
-    `;
-
-    grid.appendChild(card);
-  });
-}
-
-function showRoundOver(data){
-  phase = "roundover";
-  showPhase("DONE", "Woord was " + data.secret);
-  setStatus("Ronde gedaan.");
-  showScorePanel(data.scoreboard || []);
-  send({type:"getHighscores"});
-}
-
-function showScorePanel(scoreboard){
-  const panel = document.getElementById("scorePanel");
-  const list = document.getElementById("scoreList");
-
-  list.innerHTML = "";
-
-  if(!scoreboard.length){
-    list.innerHTML = `<div class="small">Nog geen scores.</div>`;
-  }
-
-  scoreboard.forEach((s,i)=>{
-    list.innerHTML += `
-      <div class="scoreItem">
-        <span>#${i+1} ${escapeHtml(s.name)}</span>
-        <span>${s.score} pts · ${s.solved ? "solved" : "failed"} · ${s.guesses}/6</span>
-      </div>
-    `;
-  });
-
-  panel.classList.remove("hidden");
-}
-
-function hideScorePanel(){
-  document.getElementById("scorePanel").classList.add("hidden");
-}
-
-function resetLocalRound(){
-  currentGuess = "";
-  guesses = [];
-  keyboardState = {};
-  setStatus("");
-  renderBoard();
-  renderKeyboard();
-}
-
-function setStatus(text){
-  const el = document.getElementById("status");
-  if(el) el.innerText = text;
-}
-
-function setMenuStatus(text){
-  const el = document.getElementById("menuStatus");
-  if(el) el.innerText = text;
-}
-
-function shakeBoard(){
-  const board = document.getElementById("board");
-  if(!board) return;
-  board.classList.add("shake");
-  setTimeout(()=>board.classList.remove("shake"),220);
-}
-
-function escapeHtml(text){
-  return String(text ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-}
-
-document.addEventListener("keydown",(e)=>{
-  if(myRole !== "player") return;
-
-  const key = e.key.toUpperCase();
-
-  if(key === "ENTER") submitGuess();
-  else if(key === "BACKSPACE") backspace();
-  else if(/^[A-Z]$/.test(key)) pressKey(key);
-});
+/* COMPLETE SCRIPT VAN VORIGE MESSAGE HIER PLAKKEN */
 </script>
 
 </body>
