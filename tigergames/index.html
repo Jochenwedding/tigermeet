@@ -210,12 +210,31 @@
   }
 
   function drawLoginTop10(top10) {
-    const rows = document.getElementById("loginTopRows");
+  const rows = document.getElementById("loginTopRows");
 
-    if (!top10 || !top10.length) {
-      rows.innerHTML = `<div class="small" style="text-align:center">Nog geen highscores. Word de eerste TigerKing.</div>`;
-      return;
-    }
+  if (!top10 || !top10.length) {
+    rows.innerHTML = `<div class="small" style="text-align:center">Nog geen highscores. Word de eerste TigerKing.</div>`;
+    return;
+  }
+
+  rows.innerHTML = top10.slice(0, 10).map((p, i) => {
+    const king = i === 0;
+
+    return `
+      <div class="loginRow ${king ? "king" : ""}">
+        <span>${i + 1}</span>
+
+        <span>
+          ${king
+            ? "🐯 " + esc(p.name) + " : you are the TigerKing"
+            : esc(p.name)}
+        </span>
+
+        <b>${Math.round(p.score)}</b>
+      </div>
+    `;
+  }).join("");
+}
 
     rows.innerHTML = top10.slice(0, 10).map((p, i) => {
       const king = i === 0;
