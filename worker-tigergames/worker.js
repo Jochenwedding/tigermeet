@@ -385,13 +385,32 @@ export class TigerRoom {
   }
 
   async saveTop(name, score) {
-    if (!score || score < 1) return;
+  name = safeName(name);
+  score = Math.round(score);
 
+  if (!score || score < 1) return;
+
+  const existing = this.top10.find(
+    x => safeName(x.name).toLowerCase() === name.toLowerCase()
+  );
+
+  if (existing) {
+    if (score > existing.score) {
+      existing.score = score;
+      existing.at = Date.now();
+    }
+  } else {
     this.top10.push({
-      name: safeName(name),
-      score: Math.round(score),
+      name,
+      score,
       at: Date.now()
     });
+  }
+
+  this.top10 = normalizeTop10(this.top10);
+
+  await this.state.storage.put(TOP_KEY, this.top10);
+}
 
     this.top10 = normalizeTop10(this.top10);
 
