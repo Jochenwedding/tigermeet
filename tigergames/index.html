@@ -46,8 +46,26 @@
     }
 
     .tag{color:#ddd;line-height:1.42;margin:8px 0 14px;font-size:14px}
-    input{width:100%;padding:15px 16px;border-radius:17px;border:1px solid rgba(255,136,0,.45);background:#111;color:white;font-size:18px;text-align:center;outline:none}
-    input:focus{border-color:#ffc14d;box-shadow:0 0 18px rgba(255,136,0,.28)}
+
+    input,.nationSelect{
+      width:100%;
+      padding:15px 16px;
+      border-radius:17px;
+      border:1px solid rgba(255,136,0,.45);
+      background:#111;
+      color:white;
+      font-size:18px;
+      text-align:center;
+      outline:none;
+    }
+
+    .nationSelect{
+      margin-top:10px;
+      font-size:16px;
+      cursor:pointer;
+    }
+
+    input:focus,.nationSelect:focus{border-color:#ffc14d;box-shadow:0 0 18px rgba(255,136,0,.28)}
     button{border:0;border-radius:999px;padding:15px 22px;font-weight:900;color:#111;background:linear-gradient(135deg,#ffd36a,#ff8a00 60%,#ff5700);box-shadow:0 0 22px rgba(255,136,0,.35);cursor:pointer}
     button:active{transform:scale(.97)}
     .big{width:100%;font-size:18px;margin-top:12px}
@@ -107,6 +125,21 @@
       </p>
 
       <input id="playerName" maxlength="16" placeholder="Naam / callsign" autocomplete="off" />
+
+      <select id="playerNation" class="nationSelect">
+        <option value="BE">🇧🇪 Belgium</option>
+        <option value="CZ">🇨🇿 Czech Republic</option>
+        <option value="HU">🇭🇺 Hungary</option>
+        <option value="CH">🇨🇭 Switzerland</option>
+        <option value="IT">🇮🇹 Italy</option>
+        <option value="ES">🇪🇸 Spain</option>
+        <option value="DE">🇩🇪 Germany</option>
+        <option value="GR">🇬🇷 Greece</option>
+        <option value="PL">🇵🇱 Poland</option>
+        <option value="UK">🇬🇧 UK</option>
+        <option value="OTHER">🏳️ Other</option>
+      </select>
+
       <button class="big" id="playBtn">ENTER TIGER ARENA</button>
 
       <div class="loginTop">
@@ -180,11 +213,16 @@
   let angle = 0;
   let boosting = false;
   let musicEnabled = true;
+  let playerNation = "BE";
 
   const camera = { x: WORLD / 2, y: WORLD / 2, zoom: 1 };
 
   const saved = localStorage.getItem("tigergames_name") || "";
+  const savedNation = localStorage.getItem("tigergames_nation") || "BE";
+
   document.getElementById("playerName").value = saved;
+  document.getElementById("playerNation").value = savedNation;
+  playerNation = savedNation;
 
   function wsUrl() {
     return "wss://tigermeet-game.jochenmichels.workers.dev";
@@ -202,7 +240,12 @@
 
   document.getElementById("playBtn").onclick = () => {
     const name = (document.getElementById("playerName").value.trim() || "Unknown Tiger").slice(0, 16);
+    const nation = document.getElementById("playerNation").value || "OTHER";
+
+    playerNation = nation;
+
     localStorage.setItem("tigergames_name", name);
+    localStorage.setItem("tigergames_nation", nation);
 
     if (previewWs) {
       try { previewWs.close(); } catch {}
@@ -213,7 +256,7 @@
     gameScreen.classList.remove("hidden");
 
     if (musicEnabled) startAudio();
-    connect(name);
+    connect(name, nation);
   };
 
   document.getElementById("menuBtn").onclick = () => {
@@ -271,10 +314,12 @@
 
     rows.innerHTML = top10.slice(0, 5).map((p, i) => {
       const king = i === 0;
+      const label = `${flagOf(p.nation)} ${esc(p.name)}`;
+
       return `
         <div class="loginRow ${king ? "king" : ""}">
           <span>${i + 1}</span>
-          <span>${king ? "🐯 " + esc(p.name) + " : you are the TigerKing" : esc(p.name)}</span>
+          <span>${king ? "🐯 " + label + " : you are the TigerKing" : label}</span>
           <b>${Math.round(p.score)}</b>
         </div>
       `;
@@ -309,7 +354,7 @@
     } catch {}
   }
 
-  function connect(name) {
+  function connect(name, nation) {
     running = true;
     setNet("ONLINE");
     showToast("Connecting websocket...");
@@ -325,7 +370,7 @@
     ws.onopen = () => {
       setNet("ONLINE ✅");
       showToast("ONLINE ✅");
-      ws.send(JSON.stringify({ type: "join", name }));
+      ws.send(JSON.stringify({ type: "join", name, nation }));
     };
 
     ws.onmessage = e => {
@@ -355,7 +400,7 @@
 
     ws.onclose = e => {
       setNet("OFFLINE " + e.code);
-      if (running) setTimeout(() => connect(name), 2500);
+      if (running) setTimeout(() => connect(name, nation), 2500);
     };
 
     requestAnimationFrame(loop);
@@ -412,6 +457,7 @@
       r.angle = lerpAngle(r.angle ?? t.angle, t.angle || 0, 0.25);
       r.score = t.score;
       r.name = t.name;
+      r.nation = t.nation || r.nation || "OTHER";
       r.color = t.color;
       r.alive = t.alive;
       r.radius = lerp(r.radius ?? t.radius, t.radius, 0.22);
@@ -661,12 +707,14 @@
   }
 
   function drawName(p) {
+    const label = `${flagOf(p.nation)} ${p.name}`;
+
     ctx.font = "bold 13px Arial";
     ctx.textAlign = "center";
     ctx.fillStyle = "rgba(0,0,0,.8)";
-    ctx.fillText(p.name, p.x, p.y - p.radius - 18);
+    ctx.fillText(label, p.x, p.y - p.radius - 18);
     ctx.fillStyle = "#fff";
-    ctx.fillText(p.name, p.x, p.y - p.radius - 19);
+    ctx.fillText(label, p.x, p.y - p.radius - 19);
   }
 
   function updateHud() {
@@ -676,7 +724,7 @@
     const me = renderPlayers.get(myId);
 
     if (me) {
-      document.getElementById("meName").textContent = me.name;
+      document.getElementById("meName").textContent = `${flagOf(me.nation)} ${me.name}`;
       document.getElementById("meScore").textContent = Math.round(me.score || 0);
 
       const rank = players.findIndex(p => p.id === myId) + 1;
@@ -684,7 +732,7 @@
     }
 
     document.getElementById("liveRows").innerHTML =
-      players.slice(0, 5).map((p, i) => row(i, p.name, p.score, p.color)).join("");
+      players.slice(0, 5).map((p, i) => row(i, `${flagOf(p.nation)} ${p.name}`, p.score, p.color)).join("");
   }
 
   function row(i, n, s, c) {
@@ -735,6 +783,24 @@
       ">": "&gt;",
       '"': "&quot;"
     }[m]));
+  }
+
+  function flagOf(nation) {
+    const flags = {
+      BE: "🇧🇪",
+      CZ: "🇨🇿",
+      HU: "🇭🇺",
+      CH: "🇨🇭",
+      IT: "🇮🇹",
+      ES: "🇪🇸",
+      DE: "🇩🇪",
+      GR: "🇬🇷",
+      PL: "🇵🇱",
+      UK: "🇬🇧",
+      OTHER: "🏳️"
+    };
+
+    return flags[String(nation || "OTHER").toUpperCase()] || "🏳️";
   }
 
   function lerp(a, b, t) {
