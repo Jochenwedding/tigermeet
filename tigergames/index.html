@@ -223,33 +223,14 @@
     return `
       <div class="loginRow ${king ? "king" : ""}">
         <span>${i + 1}</span>
-
-        <span>
-          ${king
-            ? "🐯 " + esc(p.name) + " : you are the TigerKing"
-            : esc(p.name)}
-        </span>
-
+        <span>${king ? "🐯 " + esc(p.name) + " : you are the TigerKing" : esc(p.name)}</span>
         <b>${Math.round(p.score)}</b>
       </div>
     `;
   }).join("");
 }
 
-    rows.innerHTML = top10.slice(0, 10).map((p, i) => {
-      const king = i === 0;
-      return `
-        <div class="loginRow ${king ? "king" : ""}">
-          <span>${i + 1}</span>
-          <span>${king ? "🐯 TigerKing" : esc(p.name)}</span>
-          <b>${Math.round(p.score)}</b>
-        </div>
-      `;
-    }).join("");
-  }
-
-  async function startAudio() {
-    music.volume = 0.42;
+async function startAudio() { music.volume = 0.42;
 
     try {
       music.src = "/Araxos%20Baby.mp3";
