@@ -73,7 +73,13 @@
         </div>
       </div>
 
-      <p class="small">Joystick links, boost rechts. Muziek start na klikken/touch.</p>
+      <p class="small">
+  Joystick links, boost rechts. Muziek start na klikken/touch.
+</p>
+
+<p class="small" style="margin-top:10px;opacity:.55">
+  Beta Release V1.0 – Jochen Michels
+</p>
     </div>
   </section>
 
@@ -236,15 +242,23 @@
   }
 
   async function startAudio() {
+  try {
     music.volume = 0.42;
-    try {
+
+    if (!music.src) {
       music.src = "/Araxos%20Baby.mp3";
-      await music.play();
-      musicBtn.textContent = "MUSIC ON";
-    } catch {
-      showToast("Tik nog eens voor muziek");
     }
+
+    if (music.paused) {
+      await music.play();
+    }
+
+    musicBtn.textContent = "MUSIC ON";
+
+  } catch {
+    showToast("Tik nog eens voor muziek");
   }
+}
 
   function connect(name) {
     running = true;
@@ -699,10 +713,15 @@
   }, { passive: false });
 
   boost.addEventListener("touchstart", e => {
-    e.preventDefault();
-    boosting = true;
-    if (musicEnabled) startAudio();
-  }, { passive: false });
+  e.preventDefault();
+
+  boosting = true;
+
+  if (music.paused) {
+    startAudio();
+  }
+
+}, { passive: false });
 
   boost.addEventListener("touchend", e => {
     e.preventDefault();
