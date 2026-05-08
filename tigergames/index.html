@@ -436,7 +436,7 @@
 
     ctx.save();
 
-    for (let i = body.length - 1; i >= 0; i--) {
+    for (let i = body.length - 1; i >= 0; i -= 1) {
       const b = body[i];
       if (!inView(b.x, b.y, view)) continue;
 
