@@ -383,12 +383,13 @@ function updateLobbyPreview(info){
   playersEl.innerHTML = "";
 
   players.forEach(p=>{
-    playersEl.innerHTML += `
-      <div class="playerPill ${p.role === "leader" ? "leader" : ""}">
-        ${escapeHtml(p.name)} · ${escapeHtml(p.role)}
-      </div>
-    `;
-  });
+  const icon = p.role === "leader" ? "👑" : "🎮";
+  playersEl.innerHTML += `
+    <div class="playerPill ${p.role === "leader" ? "leader" : ""}">
+      ${icon} ${escapeHtml(p.name)}
+    </div>
+  `;
+});
 }
 
 function mainLobbyAction(){
