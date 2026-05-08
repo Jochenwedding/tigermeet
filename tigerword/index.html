@@ -8,52 +8,60 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;min-height:100%;overflow-x:hidden;background:#050505;color:white;font-family:Arial,Helvetica,sans-serif}
-body{background:radial-gradient(circle at top,rgba(255,140,0,.22),transparent 35%),linear-gradient(160deg,#050505,#111,#000)}
+body{
+  background:
+  radial-gradient(circle at top,rgba(255,145,0,.20),transparent 34%),
+  linear-gradient(160deg,#050505,#101010,#000);
+}
 .hidden{display:none!important}
-.screen{width:100%;max-width:520px;margin:auto;padding:14px}
-.title{text-align:center;margin:18px 0}
-.title h1{color:#ff9900;font-size:38px;letter-spacing:2px}
-.title p{color:#aaa;margin-top:5px;font-size:14px}
-.card{background:rgba(255,255,255,.055);border:1px solid rgba(255,153,0,.25);border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 0 22px rgba(255,140,0,.08)}
-input,button,select{width:100%;border:none;outline:none;border-radius:13px;padding:14px;font-size:16px}
-input,select{background:#111;color:white;border:1px solid #333;margin-top:8px;text-transform:uppercase}
-button{background:#ff8800;color:#111;font-weight:bold;cursor:pointer;margin-top:10px}
-button.secondary{background:#222;color:white;border:1px solid #444}
+.screen{width:100%;max-width:480px;margin:auto;padding:14px}
+.title{text-align:center;margin:14px 0 12px}
+.title h1{color:#ff9900;font-size:28px;letter-spacing:1.5px}
+.title p{color:#aaa;margin-top:4px;font-size:13px}
+.card{
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,153,0,.22);
+  border-radius:20px;
+  padding:15px;
+  margin-bottom:12px;
+  box-shadow:0 10px 35px rgba(0,0,0,.28),0 0 24px rgba(255,140,0,.06);
+  backdrop-filter:blur(8px);
+}
+input,button,select{width:100%;border:none;outline:none;border-radius:14px;padding:14px;font-size:16px}
+input,select{background:#101010;color:white;border:1px solid #333;margin-top:8px;text-transform:uppercase}
+button{background:linear-gradient(135deg,#ff9900,#ff7300);color:#111;font-weight:900;cursor:pointer;margin-top:10px;letter-spacing:.3px}
+button.secondary{background:#202020;color:white;border:1px solid #444}
 button.danger{background:#772222;color:white;border:1px solid #aa4444}
 button:disabled{opacity:.45;cursor:not-allowed}
-button:active{transform:scale(.98)}
+button:active{transform:scale(.985)}
 .small{font-size:12px;color:#999;text-align:center;margin-top:8px;line-height:1.35}
 .status{text-align:center;color:#ff9900;min-height:22px;margin:10px 0;font-weight:bold;font-size:14px}
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
-.badge{background:#151515;border:1px solid #333;border-radius:999px;padding:7px 10px;color:#ccc;font-size:12px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.badge{background:#141414;border:1px solid #333;border-radius:999px;padding:7px 10px;color:#ccc;font-size:11px;white-space:nowrap}
 .quitBtn{width:auto;padding:8px 12px;margin:0;font-size:12px;background:#222;color:#ddd;border:1px solid #444}
-.players{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.playerPill{background:#141414;border:1px solid #333;border-radius:999px;padding:6px 9px;font-size:11px;color:#ccc}
+.lobbyTitle{color:#ff9900;font-weight:900;font-size:17px}
+.lobbyMeta{font-size:12px;color:#aaa;margin-top:2px}
+.lobbyHeader{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.lobbyPlayers,.players{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.playerPill{background:#141414;border:1px solid #333;border-radius:999px;padding:7px 10px;font-size:12px;color:#ccc}
 .playerPill.you{border-color:#ff9900;color:white}
-.playerPill.leader{color:#ff9900}
-.lobbyCard{border-color:rgba(255,153,0,.45)}
-.lobbyTop{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
-.lobbyTitle{color:#ff9900;font-weight:bold;font-size:18px}
-.lobbyMeta{font-size:12px;color:#aaa}
-.lobbyPlayers{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.playerPill.leader{color:#ff9900;border-color:rgba(255,153,0,.5)}
 .emptyLobby{color:#777;font-size:13px;text-align:center;padding:10px}
-.phaseBox{text-align:center;background:#101010;border:1px solid #333;border-radius:16px;padding:14px;margin-bottom:12px}
-.phaseBig{font-size:38px;color:#ff9900;font-weight:bold}
+.roleHint{font-size:12px;color:#aaa;margin-top:8px;text-align:center}
+.phaseBox{text-align:center;background:#101010;border:1px solid #333;border-radius:18px;padding:14px;margin-bottom:12px}
+.phaseBig{font-size:34px;color:#ff9900;font-weight:900}
 .phaseSmall{font-size:13px;color:#aaa;margin-top:5px}
 .board{display:grid;gap:7px;margin:14px auto 12px;justify-content:center}
-.row{display:grid;grid-template-columns:repeat(5,54px);gap:7px}
-.tile{width:54px;height:54px;border-radius:8px;border:2px solid #333;background:#171717;display:flex;align-items:center;justify-content:center;font-size:27px;font-weight:bold;text-transform:uppercase}
-.tile.filled{border-color:#555}
+.row{display:grid;grid-template-columns:repeat(5,52px);gap:7px}
+.tile{width:52px;height:52px;border-radius:9px;border:2px solid #333;background:#171717;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;text-transform:uppercase}
+.tile.filled{border-color:#666}
 .correct{background:#31c76a!important;border-color:#31c76a!important;color:white!important}
 .present{background:#d8b11e!important;border-color:#d8b11e!important;color:#111!important}
 .absent{background:#333!important;border-color:#333!important;color:#777!important}
 .keyboard{display:grid;gap:6px;margin-top:12px}
 .keyrow{display:flex;justify-content:center;gap:5px}
-.key{min-width:31px;height:46px;border:none;border-radius:8px;background:#222;color:white;font-weight:bold;font-size:13px;margin:0;padding:0}
-.key.big{min-width:58px;font-size:11px}
-.key.absent{background:#333!important;color:#777!important}
-.key.present{background:#d8b11e!important;color:#111!important}
-.key.correct{background:#31c76a!important;color:white!important}
+.key{min-width:30px;height:45px;border:none;border-radius:9px;background:#222;color:white;font-weight:900;font-size:13px;margin:0;padding:0}
+.key.big{min-width:57px;font-size:10px}
 .leaderGrid{display:grid;gap:12px}
 .spectatorCard{background:#111;border:1px solid #333;border-radius:16px;padding:12px}
 .spectatorTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
@@ -62,9 +70,12 @@ button:active{transform:scale(.98)}
 .miniRows{display:grid;gap:5px}
 .miniRow{display:grid;grid-template-columns:repeat(5,34px);gap:5px}
 .miniTile{width:34px;height:34px;border-radius:6px;border:1px solid #333;background:#181818;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:bold}
+.feed{display:grid;gap:7px;margin-top:8px}
+.feedItem{background:#111;border:1px solid rgba(255,153,0,.28);border-radius:12px;padding:9px;font-size:13px;color:#ddd}
 .scoreList{display:grid;gap:8px}
-.scoreItem{display:flex;justify-content:space-between;align-items:center;background:#111;border:1px solid #333;border-radius:12px;padding:10px;font-size:14px}
-.highscoreItem{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;background:#111;border:1px solid #333;border-radius:12px;padding:10px;font-size:14px}
+.scoreItem,.highscoreItem{background:#111;border:1px solid #333;border-radius:12px;padding:10px;font-size:14px}
+.scoreItem{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.highscoreItem{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center}
 .rank{color:#ff9900;font-weight:bold}
 .hsName{font-weight:bold}
 .hsMeta{font-size:12px;color:#aaa;text-align:right}
@@ -72,8 +83,9 @@ button:active{transform:scale(.98)}
 @keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}100%{transform:translateX(0)}}
 @media(max-width:390px){
   .screen{padding:10px}
-  .row{grid-template-columns:repeat(5,49px);gap:6px}
-  .tile{width:49px;height:49px;font-size:24px}
+  .title h1{font-size:25px}
+  .row{grid-template-columns:repeat(5,48px);gap:6px}
+  .tile{width:48px;height:48px;font-size:23px}
   .key{min-width:28px;height:43px;font-size:12px}
   .key.big{min-width:52px;font-size:10px}
 }
@@ -85,26 +97,24 @@ button:active{transform:scale(.98)}
 <div id="menuScreen" class="screen">
   <div class="title">
     <h1>🐯 TIGERWORD</h1>
-    <p>1 lobby · leader kiest woord · players racen</p>
+    <p>Multiplayer Wordle · 1 leader · max 3 players</p>
   </div>
 
-  <div class="card lobbyCard">
-    <div class="lobbyTop">
+  <div class="card">
+    <div class="lobbyHeader">
       <div>
         <div class="lobbyTitle" id="lobbyTitle">LOADING...</div>
         <div class="lobbyMeta" id="lobbyMeta">Connecting...</div>
       </div>
-      <div class="badge" id="lobbyPhase">WAITING</div>
+      <div class="badge" id="lobbyPhase">WAIT</div>
     </div>
 
     <div class="lobbyPlayers" id="lobbyPlayers">
       <div class="emptyLobby">Loading lobby...</div>
     </div>
-
-    <button id="mainLobbyBtn" onclick="setEntryMode('join')">LOADING...</button>
   </div>
 
-  <div class="card" id="joinCard">
+  <div class="card">
     <label>Naam</label>
     <input id="nameInput" value="JOCHEN" maxlength="18" />
 
@@ -114,10 +124,13 @@ button:active{transform:scale(.98)}
       <option value="leader">LEADER</option>
     </select>
 
-    <button id="joinBtn" onclick="joinLobby()">JOIN LOBBY</button>
+    <div class="roleHint" id="roleHint">Wachten op lobby-info...</div>
+
+    <button id="mainActionBtn" onclick="mainLobbyAction()">LOADING...</button>
     <button class="secondary" onclick="showHighscores()">HIGHSCORES</button>
+
     <div class="status" id="menuStatus">Connecting...</div>
-    <div class="small">Max 4 totaal. Leader kiest een bestaand Engels 5-letter woord.</div>
+    <div class="small">Als leader al bezet is, join je automatisch als player.</div>
   </div>
 
   <div class="card hidden" id="highscoreCard">
@@ -131,14 +144,18 @@ button:active{transform:scale(.98)}
 
 <div id="gameScreen" class="screen hidden">
   <div class="topbar">
-    <div class="badge" id="roleBadge">PLAYER</div>
+    <div class="badge" id="roleBadge">SYNC...</div>
     <div class="badge" id="phaseBadge">WAITING</div>
     <button class="quitBtn" onclick="quitGame()">QUIT</button>
   </div>
 
-  <div class="players" id="players"></div>
+  <div class="card">
+    <div class="lobbyTitle">Lobby</div>
+    <div class="players" id="players"></div>
+    <div class="feed" id="eventFeed"></div>
+  </div>
 
-  <div class="phaseBox" id="phaseBox">
+  <div class="phaseBox">
     <div class="phaseBig" id="phaseBig">WAIT</div>
     <div class="phaseSmall" id="phaseSmall">Wachten op lobby...</div>
   </div>
@@ -152,9 +169,8 @@ button:active{transform:scale(.98)}
       <button onclick="setSecret()">SET WORD</button>
       <button onclick="startGame()">START GAME</button>
       <button class="secondary" onclick="newRound()">NEW ROUND</button>
-      <div class="small">Start kan zodra minstens 1 player joined en secret word geldig is.</div>
+      <div class="small">Start zodra minstens 1 player joined en het woord geldig is.</div>
     </div>
-
     <div class="leaderGrid" id="leaderGrid"></div>
   </div>
 
@@ -185,15 +201,11 @@ let currentGuess = "";
 let guesses = [];
 let maxGuesses = 6;
 let keyboardState = {};
-let lastScoreboard = [];
 let latestLobbyInfo = null;
 let latestHighscores = [];
-let selectedEntryMode = "join";
-let reconnectTimer = null;
+let eventMessages = [];
 
 function connectSocket(){
-  clearTimeout(reconnectTimer);
-
   socket = new WebSocket(WORKER_WS);
 
   socket.onopen = () => {
@@ -205,18 +217,12 @@ function connectSocket(){
 
   socket.onclose = () => {
     socketReady = false;
-
-    if(joinedLobby){
-      setStatus("Disconnected.");
-      return;
+    if(!joinedLobby){
+      setMenuStatus("Disconnected.");
+      updateLobbyPreview(null);
+    }else{
+      setStatus("Verbinding weg. Refresh om opnieuw te joinen.");
     }
-
-    setMenuStatus("Disconnected. Reconnecting...");
-    updateLobbyPreview(null);
-
-    reconnectTimer = setTimeout(() => {
-      connectSocket();
-    }, 1200);
   };
 
   socket.onerror = () => {
@@ -227,9 +233,7 @@ function connectSocket(){
     const data = JSON.parse(event.data);
     console.log("SERVER:", data);
 
-    if(data.type === "connected"){
-      myId = data.id;
-    }
+    if(data.type === "connected") myId = data.id;
 
     if(data.type === "lobbyInfo"){
       latestLobbyInfo = data;
@@ -243,7 +247,6 @@ function connectSocket(){
 
     if(data.type === "state"){
       phase = data.phase;
-      lastScoreboard = data.scoreboard || [];
 
       latestLobbyInfo = {
         type:"lobbyInfo",
@@ -264,18 +267,17 @@ function connectSocket(){
       renderState(data);
     }
 
-    if(data.type === "countdown"){
-      showCountdown(data.value);
-    }
+    if(data.type === "countdown") showCountdown(data.value);
 
     if(data.type === "go"){
       setStatus("GO! Raad zo snel mogelijk.");
       showPhase("GO", "Ronde gestart.");
+      addEvent("🔥 GO! Ronde gestart.");
     }
 
     if(data.type === "secretSet"){
       setStatus(data.message);
-      setMenuStatus(data.message);
+      addEvent("🔐 Leader heeft een woord gekozen.");
     }
 
     if(data.type === "invalidGuess" || data.type === "error"){
@@ -284,25 +286,22 @@ function connectSocket(){
       setMenuStatus(data.message);
     }
 
-    if(data.type === "guessResult"){
-      applyGuessResult(data);
-    }
+    if(data.type === "guessResult") applyGuessResult(data);
 
     if(data.type === "playerSolved"){
-      setStatus(`${data.name} gevonden! #${data.place} +${data.points}`);
+      const msg = `✅ ${data.name} heeft het woord geraden · #${data.place} · +${data.points} punten`;
+      setStatus(msg);
+      addEvent(msg);
     }
 
-    if(data.type === "leaderView"){
-      renderLeaderView(data);
-    }
+    if(data.type === "leaderView") renderLeaderView(data);
 
-    if(data.type === "roundOver"){
-      showRoundOver(data);
-    }
+    if(data.type === "roundOver") showRoundOver(data);
 
     if(data.type === "newRound"){
       resetLocalRound();
       hideScorePanel();
+      addEvent("🔄 Nieuwe ronde gestart.");
     }
   };
 }
@@ -311,72 +310,11 @@ connectSocket();
 
 function send(data){
   if(!socketReady || !socket || socket.readyState !== WebSocket.OPEN){
-    setStatus("Nog niet verbonden.");
     setMenuStatus("Nog niet verbonden.");
+    setStatus("Nog niet verbonden.");
     return;
   }
-
   socket.send(JSON.stringify(data));
-}
-
-function syncMyRoleFromServer(players){
-  const me = players.find(p => p.id === myId);
-
-  if(!me){
-    return;
-  }
-
-  myRole = me.role;
-  joinedLobby = true;
-
-  document.getElementById("roleBadge").innerText = myRole.toUpperCase();
-
-  document.getElementById("leaderPanel").classList.toggle("hidden", myRole !== "leader");
-  document.getElementById("playerPanel").classList.toggle("hidden", myRole !== "player");
-
-  if(myRole === "player"){
-    document.getElementById("secretInput").value = "";
-  }
-}
-
-function focusJoinCard(){
-  document.getElementById("joinCard").scrollIntoView({behavior:"smooth",block:"center"});
-}
-
-function setEntryMode(mode){
-  selectedEntryMode = mode;
-
-  const roleSelect = document.getElementById("roleSelect");
-  const joinBtn = document.getElementById("joinBtn");
-
-  const info = latestLobbyInfo;
-  const active = info?.active === true || (info?.players || []).length > 0;
-  const leaderAvailable = info?.leaderAvailable !== false;
-
-  if(mode === "create" || !active){
-    roleSelect.value = leaderAvailable ? "leader" : "player";
-    joinBtn.innerText = "START NEW LOBBY";
-  } else {
-    roleSelect.value = leaderAvailable ? "leader" : "player";
-    joinBtn.innerText = "JOIN LOBBY";
-  }
-
-  updateRoleSelectAvailability();
-  focusJoinCard();
-}
-
-function updateRoleSelectAvailability(){
-  const roleSelect = document.getElementById("roleSelect");
-  const leaderOption = roleSelect.querySelector('option[value="leader"]');
-
-  const info = latestLobbyInfo;
-  const leaderAvailable = !info || info.leaderAvailable !== false;
-
-  leaderOption.disabled = !leaderAvailable;
-
-  if(!leaderAvailable && roleSelect.value === "leader"){
-    roleSelect.value = "player";
-  }
 }
 
 function updateLobbyPreview(info){
@@ -384,16 +322,20 @@ function updateLobbyPreview(info){
   const meta = document.getElementById("lobbyMeta");
   const phaseEl = document.getElementById("lobbyPhase");
   const playersEl = document.getElementById("lobbyPlayers");
-  const mainBtn = document.getElementById("mainLobbyBtn");
+  const btn = document.getElementById("mainActionBtn");
+  const roleHint = document.getElementById("roleHint");
+  const roleSelect = document.getElementById("roleSelect");
+  const leaderOption = roleSelect.querySelector('option[value="leader"]');
 
   if(!info){
     title.innerText = "NO CONNECTION";
-    meta.innerText = "Offline / disconnected";
+    meta.innerText = "Geen verbinding met server";
     phaseEl.innerText = "OFFLINE";
-    playersEl.innerHTML = `<div class="emptyLobby">Geen connectie met lobby.</div>`;
-    mainBtn.innerText = "RECONNECT";
-    mainBtn.disabled = false;
-    mainBtn.onclick = () => location.reload();
+    playersEl.innerHTML = `<div class="emptyLobby">Refresh de pagina.</div>`;
+    btn.innerText = "RECONNECT";
+    btn.disabled = false;
+    btn.onclick = () => location.reload();
+    roleHint.innerText = "Offline.";
     return;
   }
 
@@ -401,32 +343,35 @@ function updateLobbyPreview(info){
   const max = info.maxPlayersTotal || 4;
   const active = info.active === true || players.length > 0;
   const full = players.length >= max;
+  const leaderAvailable = info.leaderAvailable !== false;
 
-  updateRoleSelectAvailability();
+  leaderOption.disabled = !leaderAvailable;
+
+  if(!leaderAvailable && roleSelect.value === "leader"){
+    roleSelect.value = "player";
+  }
 
   phaseEl.innerText = String(info.phase || "waiting").toUpperCase();
 
   if(!active){
     title.innerText = "NO ACTIVE LOBBY";
-    meta.innerText = `0/${max} joined · start een nieuwe lobby`;
+    meta.innerText = `0/${max} joined`;
     playersEl.innerHTML = `<div class="emptyLobby">Nog niemand in lobby.</div>`;
-
-    mainBtn.innerText = "START NEW LOBBY";
-    mainBtn.disabled = false;
-    mainBtn.onclick = () => setEntryMode("create");
-
-    document.getElementById("joinBtn").innerText = "START NEW LOBBY";
+    btn.innerText = "START NEW LOBBY";
+    btn.disabled = false;
+    roleHint.innerText = "Start als leader of join als player.";
+    if(leaderAvailable) roleSelect.value = "leader";
     return;
   }
 
   title.innerText = "ACTIVE LOBBY";
   meta.innerText = `${players.length}/${max} joined · ${info.hasLeader ? "leader active" : "no leader"} · ${info.hasSecret ? "word set" : "no word yet"}`;
+  btn.innerText = full ? "LOBBY FULL" : "JOIN LOBBY";
+  btn.disabled = full;
 
-  mainBtn.innerText = full ? "LOBBY FULL" : "JOIN LOBBY";
-  mainBtn.disabled = full;
-  mainBtn.onclick = () => setEntryMode("join");
-
-  document.getElementById("joinBtn").innerText = "JOIN LOBBY";
+  roleHint.innerText = leaderAvailable
+    ? "Leader is vrij. Je kan leader of player kiezen."
+    : "Leader is bezet. Je joint automatisch als player.";
 
   playersEl.innerHTML = "";
 
@@ -439,42 +384,16 @@ function updateLobbyPreview(info){
   });
 }
 
-function showHighscores(){
-  document.getElementById("highscoreCard").classList.remove("hidden");
-  send({type:"getHighscores"});
-  renderHighscores();
-  document.getElementById("highscoreCard").scrollIntoView({behavior:"smooth",block:"center"});
-}
+function mainLobbyAction(){
+  const info = latestLobbyInfo;
+  const roleSelect = document.getElementById("roleSelect");
 
-function hideHighscores(){
-  document.getElementById("highscoreCard").classList.add("hidden");
-}
-
-function renderHighscores(){
-  const list = document.getElementById("highscoreList");
-  if(!list) return;
-
-  list.innerHTML = "";
-
-  if(!latestHighscores.length){
-    list.innerHTML = `<div class="small">Nog geen highscores.</div>`;
-    return;
+  if(info && info.leaderAvailable === false){
+    roleSelect.value = "player";
   }
 
-  latestHighscores.forEach((h,i)=>{
-    list.innerHTML += `
-      <div class="highscoreItem">
-        <div class="rank">#${i+1}</div>
-        <div class="hsName">${escapeHtml(h.name)}</div>
-        <div class="hsMeta">${h.score} pts<br>${h.games} games</div>
-      </div>
-    `;
-  });
+  joinLobby();
 }
-
-document.getElementById("roleSelect").addEventListener("change", e => {
-  myRole = e.target.value;
-});
 
 function joinLobby(){
   const info = latestLobbyInfo;
@@ -513,16 +432,78 @@ function joinLobby(){
   renderKeyboard();
 
   setStatus("Lobby syncen...");
+  addEvent("🐯 Je bent de lobby aan het joinen...");
 
   if(location.hash !== "#lobby"){
     history.pushState({inGame:true}, "", "#lobby");
   }
 }
 
-function quitGame(){
-  const ok = confirm("Zeker quitten? Ge verlaat de lobby.");
-  if(!ok) return;
+function syncMyRoleFromServer(players){
+  const me = players.find(p => p.id === myId);
+  if(!me) return;
 
+  myRole = me.role;
+  joinedLobby = true;
+
+  document.getElementById("roleBadge").innerText = myRole.toUpperCase();
+  document.getElementById("leaderPanel").classList.toggle("hidden", myRole !== "leader");
+  document.getElementById("playerPanel").classList.toggle("hidden", myRole !== "player");
+
+  if(myRole === "leader") setStatus("Gij zijt leader. Kies een secret word.");
+  if(myRole === "player") setStatus("Gij zijt player. Wacht op de leader.");
+}
+
+function renderState(state){
+  document.getElementById("phaseBadge").innerText = String(state.phase || "waiting").toUpperCase();
+  renderPlayers(state.players || []);
+
+  if(state.phase === "waiting"){
+    showPhase("WAIT", state.hasSecret ? "Woord gekozen. Wachten op start." : "Wachten op leader en secret word.");
+  }
+
+  if(state.phase === "countdown") showPhase(String(state.countdown), "Start countdown...");
+  if(state.phase === "playing") showPhase("PLAY", "Snelste juiste antwoord wint.");
+  if(state.phase === "roundover") showPhase("DONE", "Ronde gedaan.");
+}
+
+function renderPlayers(players){
+  const div = document.getElementById("players");
+  div.innerHTML = "";
+
+  if(!players.length){
+    div.innerHTML = `<div class="emptyLobby">Niemand meer in lobby.</div>`;
+    return;
+  }
+
+  players.forEach(p=>{
+    div.innerHTML += `
+      <div class="playerPill ${p.id === myId ? "you" : ""} ${p.role === "leader" ? "leader" : ""}">
+        ${escapeHtml(p.name)} · ${escapeHtml(p.role)}${p.id === myId ? " · YOU" : ""}
+      </div>
+    `;
+  });
+}
+
+function addEvent(text){
+  eventMessages.unshift(text);
+  eventMessages = eventMessages.slice(0,5);
+  renderEventFeed();
+}
+
+function renderEventFeed(){
+  const feed = document.getElementById("eventFeed");
+  if(!feed) return;
+
+  feed.innerHTML = "";
+
+  eventMessages.forEach(msg=>{
+    feed.innerHTML += `<div class="feedItem">${escapeHtml(msg)}</div>`;
+  });
+}
+
+function quitGame(){
+  if(!confirm("Zeker quitten? Ge verlaat de lobby.")) return;
   leaveLobbyAndReturn();
 }
 
@@ -541,12 +522,11 @@ function leaveLobbyAndReturn(){
   currentGuess = "";
   guesses = [];
   keyboardState = {};
-  lastScoreboard = [];
   latestLobbyInfo = null;
+  eventMessages = [];
 
   document.getElementById("gameScreen").classList.add("hidden");
   document.getElementById("menuScreen").classList.remove("hidden");
-
   document.getElementById("leaderPanel").classList.add("hidden");
   document.getElementById("playerPanel").classList.add("hidden");
 
@@ -563,169 +543,75 @@ function leaveLobbyAndReturn(){
 }
 
 window.addEventListener("popstate", () => {
-  if(joinedLobby){
-    leaveLobbyAndReturn();
-  }
+  if(joinedLobby) leaveLobbyAndReturn();
 });
 
 window.addEventListener("beforeunload", () => {
-  try{
-    if(socket) socket.close();
-  }catch{}
+  try{ if(socket) socket.close(); }catch{}
 });
 
 function setSecret(){
-  const word = document.getElementById("secretInput").value.trim().toUpperCase();
-  send({type:"setSecret", word});
+  send({type:"setSecret", word:document.getElementById("secretInput").value.trim().toUpperCase()});
 }
-
-function startGame(){
-  send({type:"startGame"});
-}
-
-function newRound(){
-  send({type:"newRound"});
-}
-
-function returnToWaiting(){
-  hideScorePanel();
-}
-
-function renderState(state){
-  document.getElementById("phaseBadge").innerText = String(state.phase || "waiting").toUpperCase();
-  renderPlayers(state.players || []);
-
-  if(state.phase === "waiting"){
-    showPhase("WAIT", state.hasSecret ? "Woord gekozen. Wachten op start." : "Wachten op leader en secret word.");
-  }
-
-  if(state.phase === "countdown"){
-    showPhase(String(state.countdown), "Start countdown...");
-  }
-
-  if(state.phase === "playing"){
-    showPhase("PLAY", "Snelste juiste antwoord wint.");
-  }
-
-  if(state.phase === "roundover"){
-    showPhase("DONE", "Ronde gedaan.");
-  }
-}
-
-function renderPlayers(players){
-  const div = document.getElementById("players");
-  div.innerHTML = "";
-
-  players.forEach(p=>{
-    div.innerHTML += `
-      <div class="playerPill ${p.id === myId ? "you" : ""} ${p.role === "leader" ? "leader" : ""}">
-        ${escapeHtml(p.name)} · ${escapeHtml(p.role)}
-      </div>
-    `;
-  });
-}
-
+function startGame(){send({type:"startGame"});}
+function newRound(){send({type:"newRound"});}
+function returnToWaiting(){hideScorePanel();}
 function showPhase(big, small){
   document.getElementById("phaseBig").innerText = big;
   document.getElementById("phaseSmall").innerText = small;
 }
-
-function showCountdown(value){
-  showPhase(value > 0 ? String(value) : "GO", value > 0 ? "Ready..." : "Start!");
-}
+function showCountdown(value){showPhase(value > 0 ? String(value) : "GO", value > 0 ? "Ready..." : "Start!");}
 
 function pressKey(letter){
-  if(myRole !== "player") return;
-  if(phase !== "playing") return;
-  if(currentGuess.length >= 5) return;
-
+  if(myRole !== "player" || phase !== "playing" || currentGuess.length >= 5) return;
   currentGuess += letter;
   renderBoard();
-
-  send({
-    type:"typing",
-    value:currentGuess
-  });
+  send({type:"typing",value:currentGuess});
 }
 
 function backspace(){
-  if(myRole !== "player") return;
-  if(phase !== "playing") return;
-
+  if(myRole !== "player" || phase !== "playing") return;
   currentGuess = currentGuess.slice(0,-1);
   renderBoard();
-
-  send({
-    type:"typing",
-    value:currentGuess
-  });
+  send({type:"typing",value:currentGuess});
 }
 
 function submitGuess(){
   if(myRole !== "player") return;
-
-  if(phase !== "playing") {
-    shakeBoard();
-    return setStatus("Nog niet gestart.");
-  }
-
-  if(currentGuess.length !== 5){
-    shakeBoard();
-    return setStatus("5 letters nodig.");
-  }
-
-  send({
-    type:"guess",
-    guess:currentGuess
-  });
+  if(phase !== "playing"){shakeBoard();return setStatus("Nog niet gestart.");}
+  if(currentGuess.length !== 5){shakeBoard();return setStatus("5 letters nodig.");}
+  send({type:"guess",guess:currentGuess});
 }
 
 function applyGuessResult(data){
-  guesses.push({
-    word:data.guess,
-    result:data.result
-  });
-
-  updateKeyboard(data.guess, data.result);
+  guesses.push({word:data.guess,result:data.result});
+  updateKeyboard(data.guess,data.result);
   currentGuess = "";
-
   renderBoard();
   renderKeyboard();
-
-  if(data.solved){
-    setStatus("RAWR! Gevonden.");
-  }
+  if(data.solved) setStatus("RAWR! Gevonden.");
 }
 
 function renderBoard(){
   const board = document.getElementById("board");
   if(!board) return;
-
   board.innerHTML = "";
 
   for(let r=0;r<maxGuesses;r++){
     const row = document.createElement("div");
     row.className = "row";
-
     const saved = guesses[r];
     const word = saved ? saved.word : (r === guesses.length ? currentGuess : "");
 
     for(let c=0;c<5;c++){
       const tile = document.createElement("div");
       tile.className = "tile";
-
       const letter = word[c] || "";
       tile.innerText = letter;
-
       if(letter) tile.classList.add("filled");
-
-      if(saved){
-        tile.classList.add(saved.result[c]);
-      }
-
+      if(saved) tile.classList.add(saved.result[c]);
       row.appendChild(tile);
     }
-
     board.appendChild(row);
   }
 }
@@ -734,27 +620,18 @@ function renderKeyboard(){
   const rows = ["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"];
   const keyboard = document.getElementById("keyboard");
   if(!keyboard) return;
-
   keyboard.innerHTML = "";
 
   rows.forEach((letters,rowIndex)=>{
     const row = document.createElement("div");
     row.className = "keyrow";
-
-    if(rowIndex === 2){
-      row.appendChild(makeKey("ENTER","big",submitGuess));
-    }
-
+    if(rowIndex === 2) row.appendChild(makeKey("ENTER","big",submitGuess));
     letters.split("").forEach(letter=>{
       const btn = makeKey(letter,"",()=>pressKey(letter));
       if(keyboardState[letter]) btn.classList.add(keyboardState[letter]);
       row.appendChild(btn);
     });
-
-    if(rowIndex === 2){
-      row.appendChild(makeKey("⌫","big",backspace));
-    }
-
+    if(rowIndex === 2) row.appendChild(makeKey("⌫","big",backspace));
     keyboard.appendChild(row);
   });
 }
@@ -767,15 +644,13 @@ function makeKey(text, extra, action){
   return btn;
 }
 
-function updateKeyboard(word, result){
+function updateKeyboard(word,result){
   for(let i=0;i<word.length;i++){
     const letter = word[i];
     const state = result[i];
     const current = keyboardState[letter];
-
     if(current === "correct") continue;
     if(current === "present" && state === "absent") continue;
-
     keyboardState[letter] = state;
   }
 }
@@ -794,22 +669,16 @@ function renderLeaderView(data){
   data.players.forEach(p=>{
     const card = document.createElement("div");
     card.className = "spectatorCard";
-
     let rowsHtml = "";
 
     for(let r=0;r<6;r++){
       const guess = p.guesses[r];
       const word = guess ? guess.word : (r === p.guesses.length ? p.current : "");
       const result = guess ? guess.result : [];
-
       rowsHtml += `<div class="miniRow">`;
-
       for(let c=0;c<5;c++){
-        const letter = word[c] || "";
-        const cls = result[c] || "";
-        rowsHtml += `<div class="miniTile ${cls}">${escapeHtml(letter)}</div>`;
+        rowsHtml += `<div class="miniTile ${result[c] || ""}">${escapeHtml(word[c] || "")}</div>`;
       }
-
       rowsHtml += `</div>`;
     }
 
@@ -820,15 +689,15 @@ function renderLeaderView(data){
       </div>
       <div class="miniRows">${rowsHtml}</div>
     `;
-
     grid.appendChild(card);
   });
 }
 
 function showRoundOver(data){
   phase = "roundover";
-  showPhase("DONE", "Woord was " + data.secret);
+  showPhase("DONE","Woord was " + data.secret);
   setStatus("Ronde gedaan.");
+  addEvent("🏁 Ronde gedaan. Woord was " + data.secret);
   showScorePanel(data.scoreboard || []);
   send({type:"getHighscores"});
 }
@@ -836,12 +705,9 @@ function showRoundOver(data){
 function showScorePanel(scoreboard){
   const panel = document.getElementById("scorePanel");
   const list = document.getElementById("scoreList");
-
   list.innerHTML = "";
 
-  if(!scoreboard.length){
-    list.innerHTML = `<div class="small">Nog geen scores.</div>`;
-  }
+  if(!scoreboard.length) list.innerHTML = `<div class="small">Nog geen scores.</div>`;
 
   scoreboard.forEach((s,i)=>{
     list.innerHTML += `
@@ -855,8 +721,33 @@ function showScorePanel(scoreboard){
   panel.classList.remove("hidden");
 }
 
-function hideScorePanel(){
-  document.getElementById("scorePanel").classList.add("hidden");
+function hideScorePanel(){document.getElementById("scorePanel").classList.add("hidden");}
+
+function showHighscores(){
+  document.getElementById("highscoreCard").classList.remove("hidden");
+  send({type:"getHighscores"});
+  renderHighscores();
+}
+
+function hideHighscores(){document.getElementById("highscoreCard").classList.add("hidden");}
+
+function renderHighscores(){
+  const list = document.getElementById("highscoreList");
+  if(!list) return;
+  list.innerHTML = "";
+  if(!latestHighscores.length){
+    list.innerHTML = `<div class="small">Nog geen highscores.</div>`;
+    return;
+  }
+  latestHighscores.forEach((h,i)=>{
+    list.innerHTML += `
+      <div class="highscoreItem">
+        <div class="rank">#${i+1}</div>
+        <div class="hsName">${escapeHtml(h.name)}</div>
+        <div class="hsMeta">${h.score} pts<br>${h.games} games</div>
+      </div>
+    `;
+  });
 }
 
 function resetLocalRound(){
@@ -868,23 +759,9 @@ function resetLocalRound(){
   renderKeyboard();
 }
 
-function setStatus(text){
-  const el = document.getElementById("status");
-  if(el) el.innerText = text;
-}
-
-function setMenuStatus(text){
-  const el = document.getElementById("menuStatus");
-  if(el) el.innerText = text;
-}
-
-function shakeBoard(){
-  const board = document.getElementById("board");
-  if(!board) return;
-  board.classList.add("shake");
-  setTimeout(()=>board.classList.remove("shake"),220);
-}
-
+function setStatus(text){const el=document.getElementById("status");if(el)el.innerText=text;}
+function setMenuStatus(text){const el=document.getElementById("menuStatus");if(el)el.innerText=text;}
+function shakeBoard(){const board=document.getElementById("board");if(!board)return;board.classList.add("shake");setTimeout(()=>board.classList.remove("shake"),220);}
 function escapeHtml(text){
   return String(text ?? "")
     .replaceAll("&","&amp;")
@@ -896,9 +773,7 @@ function escapeHtml(text){
 
 document.addEventListener("keydown",(e)=>{
   if(myRole !== "player") return;
-
   const key = e.key.toUpperCase();
-
   if(key === "ENTER") submitGuess();
   else if(key === "BACKSPACE") backspace();
   else if(/^[A-Z]$/.test(key)) pressKey(key);
