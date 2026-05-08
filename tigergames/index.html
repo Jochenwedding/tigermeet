@@ -9,27 +9,59 @@
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050505;color:white;font-family:Arial,Helvetica,sans-serif;touch-action:none;user-select:none}
     body{background:radial-gradient(circle at top,rgba(255,136,0,.28),transparent 38%),linear-gradient(135deg,#050505,#111,#000)}
-    .screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
+
+    .screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;z-index:10;overflow-y:auto}
     .hidden{display:none!important}
-    .card{width:min(590px,94vw);padding:26px;border-radius:30px;text-align:center;background:linear-gradient(180deg,rgba(25,25,25,.96),rgba(5,5,5,.97));border:1px solid rgba(255,136,0,.58);box-shadow:0 0 65px rgba(255,136,0,.22),0 25px 85px rgba(0,0,0,.82);position:relative;overflow:hidden}
+
+    .card{
+      width:min(520px,94vw);
+      max-height:96vh;
+      overflow-y:auto;
+      padding:22px;
+      border-radius:28px;
+      text-align:center;
+      background:linear-gradient(180deg,rgba(25,25,25,.96),rgba(5,5,5,.97));
+      border:1px solid rgba(255,136,0,.58);
+      box-shadow:0 0 65px rgba(255,136,0,.22),0 25px 85px rgba(0,0,0,.82);
+      position:relative;
+    }
+
     .card:before{content:"";position:absolute;inset:-70px;background:repeating-linear-gradient(45deg,transparent 0,transparent 18px,rgba(255,136,0,.08) 18px,rgba(255,136,0,.08) 38px)}
     .card>*{position:relative}
-    .logo{font-size:64px;filter:drop-shadow(0 0 20px rgba(255,136,0,.85))}
-    h1{margin:4px 0;color:#ff8a00;font-size:clamp(40px,9vw,68px);letter-spacing:2px;text-shadow:0 0 22px rgba(255,136,0,.75)}
-    .tag{color:#ddd;line-height:1.45;margin:10px 0 18px}
-    input{width:100%;padding:17px 18px;border-radius:17px;border:1px solid rgba(255,136,0,.45);background:#111;color:white;font-size:19px;text-align:center;outline:none}
+    .logo{font-size:54px;filter:drop-shadow(0 0 20px rgba(255,136,0,.85))}
+    h1{margin:2px 0;color:#ff8a00;font-size:clamp(36px,8vw,58px);letter-spacing:2px;text-shadow:0 0 22px rgba(255,136,0,.75)}
+
+    .versionBadge{
+      display:inline-block;
+      margin:0 0 10px;
+      padding:5px 11px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.4px;
+      color:#ffd36a;
+      background:rgba(255,136,0,.10);
+      border:1px solid rgba(255,136,0,.32);
+      box-shadow:0 0 14px rgba(255,136,0,.16);
+    }
+
+    .tag{color:#ddd;line-height:1.42;margin:8px 0 14px;font-size:14px}
+    input{width:100%;padding:15px 16px;border-radius:17px;border:1px solid rgba(255,136,0,.45);background:#111;color:white;font-size:18px;text-align:center;outline:none}
     input:focus{border-color:#ffc14d;box-shadow:0 0 18px rgba(255,136,0,.28)}
     button{border:0;border-radius:999px;padding:15px 22px;font-weight:900;color:#111;background:linear-gradient(135deg,#ffd36a,#ff8a00 60%,#ff5700);box-shadow:0 0 22px rgba(255,136,0,.35);cursor:pointer}
     button:active{transform:scale(.97)}
-    .big{width:100%;font-size:18px;margin-top:14px}
-    .small{font-size:12px;color:#888;margin-top:14px}
-    .loginTop{margin-top:18px;padding:14px;border-radius:20px;background:rgba(0,0,0,.45);border:1px solid rgba(255,136,0,.28);text-align:left}
-    .loginTopTitle{text-align:center;color:#ffb13b;font-weight:900;margin-bottom:8px}
-    .loginRow{display:grid;grid-template-columns:40px 1fr auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px}
+    .big{width:100%;font-size:18px;margin-top:12px}
+    .small{font-size:12px;color:#888;margin-top:11px}
+
+    .loginTop{margin-top:14px;padding:12px;border-radius:18px;background:rgba(0,0,0,.45);border:1px solid rgba(255,136,0,.28);text-align:left}
+    .loginTopTitle{text-align:center;color:#ffb13b;font-weight:900;margin-bottom:7px}
+    .loginRow{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px}
     .loginRow:last-child{border-bottom:0}
     .king{color:#ffd36a;text-shadow:0 0 12px rgba(255,136,0,.55);font-weight:900}
+
     #gameScreen{position:fixed;inset:0;overflow:hidden;background:#030303}
     canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
     .hud{position:absolute;top:10px;left:10px;right:10px;z-index:4;display:flex;justify-content:space-between;gap:10px;pointer-events:none}
     .box{background:rgba(7,7,7,.76);backdrop-filter:blur(10px);border:1px solid rgba(255,136,0,.32);border-radius:18px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
     .mine{min-width:160px}
@@ -43,8 +75,10 @@
     .dot{width:11px;height:11px;border-radius:50%;box-shadow:0 0 10px currentColor}
     .rname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .rscore{font-weight:900}
+
     .buttons{position:absolute;top:92px;left:10px;z-index:5;display:flex;gap:8px;flex-wrap:wrap}
     .buttons button{pointer-events:auto;padding:10px 12px;font-size:12px}
+
     .net{position:absolute;right:12px;bottom:10px;z-index:5;background:rgba(0,0,0,.38);border:1px solid rgba(255,136,0,.18);border-radius:999px;padding:6px 10px;font-size:10px;color:#aaa;pointer-events:none;opacity:.55}
     .controls{position:absolute;inset:0;z-index:5;pointer-events:none}
     .joy{position:absolute;left:18px;bottom:18px;width:154px;height:154px;border-radius:50%;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.17);pointer-events:auto}
@@ -52,7 +86,12 @@
     .boost{position:absolute;right:20px;bottom:34px;width:108px;height:108px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#ffe07b,#ff8700);color:#111;font-weight:900;box-shadow:0 0 30px rgba(255,136,0,.45);pointer-events:auto;border:3px solid rgba(255,255,255,.28)}
     .toast{position:absolute;left:50%;top:54px;transform:translateX(-50%);z-index:7;background:rgba(0,0,0,.75);border:1px solid rgba(255,136,0,.45);border-radius:999px;padding:9px 14px;font-size:13px;color:#eee;opacity:0;transition:.2s opacity;pointer-events:none}
     .toast.show{opacity:1}
-    @media(max-width:720px){.mine{min-width:135px}.score{font-size:23px}.box{padding:9px}.buttons{top:84px}.board{width:46vw}.logo{font-size:50px}h1{font-size:40px}.net{display:none}}
+
+    @media(max-width:720px){
+      .mine{min-width:135px}.score{font-size:23px}.box{padding:9px}.buttons{top:84px}.board{width:46vw}
+      .logo{font-size:48px}h1{font-size:36px}.net{display:none}
+      .card{padding:18px}.tag{font-size:13px}
+    }
   </style>
 </head>
 
@@ -61,25 +100,23 @@
     <div class="card">
       <div class="logo">🐯</div>
       <h1>Tigergames Online</h1>
-      <p class="tag">Feed yourself on other countries. Belgium is the best. Make your legacy, become the biggest tiger of them all and RAWR your way to the top.</p>
+      <div class="versionBadge">Beta Release V1.0 · Jochen Michels</div>
+
+      <p class="tag">
+        Feed yourself on other countries. Belgium is the best. Make your legacy, become the biggest tiger of them all and RAWR your way to the top.
+      </p>
 
       <input id="playerName" maxlength="16" placeholder="Naam / callsign" autocomplete="off" />
       <button class="big" id="playBtn">ENTER TIGER ARENA</button>
 
       <div class="loginTop">
-        <div class="loginTopTitle">🏆 TOP 10 ALL-TIME</div>
+        <div class="loginTopTitle">🏆 TOP 5 ALL-TIME</div>
         <div id="loginTopRows">
           <div class="small" style="text-align:center">Highscores laden...</div>
         </div>
       </div>
 
-      <p class="small">
-  Joystick links, boost rechts. Muziek start na klikken/touch.
-</p>
-
-<p class="small" style="margin-top:10px;opacity:.55">
-  Beta Release V1.0 – Jochen Michels
-</p>
+      <p class="small">Joystick links, boost rechts. Muziek start na klikken/touch.</p>
     </div>
   </section>
 
@@ -115,6 +152,7 @@
     <div id="toast" class="toast">RAWR</div>
 
     <audio id="music" src="/Araxos%20Baby.mp3" preload="auto" loop></audio>
+    <audio id="roar" src="/roar.mp3" preload="auto"></audio>
   </section>
 
 <script>
@@ -125,6 +163,7 @@
   const login = document.getElementById("login");
   const gameScreen = document.getElementById("gameScreen");
   const music = document.getElementById("music");
+  const roar = document.getElementById("roar");
   const musicBtn = document.getElementById("musicBtn");
 
   const WORLD = 4200;
@@ -137,6 +176,7 @@
 
   let running = false;
   let lastInput = 0;
+  let lastRoar = 0;
   let angle = 0;
   let boosting = false;
   let musicEnabled = true;
@@ -158,7 +198,7 @@
 
   addEventListener("resize", resize);
   resize();
-  preloadTop10();
+  preloadTop5();
 
   document.getElementById("playBtn").onclick = () => {
     const name = (document.getElementById("playerName").value.trim() || "Unknown Tiger").slice(0, 16);
@@ -182,7 +222,7 @@
     gameScreen.classList.add("hidden");
     login.classList.remove("hidden");
     renderPlayers.clear();
-    preloadTop10();
+    preloadTop5();
   };
 
   document.getElementById("respawnBtn").onclick = () => {
@@ -197,7 +237,7 @@
     else music.pause();
   };
 
-  function preloadTop10() {
+  function preloadTop5() {
     try {
       previewWs = new WebSocket(wsUrl());
 
@@ -205,7 +245,7 @@
         try {
           const msg = JSON.parse(e.data);
           if (msg.type === "welcome" && msg.top10) {
-            drawLoginTop10(msg.top10);
+            drawLoginTop5(msg.top10);
             previewWs.close();
           }
         } catch {}
@@ -213,15 +253,15 @@
 
       previewWs.onerror = () => {
         document.getElementById("loginTopRows").innerHTML =
-          `<div class="small" style="text-align:center">Top 10 niet bereikbaar</div>`;
+          `<div class="small" style="text-align:center">Top 5 niet bereikbaar</div>`;
       };
     } catch {
       document.getElementById("loginTopRows").innerHTML =
-        `<div class="small" style="text-align:center">Top 10 niet bereikbaar</div>`;
+        `<div class="small" style="text-align:center">Top 5 niet bereikbaar</div>`;
     }
   }
 
-  function drawLoginTop10(top10) {
+  function drawLoginTop5(top10) {
     const rows = document.getElementById("loginTopRows");
 
     if (!top10 || !top10.length) {
@@ -229,7 +269,7 @@
       return;
     }
 
-    rows.innerHTML = top10.slice(0, 10).map((p, i) => {
+    rows.innerHTML = top10.slice(0, 5).map((p, i) => {
       const king = i === 0;
       return `
         <div class="loginRow ${king ? "king" : ""}">
@@ -242,23 +282,32 @@
   }
 
   async function startAudio() {
-  try {
-    music.volume = 0.42;
+    try {
+      music.volume = 0.42;
 
-    if (!music.src) {
-      music.src = "/Araxos%20Baby.mp3";
+      if (music.paused) {
+        await music.play();
+      }
+
+      musicBtn.textContent = "MUSIC ON";
+    } catch {
+      showToast("Tik nog eens voor muziek");
     }
-
-    if (music.paused) {
-      await music.play();
-    }
-
-    musicBtn.textContent = "MUSIC ON";
-
-  } catch {
-    showToast("Tik nog eens voor muziek");
   }
-}
+
+  function playRoar() {
+    const now = performance.now();
+
+    if (now - lastRoar < 650) return;
+    lastRoar = now;
+
+    try {
+      const r = roar.cloneNode(true);
+      r.volume = 0.75;
+      r.currentTime = 0;
+      r.play().catch(() => {});
+    } catch {}
+  }
 
   function connect(name) {
     running = true;
@@ -285,7 +334,7 @@
 
         if (msg.type === "welcome") {
           myId = msg.id;
-          if (msg.top10) drawLoginTop10(msg.top10);
+          if (msg.top10) drawLoginTop5(msg.top10);
         }
 
         if (msg.type === "state") {
@@ -322,10 +371,7 @@
 
       if (!r) {
         r = JSON.parse(JSON.stringify(p));
-        r.sx = p.x;
-        r.sy = p.y;
-        r.sangle = p.angle || 0;
-        r.sbody = (p.body || []).map(b => ({ x: b.x, y: b.y }));
+        r.target = p;
         renderPlayers.set(p.id, r);
       }
 
@@ -344,15 +390,16 @@
     if (now - lastInput < 40) return;
 
     lastInput = now;
-
     ws.send(JSON.stringify({ type: "input", angle, boost: boosting }));
   }
 
   function loop() {
     if (!running) return;
+
     sendInput();
     smoothPlayers();
     draw();
+
     requestAnimationFrame(loop);
   }
 
@@ -371,16 +418,22 @@
       r.len = t.len;
 
       const tb = t.body || [];
-      if (!r.body) r.body = tb.map(b => ({ x: b.x, y: b.y }));
+
+      if (!r.body) {
+        r.body = tb.map(b => ({ x: b.x, y: b.y }));
+      }
 
       const max = Math.min(r.body.length, tb.length);
+
       for (let i = 0; i < max; i++) {
         r.body[i].x = lerp(r.body[i].x, tb[i].x, 0.25);
         r.body[i].y = lerp(r.body[i].y, tb[i].y, 0.25);
       }
 
       if (tb.length > r.body.length) {
-        for (let i = r.body.length; i < tb.length; i++) r.body.push({ x: tb[i].x, y: tb[i].y });
+        for (let i = r.body.length; i < tb.length; i++) {
+          r.body.push({ x: tb[i].x, y: tb[i].y });
+        }
       }
 
       if (r.body.length > tb.length) r.body.length = tb.length;
@@ -420,10 +473,15 @@
       y2: camera.y + h / camera.zoom / 2 + 160
     };
 
-    for (const f of state.food || []) if (inView(f.x, f.y, view)) drawFlagFood(f);
+    for (const f of state.food || []) {
+      if (inView(f.x, f.y, view)) drawFlagFood(f);
+    }
 
     const players = [...renderPlayers.values()].sort((a, b) => (a.len || 0) - (b.len || 0));
-    for (const p of players) drawTigerDragonSnake(p, view);
+
+    for (const p of players) {
+      drawTigerDragonSnake(p, view);
+    }
 
     ctx.restore();
 
@@ -439,11 +497,17 @@
     ctx.lineWidth = 1;
 
     for (let x = 0; x < WORLD; x += 160) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, WORLD); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, WORLD);
+      ctx.stroke();
     }
 
     for (let y = 0; y < WORLD; y += 160) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD, y); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(WORLD, y);
+      ctx.stroke();
     }
 
     ctx.strokeStyle = "rgba(255,136,0,.78)";
@@ -466,9 +530,9 @@
     if (!p.alive) return;
 
     const body = p.body || [];
+
     ctx.save();
 
-    // Extra volle basislijn onder de bolletjes
     if (body.length > 1) {
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
@@ -476,9 +540,11 @@
       ctx.lineWidth = Math.max(18, p.radius * 1.45);
       ctx.beginPath();
       ctx.moveTo(p.x, p.y);
+
       for (const b of body) {
         if (inView(b.x, b.y, view)) ctx.lineTo(b.x, b.y);
       }
+
       ctx.stroke();
 
       ctx.strokeStyle = "rgba(20,10,0,.95)";
@@ -486,9 +552,11 @@
       ctx.setLineDash([18, 18]);
       ctx.beginPath();
       ctx.moveTo(p.x, p.y);
+
       for (const b of body) {
         if (inView(b.x, b.y, view)) ctx.lineTo(b.x, b.y);
       }
+
       ctx.stroke();
       ctx.setLineDash([]);
     }
@@ -684,16 +752,26 @@
   }
 
   addEventListener("mousemove", e => setDirFromScreen(e.clientX, e.clientY));
-  addEventListener("mousedown", () => boosting = true);
+
+  addEventListener("mousedown", () => {
+    boosting = true;
+    playRoar();
+  });
+
   addEventListener("mouseup", () => boosting = false);
 
   addEventListener("keydown", e => {
     const k = e.key.toLowerCase();
+
     if (k === "w" || k === "arrowup") angle = -Math.PI / 2;
     if (k === "s" || k === "arrowdown") angle = Math.PI / 2;
     if (k === "a" || k === "arrowleft") angle = Math.PI;
     if (k === "d" || k === "arrowright") angle = 0;
-    if (k === " ") boosting = true;
+
+    if (k === " " && !boosting) {
+      boosting = true;
+      playRoar();
+    }
   });
 
   addEventListener("keyup", e => {
@@ -713,15 +791,14 @@
   }, { passive: false });
 
   boost.addEventListener("touchstart", e => {
-  e.preventDefault();
+    e.preventDefault();
+    boosting = true;
+    playRoar();
 
-  boosting = true;
-
-  if (music.paused) {
-    startAudio();
-  }
-
-}, { passive: false });
+    if (musicEnabled && music.paused) {
+      startAudio();
+    }
+  }, { passive: false });
 
   boost.addEventListener("touchend", e => {
     e.preventDefault();
