@@ -30,6 +30,12 @@ button:active{transform:scale(.98)}
 .playerPill{background:#141414;border:1px solid #333;border-radius:999px;padding:6px 9px;font-size:11px;color:#ccc}
 .playerPill.you{border-color:#ff9900;color:white}
 .playerPill.leader{color:#ff9900}
+.lobbyCard{border-color:rgba(255,153,0,.45)}
+.lobbyTop{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.lobbyTitle{color:#ff9900;font-weight:bold;font-size:18px}
+.lobbyMeta{font-size:12px;color:#aaa}
+.lobbyPlayers{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.emptyLobby{color:#777;font-size:13px;text-align:center;padding:10px}
 .phaseBox{text-align:center;background:#101010;border:1px solid #333;border-radius:16px;padding:14px;margin-bottom:12px}
 .phaseBig{font-size:38px;color:#ff9900;font-weight:bold}
 .phaseSmall{font-size:13px;color:#aaa;margin-top:5px}
@@ -57,6 +63,10 @@ button:active{transform:scale(.98)}
 .miniTile{width:34px;height:34px;border-radius:6px;border:1px solid #333;background:#181818;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:bold}
 .scoreList{display:grid;gap:8px}
 .scoreItem{display:flex;justify-content:space-between;align-items:center;background:#111;border:1px solid #333;border-radius:12px;padding:10px;font-size:14px}
+.highscoreItem{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;background:#111;border:1px solid #333;border-radius:12px;padding:10px;font-size:14px}
+.rank{color:#ff9900;font-weight:bold}
+.hsName{font-weight:bold}
+.hsMeta{font-size:12px;color:#aaa;text-align:right}
 .shake{animation:shake .22s}
 @keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}100%{transform:translateX(0)}}
 @media(max-width:390px){
@@ -77,7 +87,23 @@ button:active{transform:scale(.98)}
     <p>1 lobby · leader kiest woord · players racen</p>
   </div>
 
-  <div class="card">
+  <div class="card lobbyCard" onclick="focusJoinCard()">
+    <div class="lobbyTop">
+      <div>
+        <div class="lobbyTitle">ACTIVE LOBBY</div>
+        <div class="lobbyMeta" id="lobbyMeta">Loading lobby...</div>
+      </div>
+      <div class="badge" id="lobbyPhase">WAITING</div>
+    </div>
+
+    <div class="lobbyPlayers" id="lobbyPlayers">
+      <div class="emptyLobby">Nog niemand in lobby...</div>
+    </div>
+
+    <button onclick="focusJoinCard();event.stopPropagation()">JOIN THIS LOBBY</button>
+  </div>
+
+  <div class="card" id="joinCard">
     <label>Naam</label>
     <input id="nameInput" value="JOCHEN" maxlength="18" />
 
@@ -88,8 +114,17 @@ button:active{transform:scale(.98)}
     </select>
 
     <button onclick="joinLobby()">JOIN LOBBY</button>
+    <button class="secondary" onclick="showHighscores()">HIGHSCORES</button>
     <div class="status" id="menuStatus">Connecting...</div>
     <div class="small">Max 4 totaal. Leader kiest een bestaand Engels 5-letter woord.</div>
+  </div>
+
+  <div class="card hidden" id="highscoreCard">
+    <h3 style="color:#ff9900;margin-bottom:10px;">🏆 Highscores</h3>
+    <div class="scoreList" id="highscoreList">
+      <div class="small">Nog geen highscores.</div>
+    </div>
+    <button class="secondary" onclick="hideHighscores()">TERUG</button>
   </div>
 </div>
 
@@ -149,6 +184,8 @@ let guesses = [];
 let maxGuesses = 6;
 let keyboardState = {};
 let lastScoreboard = [];
+let latestLobbyInfo = null;
+let latestHighscores = [];
 
 function connectSocket(){
   socket = new WebSocket(WORKER_WS);
@@ -156,12 +193,15 @@ function connectSocket(){
   socket.onopen = () => {
     socketReady = true;
     setMenuStatus("Connected 🐯");
+    send({type:"getLobbyInfo"});
+    send({type:"getHighscores"});
   };
 
   socket.onclose = () => {
     socketReady = false;
     setStatus("Disconnected.");
     setMenuStatus("Disconnected.");
+    updateLobbyPreview(null);
   };
 
   socket.onerror = () => {
@@ -176,9 +216,31 @@ function connectSocket(){
       myId = data.id;
     }
 
+    if(data.type === "lobbyInfo"){
+      latestLobbyInfo = data;
+      updateLobbyPreview(data);
+    }
+
+    if(data.type === "highscores"){
+      latestHighscores = data.highscores || [];
+      renderHighscores();
+    }
+
     if(data.type === "state"){
       phase = data.phase;
       lastScoreboard = data.scoreboard || [];
+
+      latestLobbyInfo = {
+        type:"lobbyInfo",
+        phase:data.phase,
+        players:data.players || [],
+        playerCount:data.playerCount || 0,
+        hasLeader:data.hasLeader,
+        hasSecret:data.hasSecret,
+        maxPlayersTotal:4
+      };
+
+      updateLobbyPreview(latestLobbyInfo);
       renderState(data);
     }
 
@@ -193,11 +255,13 @@ function connectSocket(){
 
     if(data.type === "secretSet"){
       setStatus(data.message);
+      setMenuStatus(data.message);
     }
 
     if(data.type === "invalidGuess" || data.type === "error"){
       shakeBoard();
       setStatus(data.message);
+      setMenuStatus(data.message);
     }
 
     if(data.type === "guessResult"){
@@ -232,6 +296,77 @@ function send(data){
     return;
   }
   socket.send(JSON.stringify(data));
+}
+
+function focusJoinCard(){
+  document.getElementById("joinCard").scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+function updateLobbyPreview(info){
+  const meta = document.getElementById("lobbyMeta");
+  const phaseEl = document.getElementById("lobbyPhase");
+  const playersEl = document.getElementById("lobbyPlayers");
+
+  if(!info){
+    meta.innerText = "Offline / disconnected";
+    phaseEl.innerText = "OFFLINE";
+    playersEl.innerHTML = `<div class="emptyLobby">Geen connectie met lobby.</div>`;
+    return;
+  }
+
+  const players = info.players || [];
+  const max = info.maxPlayersTotal || 4;
+
+  phaseEl.innerText = String(info.phase || "waiting").toUpperCase();
+  meta.innerText = `${players.length}/${max} joined · ${info.hasSecret ? "word set" : "no word yet"}`;
+
+  if(players.length === 0){
+    playersEl.innerHTML = `<div class="emptyLobby">Nog niemand in lobby...</div>`;
+    return;
+  }
+
+  playersEl.innerHTML = "";
+
+  players.forEach(p=>{
+    playersEl.innerHTML += `
+      <div class="playerPill ${p.role === "leader" ? "leader" : ""}">
+        ${escapeHtml(p.name)} · ${escapeHtml(p.role)}
+      </div>
+    `;
+  });
+}
+
+function showHighscores(){
+  document.getElementById("highscoreCard").classList.remove("hidden");
+  send({type:"getHighscores"});
+  renderHighscores();
+  document.getElementById("highscoreCard").scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+function hideHighscores(){
+  document.getElementById("highscoreCard").classList.add("hidden");
+}
+
+function renderHighscores(){
+  const list = document.getElementById("highscoreList");
+  if(!list) return;
+
+  list.innerHTML = "";
+
+  if(!latestHighscores.length){
+    list.innerHTML = `<div class="small">Nog geen highscores.</div>`;
+    return;
+  }
+
+  latestHighscores.forEach((h,i)=>{
+    list.innerHTML += `
+      <div class="highscoreItem">
+        <div class="rank">#${i+1}</div>
+        <div class="hsName">${escapeHtml(h.name)}</div>
+        <div class="hsMeta">${h.score} pts<br>${h.games} games</div>
+      </div>
+    `;
+  });
 }
 
 document.getElementById("roleSelect").addEventListener("change", e => {
@@ -310,7 +445,7 @@ function renderPlayers(players){
   players.forEach(p=>{
     div.innerHTML += `
       <div class="playerPill ${p.id === myId ? "you" : ""} ${p.role === "leader" ? "leader" : ""}">
-        ${escapeHtml(p.name)} · ${p.role}
+        ${escapeHtml(p.name)} · ${escapeHtml(p.role)}
       </div>
     `;
   });
@@ -516,6 +651,7 @@ function showRoundOver(data){
   showPhase("DONE", "Woord was " + data.secret);
   setStatus("Ronde gedaan.");
   showScorePanel(data.scoreboard || []);
+  send({type:"getHighscores"});
 }
 
 function showScorePanel(scoreboard){
