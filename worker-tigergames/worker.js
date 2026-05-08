@@ -11,10 +11,9 @@ export default {
 
 const WORLD = 4200;
 
-// Smooth settings
 const FOOD_TARGET = 140;
-const TICK_MS = 33;          // server rekent ±30 FPS
-const BROADCAST_MS = 50;    // client krijgt ±20 updates/sec
+const TICK_MS = 33;
+const BROADCAST_MS = 50;
 const MAX_FOOD_SEND = 150;
 const TOP_KEY = "top10_v2";
 
@@ -56,7 +55,7 @@ export class TigerRoom {
     server.send(JSON.stringify({
       type: "welcome",
       id: server.id,
-      game: "Tiger.io",
+      game: "Tigergames Online",
       world: WORLD,
       top10: this.top10
     }));
@@ -70,7 +69,8 @@ export class TigerRoom {
 
     if (msg.type === "join") {
       const name = safeName(msg.name || "Tiger");
-      const p = this.createPlayer(ws.id, name);
+      const nation = safeNation(msg.nation || "OTHER");
+      const p = this.createPlayer(ws.id, name, nation);
 
       this.players.set(ws, p);
       this.inputs.set(ws.id, {
@@ -78,7 +78,10 @@ export class TigerRoom {
         boost: false
       });
 
-      this.broadcast({ type: "event", text: `${name} joined Tiger.io 🐯` });
+      this.broadcast({
+        type: "event",
+        text: `${flagOf(nation)} ${name} joined Tigergames Online 🐯`
+      });
 
       this.ensureLoop();
       this.broadcastState(true);
@@ -101,7 +104,7 @@ export class TigerRoom {
       const old = this.players.get(ws);
       if (!old) return;
 
-      this.players.set(ws, this.createPlayer(old.id, old.name));
+      this.players.set(ws, this.createPlayer(old.id, old.name, old.nation));
       this.inputs.set(old.id, {
         angle: Math.random() * Math.PI * 2,
         boost: false
@@ -115,13 +118,13 @@ export class TigerRoom {
   onClose(ws) {
     const p = this.players.get(ws);
 
-    if (p) this.saveTop(p.name, Math.round(p.score));
+    if (p) this.saveTop(p.name, Math.round(p.score), p.nation);
 
     this.players.delete(ws);
     this.inputs.delete(ws.id);
   }
 
-  createPlayer(id, name) {
+  createPlayer(id, name, nation = "OTHER") {
     const a = Math.random() * Math.PI * 2;
     const x = rand(300, WORLD - 300);
     const y = rand(300, WORLD - 300);
@@ -129,6 +132,7 @@ export class TigerRoom {
     const p = {
       id,
       name,
+      nation: safeNation(nation),
       x,
       y,
       angle: a,
@@ -290,7 +294,7 @@ export class TigerRoom {
       killer.score += 10;
     }
 
-    this.saveTop(dead.name, Math.round(dead.score));
+    this.saveTop(dead.name, Math.round(dead.score), dead.nation);
 
     for (let i = 0; i < dead.body.length; i += 5) {
       const b = dead.body[i];
@@ -303,11 +307,11 @@ export class TigerRoom {
       ));
     }
 
-    let text = `${dead.name} died 💀`;
+    let text = `${flagOf(dead.nation)} ${dead.name} died 💀`;
 
-    if (reason === "self") text = `${dead.name} ate his own tiger tail 🐯`;
-    else if (reason === "border") text = `${dead.name} left the Tiger zone 💀`;
-    else if (killer) text = `${killer.name} destroyed ${dead.name} 🐯`;
+    if (reason === "self") text = `${flagOf(dead.nation)} ${dead.name} ate his own tiger tail 🐯`;
+    else if (reason === "border") text = `${flagOf(dead.nation)} ${dead.name} left the Tiger zone 💀`;
+    else if (killer) text = `${flagOf(killer.nation)} ${killer.name} destroyed ${flagOf(dead.nation)} ${dead.name} 🐯`;
 
     this.broadcast({ type: "event", text });
     this.broadcastState(true);
@@ -332,6 +336,7 @@ export class TigerRoom {
     const players = [...this.players.values()].map(p => ({
       id: p.id,
       name: p.name,
+      nation: p.nation || "OTHER",
       x: Math.round(p.x * 10) / 10,
       y: Math.round(p.y * 10) / 10,
       angle: Math.round(p.angle * 1000) / 1000,
@@ -341,8 +346,6 @@ export class TigerRoom {
       alive: p.alive,
       radius: Math.round(p.radius * 10) / 10,
       len: p.body.length,
-
-      // Minder data, maar genoeg voor smooth dragon-body
       body: p.body
         .filter((_, i) => i % 3 === 0)
         .map(b => ({
@@ -361,7 +364,7 @@ export class TigerRoom {
 
     this.broadcastRaw(JSON.stringify({
       type: "state",
-      game: "Tiger.io",
+      game: "Tigergames Online",
       world: WORLD,
       players,
       food,
@@ -384,33 +387,33 @@ export class TigerRoom {
     }
   }
 
-  async saveTop(name, score) {
-  name = safeName(name);
-  score = Math.round(score);
+  async saveTop(name, score, nation = "OTHER") {
+    name = safeName(name);
+    nation = safeNation(nation);
+    score = Math.round(score);
 
-  if (!score || score < 1) return;
+    if (!score || score < 1) return;
 
-  const existing = this.top10.find(
-    x => safeName(x.name).toLowerCase() === name.toLowerCase()
-  );
+    const existing = this.top10.find(
+      x => safeName(x.name).toLowerCase() === name.toLowerCase()
+    );
 
-  if (existing) {
-    if (score > existing.score) {
-      existing.score = score;
-      existing.at = Date.now();
+    if (existing) {
+      if (score > existing.score) {
+        existing.score = score;
+        existing.nation = nation;
+        existing.at = Date.now();
+      } else if (!existing.nation) {
+        existing.nation = nation;
+      }
+    } else {
+      this.top10.push({
+        name,
+        nation,
+        score,
+        at: Date.now()
+      });
     }
-  } else {
-    this.top10.push({
-      name,
-      score,
-      at: Date.now()
-    });
-  }
-
-  this.top10 = normalizeTop10(this.top10);
-
-  await this.state.storage.put(TOP_KEY, this.top10);
-}
 
     this.top10 = normalizeTop10(this.top10);
 
@@ -430,18 +433,59 @@ function makeFood(x, y, r, v) {
 
 function normalizeTop10(list) {
   const clean = Array.isArray(list) ? list : [];
+  const byName = new Map();
 
-  clean.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+  for (const item of clean) {
+    const name = safeName(item.name || "Tiger");
+    const nation = safeNation(item.nation || "OTHER");
+    const score = Math.round(Number(item.score || 0));
 
-  return clean.slice(0, 10).map(x => ({
-    name: safeName(x.name || "Tiger"),
-    score: Math.round(Number(x.score || 0)),
-    at: Number(x.at || Date.now())
-  }));
+    if (!score) continue;
+
+    const key = name.toLowerCase();
+    const old = byName.get(key);
+
+    if (!old || score > old.score) {
+      byName.set(key, {
+        name,
+        nation,
+        score,
+        at: Number(item.at || Date.now())
+      });
+    }
+  }
+
+  return [...byName.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
 }
 
 function safeName(v) {
   return String(v).replace(/[<>"&]/g, "").trim().slice(0, 16) || "Tiger";
+}
+
+function safeNation(v) {
+  const n = String(v || "OTHER").toUpperCase();
+  const allowed = ["BE", "CZ", "HU", "CH", "IT", "ES", "DE", "GR", "PL", "UK", "OTHER"];
+  return allowed.includes(n) ? n : "OTHER";
+}
+
+function flagOf(nation) {
+  const flags = {
+    BE: "🇧🇪",
+    CZ: "🇨🇿",
+    HU: "🇭🇺",
+    CH: "🇨🇭",
+    IT: "🇮🇹",
+    ES: "🇪🇸",
+    DE: "🇩🇪",
+    GR: "🇬🇷",
+    PL: "🇵🇱",
+    UK: "🇬🇧",
+    OTHER: "🏳️"
+  };
+
+  return flags[safeNation(nation)] || "🏳️";
 }
 
 function rand(a, b) {
