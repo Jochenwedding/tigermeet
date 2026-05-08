@@ -3,116 +3,679 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>TigerGames</title>
+  <title>Tiger.io</title>
+
   <style>
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050505;color:white;font-family:Arial,Helvetica,sans-serif;touch-action:none;user-select:none}body{background:radial-gradient(circle at top,rgba(255,136,0,.24),transparent 38%),linear-gradient(135deg,#050505,#111,#000)}.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}.hidden{display:none!important}.card{width:min(540px,94vw);padding:28px;border-radius:30px;text-align:center;background:linear-gradient(180deg,rgba(25,25,25,.95),rgba(5,5,5,.96));border:1px solid rgba(255,136,0,.55);box-shadow:0 0 55px rgba(255,136,0,.18),0 25px 85px rgba(0,0,0,.8);position:relative;overflow:hidden}.card:before{content:"";position:absolute;inset:-60px;background:repeating-linear-gradient(45deg,transparent 0,transparent 18px,rgba(255,136,0,.07) 18px,rgba(255,136,0,.07) 38px)}.card>*{position:relative}.logo{font-size:62px;filter:drop-shadow(0 0 18px rgba(255,136,0,.8))}h1{margin:4px 0;color:#ff8a00;font-size:clamp(42px,10vw,72px);letter-spacing:2px;text-shadow:0 0 20px rgba(255,136,0,.7)}.tag{color:#ddd;line-height:1.45;margin:10px 0 18px}input{width:100%;padding:17px 18px;border-radius:17px;border:1px solid rgba(255,136,0,.45);background:#111;color:white;font-size:19px;text-align:center;outline:none}input:focus{border-color:#ffc14d;box-shadow:0 0 18px rgba(255,136,0,.28)}button{border:0;border-radius:999px;padding:15px 22px;font-weight:900;color:#111;background:linear-gradient(135deg,#ffd36a,#ff8a00 60%,#ff5700);box-shadow:0 0 22px rgba(255,136,0,.35);cursor:pointer}button:active{transform:scale(.97)}.big{width:100%;font-size:18px;margin-top:14px}.small{font-size:12px;color:#888;margin-top:14px}#gameScreen{position:fixed;inset:0;overflow:hidden;background:#030303}canvas{position:absolute;inset:0;width:100%;height:100%;display:block}.hud{position:absolute;top:10px;left:10px;right:10px;z-index:4;display:flex;justify-content:space-between;gap:10px;pointer-events:none}.box{background:rgba(7,7,7,.76);backdrop-filter:blur(10px);border:1px solid rgba(255,136,0,.32);border-radius:18px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.4)}.mine{min-width:160px}.name{font-size:13px;color:#bbb}.score{font-size:28px;font-weight:900;color:#ffc14d;line-height:1}.meta{font-size:12px;color:#ccc;margin-top:3px}.board{width:min(300px,46vw)}.title{font-size:13px;color:#ff8a00;font-weight:900;margin-bottom:5px}.row{display:grid;grid-template-columns:18px 1fr auto;gap:7px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:12px}.row:last-child{border-bottom:0}.dot{width:11px;height:11px;border-radius:50%;box-shadow:0 0 10px currentColor}.rname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rscore{font-weight:900}.top5{position:absolute;left:10px;bottom:10px;width:min(300px,48vw);z-index:4}.buttons{position:absolute;top:92px;left:10px;z-index:5;display:flex;gap:8px}.buttons button{pointer-events:auto;padding:10px 12px;font-size:12px}.net{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:5;background:rgba(0,0,0,.7);border:1px solid rgba(255,136,0,.4);border-radius:999px;padding:8px 12px;font-size:12px;color:#ddd;pointer-events:none}.controls{position:absolute;inset:0;z-index:5;pointer-events:none}.joy{position:absolute;left:18px;bottom:18px;width:154px;height:154px;border-radius:50%;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.17);pointer-events:auto}.stick{position:absolute;left:50%;top:50%;width:64px;height:64px;margin-left:-32px;margin-top:-32px;border-radius:50%;background:rgba(255,136,0,.86);box-shadow:0 0 26px rgba(255,136,0,.45)}.boost{position:absolute;right:20px;bottom:34px;width:108px;height:108px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#ffe07b,#ff8700);color:#111;font-weight:900;box-shadow:0 0 30px rgba(255,136,0,.45);pointer-events:auto;border:3px solid rgba(255,255,255,.28)}.toast{position:absolute;left:50%;top:54px;transform:translateX(-50%);z-index:7;background:rgba(0,0,0,.75);border:1px solid rgba(255,136,0,.45);border-radius:999px;padding:9px 14px;font-size:13px;color:#eee;opacity:0;transition:.2s opacity;pointer-events:none}.toast.show{opacity:1}@media(max-width:720px){.mine{min-width:135px}.score{font-size:23px}.box{padding:9px}.buttons{top:84px}.top5{width:46vw}.board{width:46vw}.logo{font-size:50px}h1{font-size:42px}}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050505;color:white;font-family:Arial,Helvetica,sans-serif;touch-action:none;user-select:none}
+    body{background:radial-gradient(circle at top,rgba(255,136,0,.28),transparent 38%),linear-gradient(135deg,#050505,#111,#000)}
+    .screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
+    .hidden{display:none!important}
+    .card{width:min(580px,94vw);padding:26px;border-radius:30px;text-align:center;background:linear-gradient(180deg,rgba(25,25,25,.96),rgba(5,5,5,.97));border:1px solid rgba(255,136,0,.58);box-shadow:0 0 65px rgba(255,136,0,.22),0 25px 85px rgba(0,0,0,.82);position:relative;overflow:hidden}
+    .card:before{content:"";position:absolute;inset:-70px;background:repeating-linear-gradient(45deg,transparent 0,transparent 18px,rgba(255,136,0,.08) 18px,rgba(255,136,0,.08) 38px)}
+    .card>*{position:relative}
+    .logo{font-size:64px;filter:drop-shadow(0 0 20px rgba(255,136,0,.85))}
+    h1{margin:4px 0;color:#ff8a00;font-size:clamp(46px,11vw,76px);letter-spacing:2px;text-shadow:0 0 22px rgba(255,136,0,.75)}
+    .tag{color:#ddd;line-height:1.45;margin:10px 0 18px}
+    input{width:100%;padding:17px 18px;border-radius:17px;border:1px solid rgba(255,136,0,.45);background:#111;color:white;font-size:19px;text-align:center;outline:none}
+    input:focus{border-color:#ffc14d;box-shadow:0 0 18px rgba(255,136,0,.28)}
+    button{border:0;border-radius:999px;padding:15px 22px;font-weight:900;color:#111;background:linear-gradient(135deg,#ffd36a,#ff8a00 60%,#ff5700);box-shadow:0 0 22px rgba(255,136,0,.35);cursor:pointer}
+    button:active{transform:scale(.97)}
+    .big{width:100%;font-size:18px;margin-top:14px}
+    .small{font-size:12px;color:#888;margin-top:14px}
+    .loginTop{margin-top:18px;padding:14px;border-radius:20px;background:rgba(0,0,0,.45);border:1px solid rgba(255,136,0,.28);text-align:left}
+    .loginTopTitle{text-align:center;color:#ffb13b;font-weight:900;margin-bottom:8px}
+    .loginRow{display:grid;grid-template-columns:40px 1fr auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px}
+    .loginRow:last-child{border-bottom:0}
+    .king{color:#ffd36a;text-shadow:0 0 12px rgba(255,136,0,.55);font-weight:900}
+    #gameScreen{position:fixed;inset:0;overflow:hidden;background:#030303}
+    canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+    .hud{position:absolute;top:10px;left:10px;right:10px;z-index:4;display:flex;justify-content:space-between;gap:10px;pointer-events:none}
+    .box{background:rgba(7,7,7,.76);backdrop-filter:blur(10px);border:1px solid rgba(255,136,0,.32);border-radius:18px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+    .mine{min-width:160px}
+    .name{font-size:13px;color:#bbb}
+    .score{font-size:28px;font-weight:900;color:#ffc14d;line-height:1}
+    .meta{font-size:12px;color:#ccc;margin-top:3px}
+    .board{width:min(300px,46vw)}
+    .title{font-size:13px;color:#ff8a00;font-weight:900;margin-bottom:5px}
+    .row{display:grid;grid-template-columns:18px 1fr auto;gap:7px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:12px}
+    .row:last-child{border-bottom:0}
+    .dot{width:11px;height:11px;border-radius:50%;box-shadow:0 0 10px currentColor}
+    .rname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .rscore{font-weight:900}
+    .buttons{position:absolute;top:92px;left:10px;z-index:5;display:flex;gap:8px}
+    .buttons button{pointer-events:auto;padding:10px 12px;font-size:12px}
+    .net{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:5;background:rgba(0,0,0,.7);border:1px solid rgba(255,136,0,.4);border-radius:999px;padding:8px 12px;font-size:12px;color:#ddd;pointer-events:none}
+    .controls{position:absolute;inset:0;z-index:5;pointer-events:none}
+    .joy{position:absolute;left:18px;bottom:18px;width:154px;height:154px;border-radius:50%;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.17);pointer-events:auto}
+    .stick{position:absolute;left:50%;top:50%;width:64px;height:64px;margin-left:-32px;margin-top:-32px;border-radius:50%;background:rgba(255,136,0,.86);box-shadow:0 0 26px rgba(255,136,0,.45)}
+    .boost{position:absolute;right:20px;bottom:34px;width:108px;height:108px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#ffe07b,#ff8700);color:#111;font-weight:900;box-shadow:0 0 30px rgba(255,136,0,.45);pointer-events:auto;border:3px solid rgba(255,255,255,.28)}
+    .toast{position:absolute;left:50%;top:54px;transform:translateX(-50%);z-index:7;background:rgba(0,0,0,.75);border:1px solid rgba(255,136,0,.45);border-radius:999px;padding:9px 14px;font-size:13px;color:#eee;opacity:0;transition:.2s opacity;pointer-events:none}
+    .toast.show{opacity:1}
+    @media(max-width:720px){.mine{min-width:135px}.score{font-size:23px}.box{padding:9px}.buttons{top:84px}.board{width:46vw}.logo{font-size:50px}h1{font-size:44px}}
   </style>
 </head>
+
 <body>
   <section id="login" class="screen">
     <div class="card">
       <div class="logo">🐯</div>
-      <h1>TigerGames</h1>
-      <p class="tag">Multiplayer Snake.io voor de tijgers. Log in met uw naam, eet mini-tijgers, pak de resten van dode spelers en word de grootste.</p>
+      <h1>Tiger.io</h1>
+      <p class="tag">Multiplayer tiger-dragon arena. Eet vlaggen, pak resten van dode spelers en word de grootste tijger van Araxos.</p>
+
       <input id="playerName" maxlength="16" placeholder="Naam / callsign" autocomplete="off" />
       <button class="big" id="playBtn">ENTER TIGER ARENA</button>
-      <p class="small">Touchscreen ready: joystick links, boost rechts. Muziek start na klikken/touch.</p>
+
+      <div class="loginTop">
+        <div class="loginTopTitle">🏆 TOP 10 ALL-TIME</div>
+        <div id="loginTopRows">
+          <div class="small" style="text-align:center">Highscores laden...</div>
+        </div>
+      </div>
+
+      <p class="small">Joystick links, boost rechts. Muziek start na klikken/touch.</p>
     </div>
   </section>
 
   <section id="gameScreen" class="hidden">
     <canvas id="game"></canvas>
+
     <div class="net" id="net">connecting...</div>
+
     <div class="hud">
-      <div class="box mine"><div class="name" id="meName">Tiger</div><div class="score" id="meScore">0</div><div class="meta" id="meMeta">Lengte 0</div></div>
-      <div class="box board"><div class="title">🏆 LIVE</div><div id="liveRows"></div></div>
+      <div class="box mine">
+        <div class="name" id="meName">Tiger</div>
+        <div class="score" id="meScore">0</div>
+        <div class="meta" id="meMeta">Lengte 0</div>
+      </div>
+
+      <div class="box board">
+        <div class="title">🏆 LIVE</div>
+        <div id="liveRows"></div>
+      </div>
     </div>
-    <div class="box top5"><div class="title">🔥 TOP 5 ALL-TIME</div><div id="topRows"></div></div>
-    <div class="buttons"><button id="respawnBtn">RESPAWN</button><button id="menuBtn">MENU</button></div>
-    <div class="controls"><div id="joy" class="joy"><div id="stick" class="stick"></div></div><div id="boost" class="boost">BOOST</div></div>
+
+    <div class="buttons">
+      <button id="respawnBtn">RESPAWN</button>
+      <button id="menuBtn">MENU</button>
+    </div>
+
+    <div class="controls">
+      <div id="joy" class="joy"><div id="stick" class="stick"></div></div>
+      <div id="boost" class="boost">BOOST</div>
+    </div>
+
     <div id="toast" class="toast">RAWR</div>
-    <audio id="music" src="/tigergames/araxos%20baby.mp3" preload="auto" loop></audio>
+
+    <audio id="music" src="/Araxos%20Baby.mp3" preload="auto" loop></audio>
   </section>
 
 <script>
 (() => {
-  const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
-  const login=document.getElementById('login'),gameScreen=document.getElementById('gameScreen'),music=document.getElementById('music');
-  const WORLD=4200; let ws=null,myId=null,state=null,running=false,lastInput=0,angle=0,boosting=false,camera={x:WORLD/2,y:WORLD/2,zoom:1};
-  const saved=localStorage.getItem('tigergames_name')||''; document.getElementById('playerName').value=saved;
-  function resize(){canvas.width=innerWidth*devicePixelRatio;canvas.height=innerHeight*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)} addEventListener('resize',resize); resize();
-  document.getElementById('playBtn').onclick=()=>{const name=(document.getElementById('playerName').value.trim()||'Unknown Tiger').slice(0,16);localStorage.setItem('tigergames_name',name);login.classList.add('hidden');gameScreen.classList.remove('hidden');startAudio();connect(name)};
-  document.getElementById('menuBtn').onclick=()=>{running=false;if(ws)ws.close();gameScreen.classList.add('hidden');login.classList.remove('hidden')};
-  document.getElementById('respawnBtn').onclick=()=>{if(ws&&ws.readyState===1)ws.send(JSON.stringify({type:'respawn'}))};
-  function startAudio(){music.volume=.42;music.play().catch(()=>showToast('Tik nog eens voor muziek'))}
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  const login = document.getElementById("login");
+  const gameScreen = document.getElementById("gameScreen");
+  const music = document.getElementById("music");
+
+  const WORLD = 4200;
+
+  let ws = null;
+  let previewWs = null;
+  let myId = null;
+  let state = null;
+  let running = false;
+  let lastInput = 0;
+  let angle = 0;
+  let boosting = false;
+
+  const camera = {
+    x: WORLD / 2,
+    y: WORLD / 2,
+    zoom: 1
+  };
+
+  const saved = localStorage.getItem("tigergames_name") || "";
+  document.getElementById("playerName").value = saved;
+
   function wsUrl() {
-  return "wss://tigermeet-game.jochenmichels.workers.dev";
-}
-  function connect(name){
-  running = true;
-
-  const url = wsUrl();
-  setNet("connecting: " + url);
-  showToast("Connecting websocket...");
-
-  try {
-    ws = new WebSocket(url);
-  } catch(err) {
-    setNet("WS create error: " + err.message);
-    showToast("WS create error");
-    return;
+    return "wss://tigermeet-game.jochenmichels.workers.dev";
   }
 
-  ws.onopen = () => {
-    setNet("ONLINE ✅");
-    showToast("ONLINE ✅");
-    ws.send(JSON.stringify({
-      type: "join",
-      name: name
-    }));
+  function resize() {
+    canvas.width = innerWidth * devicePixelRatio;
+    canvas.height = innerHeight * devicePixelRatio;
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  }
+
+  addEventListener("resize", resize);
+  resize();
+
+  preloadTop10();
+
+  document.getElementById("playBtn").onclick = () => {
+    const name = (document.getElementById("playerName").value.trim() || "Unknown Tiger").slice(0, 16);
+
+    localStorage.setItem("tigergames_name", name);
+
+    if (previewWs) {
+      try { previewWs.close(); } catch {}
+      previewWs = null;
+    }
+
+    login.classList.add("hidden");
+    gameScreen.classList.remove("hidden");
+
+    startAudio();
+    connect(name);
   };
 
-  ws.onmessage = e => {
+  document.getElementById("menuBtn").onclick = () => {
+    running = false;
+    if (ws) ws.close();
+    gameScreen.classList.add("hidden");
+    login.classList.remove("hidden");
+    preloadTop10();
+  };
+
+  document.getElementById("respawnBtn").onclick = () => {
+    if (ws && ws.readyState === 1) {
+      ws.send(JSON.stringify({ type: "respawn" }));
+    }
+  };
+
+  function preloadTop10() {
     try {
-      const msg = JSON.parse(e.data);
+      previewWs = new WebSocket(wsUrl());
 
-      if(msg.type === "welcome") myId = msg.id;
-      if(msg.type === "state") state = msg;
-      if(msg.type === "event") showToast(msg.text);
-    } catch(err) {
-      setNet("MSG parse error: " + err.message);
+      previewWs.onmessage = e => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.type === "welcome" && msg.top10) {
+            drawLoginTop10(msg.top10);
+            previewWs.close();
+          }
+        } catch {}
+      };
+
+      previewWs.onerror = () => {
+        document.getElementById("loginTopRows").innerHTML =
+          `<div class="small" style="text-align:center">Top 10 niet bereikbaar</div>`;
+      };
+    } catch {
+      document.getElementById("loginTopRows").innerHTML =
+        `<div class="small" style="text-align:center">Top 10 niet bereikbaar</div>`;
     }
-  };
+  }
 
-  ws.onerror = err => {
-    setNet("WS ERROR ❌ check backend/binding");
-    showToast("WebSocket error");
-  };
+  function drawLoginTop10(top10) {
+    const rows = document.getElementById("loginTopRows");
 
-  ws.onclose = e => {
-    setNet("OFFLINE ❌ code " + e.code + " reason: " + (e.reason || "none"));
-
-    if(running){
-      setTimeout(() => connect(name), 2500);
+    if (!top10 || !top10.length) {
+      rows.innerHTML = `<div class="small" style="text-align:center">Nog geen highscores. Word de eerste TigerKing.</div>`;
+      return;
     }
-  };
 
-  requestAnimationFrame(loop);
-}
-  function sendInput(){if(!ws||ws.readyState!==1)return;const now=performance.now();if(now-lastInput<45)return;lastInput=now;ws.send(JSON.stringify({type:'input',angle,boost:boosting}))}
-  function loop(){if(!running)return;sendInput();draw();requestAnimationFrame(loop)}
-  function draw(){const w=innerWidth,h=innerHeight;ctx.clearRect(0,0,w,h);if(!state){drawText('Waiting for Tiger server...');return}const me=state.players.find(p=>p.id===myId);if(me){camera.x+=(me.x-camera.x)*.1;camera.y+=(me.y-camera.y)*.1;camera.zoom=Math.max(.62,1.05-(me.len||20)/450)}ctx.save();ctx.translate(w/2,h/2);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-camera.x,-camera.y);drawWorld();for(const f of state.food)drawTigerFood(f);for(const p of [...state.players].sort((a,b)=>a.len-b.len))drawSnake(p);ctx.restore();drawVignette(w,h);updateHud()}
-  function drawWorld(){ctx.fillStyle='#050505';ctx.fillRect(0,0,WORLD,WORLD);ctx.strokeStyle='rgba(255,255,255,.035)';ctx.lineWidth=1;for(let x=0;x<WORLD;x+=120){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD);ctx.stroke()}for(let y=0;y<WORLD;y+=120){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD,y);ctx.stroke()}ctx.strokeStyle='rgba(255,136,0,.75)';ctx.lineWidth=8;ctx.strokeRect(0,0,WORLD,WORLD)}
-  function drawTigerFood(f){ctx.font=`${f.r*3.4}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='#ff8a00';ctx.shadowBlur=10;ctx.fillText('🐯',f.x,f.y);ctx.shadowBlur=0}
-  function drawSnake(p){if(!p.alive)return;ctx.lineCap='round';ctx.lineJoin='round';for(let i=p.body.length-1;i>0;i--){const a=1-i/p.body.length;ctx.strokeStyle=rgba(p.color,.22+a*.7);ctx.lineWidth=Math.max(12,Math.min(48,p.radius*1.8*(.6+a*.55)));ctx.beginPath();ctx.moveTo(p.body[i].x,p.body[i].y);ctx.lineTo(p.body[i-1].x,p.body[i-1].y);ctx.stroke()}ctx.fillStyle=p.color;ctx.shadowColor=p.color;ctx.shadowBlur=22;ctx.beginPath();ctx.arc(p.x,p.y,p.radius*1.15,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.font='bold 13px Arial';ctx.textAlign='center';ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillText(p.name,p.x,p.y-p.radius-14);ctx.fillStyle='#fff';ctx.fillText(p.name,p.x,p.y-p.radius-15)}
-  function updateHud(){const players=[...state.players].filter(p=>p.alive).sort((a,b)=>b.score-a.score);const me=players.find(p=>p.id===myId)||state.players.find(p=>p.id===myId);if(me){document.getElementById('meName').textContent=me.name;document.getElementById('meScore').textContent=Math.round(me.score);document.getElementById('meMeta').textContent=`Lengte ${me.len} · Rank #${Math.max(1,players.findIndex(p=>p.id===myId)+1)}`}document.getElementById('liveRows').innerHTML=players.slice(0,5).map((p,i)=>row(i,p.name,p.score,p.color)).join('');document.getElementById('topRows').innerHTML=(state.top5||[]).slice(0,5).map((p,i)=>row(i,p.name,p.score,'#ffc14d')).join('')}
-  function row(i,n,s,c){return `<div class="row"><span class="dot" style="background:${c};color:${c}"></span><span class="rname">#${i+1} ${esc(n)}</span><span class="rscore">${Math.round(s)}</span></div>`}
-  function drawVignette(w,h){const g=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.25,w/2,h/2,Math.max(w,h)*.72);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.58)');ctx.fillStyle=g;ctx.fillRect(0,0,w,h)}
-  function drawText(t){ctx.fillStyle='#ff8a00';ctx.font='bold 28px Arial';ctx.textAlign='center';ctx.fillText(t,innerWidth/2,innerHeight/2)}
-  function setNet(t){document.getElementById('net').textContent=t}function showToast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(showToast.t);showToast.t=setTimeout(()=>e.classList.remove('show'),1400)}function rgba(hex,a){const h=hex.replace('#','');return `rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`}function esc(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
-  function setDirFromScreen(x,y){const dx=x-innerWidth/2,dy=y-innerHeight/2;angle=Math.atan2(dy,dx)} addEventListener('mousemove',e=>setDirFromScreen(e.clientX,e.clientY));addEventListener('mousedown',()=>boosting=true);addEventListener('mouseup',()=>boosting=false);addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(k==='w'||k==='arrowup')angle=-Math.PI/2;if(k==='s'||k==='arrowdown')angle=Math.PI/2;if(k==='a'||k==='arrowleft')angle=Math.PI;if(k==='d'||k==='arrowright')angle=0;if(k===' ')boosting=true});addEventListener('keyup',e=>{if(e.key===' ')boosting=false});
-  const joy=document.getElementById('joy'),stick=document.getElementById('stick'),boost=document.getElementById('boost');joy.addEventListener('touchstart',joyMove,{passive:false});joy.addEventListener('touchmove',joyMove,{passive:false});joy.addEventListener('touchend',e=>{e.preventDefault();stick.style.transform='translate(0,0)'},{passive:false});boost.addEventListener('touchstart',e=>{e.preventDefault();boosting=true;startAudio()},{passive:false});boost.addEventListener('touchend',e=>{e.preventDefault();boosting=false},{passive:false});document.body.addEventListener('touchstart',startAudio,{passive:true,once:true});
-  function joyMove(e){e.preventDefault();const t=e.changedTouches[0],r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=t.clientX-cx,dy=t.clientY-cy,l=Math.hypot(dx,dy)||1,max=47;if(l>max){dx=dx/l*max;dy=dy/l*max}stick.style.transform=`translate(${dx}px,${dy}px)`;angle=Math.atan2(dy,dx)}
+    rows.innerHTML = top10.slice(0, 10).map((p, i) => {
+      const king = i === 0;
+      return `
+        <div class="loginRow ${king ? "king" : ""}">
+          <span>${i + 1}</span>
+          <span>${king ? "🐯 TigerKing" : esc(p.name)}</span>
+          <b>${Math.round(p.score)}</b>
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function startAudio() {
+    music.volume = 0.42;
+
+    try {
+      music.src = "/Araxos%20Baby.mp3";
+      await music.play();
+    } catch {
+      showToast("Tik nog eens voor muziek");
+    }
+  }
+
+  function connect(name) {
+    running = true;
+
+    setNet("connecting...");
+    showToast("Connecting websocket...");
+
+    try {
+      ws = new WebSocket(wsUrl());
+    } catch (err) {
+      setNet("WS create error");
+      showToast("WS create error");
+      return;
+    }
+
+    ws.onopen = () => {
+      setNet("ONLINE ✅");
+      showToast("ONLINE ✅");
+
+      ws.send(JSON.stringify({
+        type: "join",
+        name
+      }));
+    };
+
+    ws.onmessage = e => {
+      try {
+        const msg = JSON.parse(e.data);
+
+        if (msg.type === "welcome") {
+          myId = msg.id;
+          if (msg.top10) drawLoginTop10(msg.top10);
+        }
+
+        if (msg.type === "state") {
+          state = msg;
+        }
+
+        if (msg.type === "event") {
+          showToast(msg.text);
+        }
+      } catch (err) {
+        setNet("MSG parse error");
+      }
+    };
+
+    ws.onerror = () => {
+      setNet("WS ERROR ❌");
+      showToast("WebSocket error");
+    };
+
+    ws.onclose = e => {
+      setNet("OFFLINE ❌ " + e.code);
+
+      if (running) {
+        setTimeout(() => connect(name), 2500);
+      }
+    };
+
+    requestAnimationFrame(loop);
+  }
+
+  function sendInput() {
+    if (!ws || ws.readyState !== 1) return;
+
+    const now = performance.now();
+
+    if (now - lastInput < 45) return;
+
+    lastInput = now;
+
+    ws.send(JSON.stringify({
+      type: "input",
+      angle,
+      boost: boosting
+    }));
+  }
+
+  function loop() {
+    if (!running) return;
+
+    sendInput();
+    draw();
+
+    requestAnimationFrame(loop);
+  }
+
+  function draw() {
+    const w = innerWidth;
+    const h = innerHeight;
+
+    ctx.clearRect(0, 0, w, h);
+
+    if (!state) {
+      drawText("Waiting for Tiger server...");
+      return;
+    }
+
+    const me = state.players.find(p => p.id === myId);
+
+    if (me) {
+      camera.x += (me.x - camera.x) * 0.13;
+      camera.y += (me.y - camera.y) * 0.13;
+      camera.zoom += (Math.max(0.64, 1.08 - (me.len || 20) / 470) - camera.zoom) * 0.06;
+    }
+
+    ctx.save();
+    ctx.translate(w / 2, h / 2);
+    ctx.scale(camera.zoom, camera.zoom);
+    ctx.translate(-camera.x, -camera.y);
+
+    drawWorld();
+
+    const view = {
+      x1: camera.x - w / camera.zoom / 2 - 120,
+      y1: camera.y - h / camera.zoom / 2 - 120,
+      x2: camera.x + w / camera.zoom / 2 + 120,
+      y2: camera.y + h / camera.zoom / 2 + 120
+    };
+
+    for (const f of state.food) {
+      if (inView(f.x, f.y, view)) drawFlagFood(f);
+    }
+
+    for (const p of [...state.players].sort((a, b) => a.len - b.len)) {
+      drawTigerDragonSnake(p, view);
+    }
+
+    ctx.restore();
+
+    drawVignette(w, h);
+    updateHud();
+  }
+
+  function drawWorld() {
+    ctx.fillStyle = "#050505";
+    ctx.fillRect(0, 0, WORLD, WORLD);
+
+    ctx.strokeStyle = "rgba(255,136,0,.045)";
+    ctx.lineWidth = 1;
+
+    for (let x = 0; x < WORLD; x += 140) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, WORLD);
+      ctx.stroke();
+    }
+
+    for (let y = 0; y < WORLD; y += 140) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(WORLD, y);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = "rgba(255,136,0,.78)";
+    ctx.lineWidth = 9;
+    ctx.strokeRect(0, 0, WORLD, WORLD);
+  }
+
+  function drawFlagFood(f) {
+    ctx.save();
+    ctx.font = `${Math.max(17, f.r * 3.5)}px Arial`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.shadowColor = "#ff8a00";
+    ctx.shadowBlur = 12;
+    ctx.fillText(f.flag || "🏳️", f.x, f.y);
+    ctx.restore();
+  }
+
+  function drawTigerDragonSnake(p, view) {
+    if (!p.alive) return;
+
+    const body = p.body || [];
+
+    ctx.save();
+
+    for (let i = body.length - 1; i >= 0; i--) {
+      const b = body[i];
+      if (!inView(b.x, b.y, view)) continue;
+
+      const t = 1 - i / Math.max(1, body.length);
+      const size = Math.max(9, p.radius * (0.62 + t * 0.58));
+
+      ctx.beginPath();
+      ctx.fillStyle = "#ff8a00";
+      ctx.shadowColor = "rgba(255,136,0,.55)";
+      ctx.shadowBlur = 14;
+      ctx.arc(b.x, b.y, size, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+
+      if (i % 2 === 0) {
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate((i * 0.75) + (p.angle || 0));
+
+        ctx.fillStyle = "#070707";
+        ctx.fillRect(-size * 0.72, -size * 0.16, size * 1.42, size * 0.26);
+
+        ctx.fillStyle = "rgba(255,220,80,.75)";
+        ctx.fillRect(-size * 0.34, size * 0.18, size * 0.68, size * 0.12);
+
+        ctx.restore();
+      }
+    }
+
+    drawTigerHead(p);
+    drawName(p);
+
+    ctx.restore();
+  }
+
+  function drawTigerHead(p) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.angle || 0);
+
+    const r = p.radius;
+
+    ctx.shadowColor = "#ff8a00";
+    ctx.shadowBlur = 22;
+
+    ctx.fillStyle = "#ff8a00";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r * 1.6, r * 1.08, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = "#050505";
+
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.25, -r * 0.92);
+    ctx.lineTo(-r * 0.85, -r * 1.68);
+    ctx.lineTo(r * 0.22, -r * 1.0);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.25, r * 0.92);
+    ctx.lineTo(-r * 0.85, r * 1.68);
+    ctx.lineTo(r * 0.22, r * 1.0);
+    ctx.fill();
+
+    ctx.fillRect(-r * 0.65, -r * 0.82, r * 0.24, r * 1.64);
+    ctx.fillRect(-r * 0.12, -r * 0.95, r * 0.23, r * 1.9);
+    ctx.fillRect(r * 0.42, -r * 0.78, r * 0.18, r * 1.56);
+
+    ctx.fillStyle = "#fff0c2";
+    ctx.beginPath();
+    ctx.ellipse(r * 0.95, 0, r * 0.55, r * 0.42, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#00ffd5";
+    ctx.shadowColor = "#00ffd5";
+    ctx.shadowBlur = 9;
+    ctx.beginPath();
+    ctx.arc(r * 0.58, -r * 0.38, 3.7, 0, Math.PI * 2);
+    ctx.arc(r * 0.58, r * 0.38, 3.7, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.arc(r * 1.34, 0, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(255,255,255,.85)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(r * 1.05, -r * 0.18);
+    ctx.lineTo(r * 1.55, -r * 0.62);
+    ctx.moveTo(r * 1.05, r * 0.18);
+    ctx.lineTo(r * 1.55, r * 0.62);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawName(p) {
+    ctx.font = "bold 13px Arial";
+    ctx.textAlign = "center";
+
+    ctx.fillStyle = "rgba(0,0,0,.8)";
+    ctx.fillText(p.name, p.x, p.y - p.radius - 16);
+
+    ctx.fillStyle = "#fff";
+    ctx.fillText(p.name, p.x, p.y - p.radius - 17);
+  }
+
+  function updateHud() {
+    const players = [...state.players].filter(p => p.alive).sort((a, b) => b.score - a.score);
+    const me = players.find(p => p.id === myId) || state.players.find(p => p.id === myId);
+
+    if (me) {
+      document.getElementById("meName").textContent = me.name;
+      document.getElementById("meScore").textContent = Math.round(me.score);
+
+      const rank = players.findIndex(p => p.id === myId) + 1;
+      document.getElementById("meMeta").textContent = `Lengte ${me.len} · Rank #${rank > 0 ? rank : "-"}`;
+    }
+
+    document.getElementById("liveRows").innerHTML =
+      players.slice(0, 5).map((p, i) => row(i, p.name, p.score, p.color)).join("");
+  }
+
+  function row(i, n, s, c) {
+    return `
+      <div class="row">
+        <span class="dot" style="background:${c};color:${c}"></span>
+        <span class="rname">#${i + 1} ${esc(n)}</span>
+        <span class="rscore">${Math.round(s)}</span>
+      </div>
+    `;
+  }
+
+  function drawVignette(w, h) {
+    const g = ctx.createRadialGradient(
+      w / 2, h / 2, Math.min(w, h) * 0.25,
+      w / 2, h / 2, Math.max(w, h) * 0.72
+    );
+
+    g.addColorStop(0, "rgba(0,0,0,0)");
+    g.addColorStop(1, "rgba(0,0,0,.58)");
+
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  function drawText(t) {
+    ctx.fillStyle = "#ff8a00";
+    ctx.font = "bold 28px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(t, innerWidth / 2, innerHeight / 2);
+  }
+
+  function inView(x, y, v) {
+    return x >= v.x1 && x <= v.x2 && y >= v.y1 && y <= v.y2;
+  }
+
+  function setNet(t) {
+    document.getElementById("net").textContent = t;
+  }
+
+  function showToast(t) {
+    const e = document.getElementById("toast");
+    e.textContent = t;
+    e.classList.add("show");
+
+    clearTimeout(showToast.t);
+    showToast.t = setTimeout(() => e.classList.remove("show"), 1400);
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, m => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;"
+    }[m]));
+  }
+
+  function setDirFromScreen(x, y) {
+    const dx = x - innerWidth / 2;
+    const dy = y - innerHeight / 2;
+    angle = Math.atan2(dy, dx);
+  }
+
+  addEventListener("mousemove", e => setDirFromScreen(e.clientX, e.clientY));
+  addEventListener("mousedown", () => boosting = true);
+  addEventListener("mouseup", () => boosting = false);
+
+  addEventListener("keydown", e => {
+    const k = e.key.toLowerCase();
+
+    if (k === "w" || k === "arrowup") angle = -Math.PI / 2;
+    if (k === "s" || k === "arrowdown") angle = Math.PI / 2;
+    if (k === "a" || k === "arrowleft") angle = Math.PI;
+    if (k === "d" || k === "arrowright") angle = 0;
+    if (k === " ") boosting = true;
+  });
+
+  addEventListener("keyup", e => {
+    if (e.key === " ") boosting = false;
+  });
+
+  const joy = document.getElementById("joy");
+  const stick = document.getElementById("stick");
+  const boost = document.getElementById("boost");
+
+  joy.addEventListener("touchstart", joyMove, { passive: false });
+  joy.addEventListener("touchmove", joyMove, { passive: false });
+
+  joy.addEventListener("touchend", e => {
+    e.preventDefault();
+    stick.style.transform = "translate(0,0)";
+  }, { passive: false });
+
+  boost.addEventListener("touchstart", e => {
+    e.preventDefault();
+    boosting = true;
+    startAudio();
+  }, { passive: false });
+
+  boost.addEventListener("touchend", e => {
+    e.preventDefault();
+    boosting = false;
+  }, { passive: false });
+
+  document.body.addEventListener("touchstart", startAudio, { passive: true, once: true });
+
+  function joyMove(e) {
+    e.preventDefault();
+
+    const t = e.changedTouches[0];
+    const r = joy.getBoundingClientRect();
+
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+
+    let dx = t.clientX - cx;
+    let dy = t.clientY - cy;
+
+    const l = Math.hypot(dx, dy) || 1;
+    const max = 47;
+
+    if (l > max) {
+      dx = dx / l * max;
+      dy = dy / l * max;
+    }
+
+    stick.style.transform = `translate(${dx}px,${dy}px)`;
+    angle = Math.atan2(dy, dx);
+  }
 })();
 </script>
 </body>
