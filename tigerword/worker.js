@@ -2319,7 +2319,9 @@ export default {
       return room.fetch(request);
     }
 
-    return new Response("TigerWord Worker Running 🐯");
+    return new Response("TigerWord Worker Running 🐯", {
+      headers: { "content-type": "text/plain;charset=UTF-8" }
+    });
   }
 };
 
@@ -2329,19 +2331,23 @@ export class TigerWordRoom {
     this.env = env;
     this.sessions = new Map();
     this.highscores = {};
+    this.game = this.defaultGame();
 
     this.state.blockConcurrencyWhile(async () => {
       this.highscores = await this.state.storage.get("highscores") || {};
     });
+  }
 
-    this.game = {
+  defaultGame() {
+    return {
       phase: "waiting",
       leaderId: null,
       secret: null,
       players: {},
       countdown: 0,
       finishOrder: [],
-      maxPlayersTotal: 4
+      maxPlayersTotal: 4,
+      maxPlayersOnly: 3
     };
   }
 
@@ -2365,24 +2371,31 @@ export class TigerWordRoom {
   handleSession(ws) {
     ws.accept();
 
-    const id = crypto.randomUUID();
-
     const session = {
-      id,
+      id: crypto.randomUUID(),
       ws,
       name: "Unknown",
       role: "player",
       joined: false
     };
 
-    this.sessions.set(id, session);
+    this.sessions.set(session.id, session);
 
-    this.send(ws, { type: "connected", id, phase: this.game.phase });
+    this.send(ws, {
+      type: "connected",
+      id: session.id,
+      phase: this.game.phase
+    });
+
     this.send(ws, this.getLobbyInfo());
-    this.send(ws, { type: "highscores", highscores: this.getHighscores() });
+    this.send(ws, {
+      type: "highscores",
+      highscores: this.getHighscores()
+    });
 
-    ws.addEventListener("message", (event) => {
+    ws.addEventListener("message", event => {
       let data;
+
       try {
         data = JSON.parse(event.data);
       } catch {
@@ -2390,6 +2403,7 @@ export class TigerWordRoom {
       }
 
       if (data.type === "join") this.join(session, data);
+      if (data.type === "leave") this.leave(session);
       if (data.type === "setSecret") this.setSecret(session, data.word);
       if (data.type === "startGame") this.startGame(session);
       if (data.type === "typing") this.handleTyping(session, data.value);
@@ -2406,6 +2420,13 @@ export class TigerWordRoom {
           highscores: this.getHighscores()
         });
       }
+
+      if (data.type === "ping") {
+        this.send(session.ws, {
+          type: "pong",
+          time: Date.now()
+        });
+      }
     });
 
     ws.addEventListener("close", () => {
@@ -2414,15 +2435,8 @@ export class TigerWordRoom {
   }
 
   join(session, data) {
-    const joinedCount = [...this.sessions.values()].filter(s => s.joined).length;
-
-    if (!session.joined && joinedCount >= this.game.maxPlayersTotal) {
-      this.send(session.ws, {
-        type: "error",
-        message: "Lobby zit vol. Max 4 totaal."
-      });
-      return;
-    }
+    const joinedSessions = this.getJoinedSessions();
+    const alreadyJoined = session.joined;
 
     let role = data.role === "leader" ? "leader" : "player";
 
@@ -2430,13 +2444,35 @@ export class TigerWordRoom {
       role = "player";
     }
 
-    session.name = String(data.name || "Player").slice(0, 18);
+    const totalJoined = joinedSessions.length;
+    const playerCount = Object.keys(this.game.players).length;
+
+    if (!alreadyJoined && totalJoined >= this.game.maxPlayersTotal) {
+      return this.send(session.ws, {
+        type: "error",
+        message: "Lobby zit vol. Max 4 totaal."
+      });
+    }
+
+    if (!alreadyJoined && role === "player" && playerCount >= this.game.maxPlayersOnly) {
+      return this.send(session.ws, {
+        type: "error",
+        message: "Player slots vol. Max 3 players."
+      });
+    }
+
+    session.name = String(data.name || "Player").trim().slice(0, 18) || "Player";
     session.role = role;
     session.joined = true;
 
     if (role === "leader") {
       this.game.leaderId = session.id;
       delete this.game.players[session.id];
+
+      this.broadcast({
+        type: "event",
+        message: `${session.name} is leader geworden.`
+      });
     }
 
     if (role === "player") {
@@ -2448,11 +2484,17 @@ export class TigerWordRoom {
           current: "",
           solved: false,
           score: 0,
-          lastResult: null
+          lastResult: null,
+          countedGame: false
         };
       } else {
         this.game.players[session.id].name = session.name;
       }
+
+      this.broadcast({
+        type: "event",
+        message: `${session.name} joined als player.`
+      });
     }
 
     this.broadcastState();
@@ -2460,17 +2502,26 @@ export class TigerWordRoom {
 
   setSecret(session, word) {
     if (session.id !== this.game.leaderId) {
-      return this.send(session.ws, { type: "error", message: "Alleen leader mag woord kiezen." });
+      return this.send(session.ws, {
+        type: "error",
+        message: "Alleen leader mag woord kiezen."
+      });
     }
 
     if (this.game.phase !== "waiting" && this.game.phase !== "roundover") {
-      return this.send(session.ws, { type: "error", message: "Kan nu geen woord aanpassen." });
+      return this.send(session.ws, {
+        type: "error",
+        message: "Kan nu geen woord aanpassen."
+      });
     }
 
     word = String(word || "").trim().toUpperCase();
 
     if (word.length !== 5 || !WORDS.has(word)) {
-      return this.send(session.ws, { type: "error", message: "Secret word moet een bestaand Engels 5-letter woord zijn." });
+      return this.send(session.ws, {
+        type: "error",
+        message: "Secret word moet een bestaand Engels 5-letter woord zijn."
+      });
     }
 
     this.game.secret = word;
@@ -2485,29 +2536,44 @@ export class TigerWordRoom {
 
   startGame(session) {
     if (session.id !== this.game.leaderId) {
-      return this.send(session.ws, { type: "error", message: "Alleen leader kan starten." });
+      return this.send(session.ws, {
+        type: "error",
+        message: "Alleen leader kan starten."
+      });
     }
 
-    const playerCount = Object.keys(this.game.players).length;
+    const players = Object.values(this.game.players);
 
     if (!this.game.secret) {
-      return this.send(session.ws, { type: "error", message: "Kies eerst een geldig secret word." });
+      return this.send(session.ws, {
+        type: "error",
+        message: "Kies eerst een geldig secret word."
+      });
     }
 
-    if (playerCount < 1) {
-      return this.send(session.ws, { type: "error", message: "Wacht tot minstens 1 player joined." });
+    if (players.length < 1) {
+      return this.send(session.ws, {
+        type: "error",
+        message: "Wacht tot minstens 1 player joined."
+      });
     }
 
     this.game.phase = "countdown";
     this.game.countdown = 5;
     this.game.finishOrder = [];
 
-    for (const p of Object.values(this.game.players)) {
+    for (const p of players) {
       p.guesses = [];
       p.current = "";
       p.solved = false;
       p.lastResult = null;
+      p.countedGame = false;
     }
+
+    this.broadcast({
+      type: "event",
+      message: "Ronde start. Countdown loopt."
+    });
 
     this.broadcastState();
 
@@ -2521,7 +2587,12 @@ export class TigerWordRoom {
 
       if (this.game.countdown <= 0) {
         this.game.phase = "playing";
-        this.broadcast({ type: "go", message: "GO!" });
+
+        this.broadcast({
+          type: "go",
+          message: "GO!"
+        });
+
         this.broadcastState();
         return;
       }
@@ -2550,7 +2621,10 @@ export class TigerWordRoom {
 
   handleGuess(session, guess) {
     if (this.game.phase !== "playing") {
-      return this.send(session.ws, { type: "error", message: "Game is nog niet gestart." });
+      return this.send(session.ws, {
+        type: "error",
+        message: "Game is nog niet gestart."
+      });
     }
 
     if (session.role !== "player") return;
@@ -2576,9 +2650,16 @@ export class TigerWordRoom {
 
     const result = this.evaluateGuess(guess, this.game.secret);
 
-    player.guesses.push({ word: guess, result });
+    player.guesses.push({
+      word: guess,
+      result
+    });
+
     player.current = "";
-    player.lastResult = { word: guess, result };
+    player.lastResult = {
+      word: guess,
+      result
+    };
 
     const solved = guess === this.game.secret;
 
@@ -2590,13 +2671,22 @@ export class TigerWordRoom {
       const points = place === 1 ? 500 : place === 2 ? 300 : place === 3 ? 150 : 75;
 
       player.score += points;
-      this.addHighscore(player.name, points, false);
+
+      if (!player.countedGame) {
+        player.countedGame = true;
+        this.addHighscore(player.name, points, true);
+      } else {
+        this.addHighscore(player.name, points, false);
+      }
 
       this.broadcast({
         type: "playerSolved",
+        id: player.id,
         name: player.name,
         place,
-        points
+        points,
+        score: player.score,
+        message: `${player.name} heeft het woord geraden. #${place} +${points} punten.`
       });
     }
 
@@ -2617,34 +2707,39 @@ export class TigerWordRoom {
     if (!players.length) return;
 
     const everyoneDone = players.every(p => p.solved || p.guesses.length >= 6);
+    if (!everyoneDone) return;
 
-    if (everyoneDone) {
-      for (const p of players) {
+    for (const p of players) {
+      if (!p.countedGame) {
+        p.countedGame = true;
         this.addHighscore(p.name, 0, true);
       }
-
-      this.game.phase = "roundover";
-
-      if (this.game.finishOrder.length === 0) {
-        this.broadcast({
-          type: "leaderWin",
-          message: "Niemand heeft het geraden. Leader wint deze ronde."
-        });
-      }
-
-      this.broadcast({
-        type: "roundOver",
-        secret: this.game.secret,
-        scoreboard: this.getScoreboard()
-      });
-
-      this.broadcastState();
     }
+
+    this.game.phase = "roundover";
+
+    if (this.game.finishOrder.length === 0) {
+      this.broadcast({
+        type: "leaderWin",
+        message: "Niemand heeft het geraden. Leader wint deze ronde."
+      });
+    }
+
+    this.broadcast({
+      type: "roundOver",
+      secret: this.game.secret,
+      scoreboard: this.getScoreboard()
+    });
+
+    this.broadcastState();
   }
 
   newRound(session) {
     if (session.id !== this.game.leaderId) {
-      return this.send(session.ws, { type: "error", message: "Alleen leader kan nieuwe ronde starten." });
+      return this.send(session.ws, {
+        type: "error",
+        message: "Alleen leader kan nieuwe ronde starten."
+      });
     }
 
     this.game.phase = "waiting";
@@ -2657,16 +2752,27 @@ export class TigerWordRoom {
       p.current = "";
       p.solved = false;
       p.lastResult = null;
+      p.countedGame = false;
     }
 
-    this.broadcast({ type: "newRound" });
+    this.broadcast({
+      type: "newRound",
+      message: "Nieuwe ronde."
+    });
+
     this.broadcastState();
   }
 
   leave(session) {
+    if (!this.sessions.has(session.id)) return;
+
+    const wasJoined = session.joined;
+    const wasLeader = session.id === this.game.leaderId;
+    const oldName = session.name;
+
     this.sessions.delete(session.id);
 
-    if (session.id === this.game.leaderId) {
+    if (wasLeader) {
       this.game.leaderId = null;
       this.game.secret = null;
       this.game.phase = "waiting";
@@ -2674,15 +2780,19 @@ export class TigerWordRoom {
 
     delete this.game.players[session.id];
 
-    const joinedLeft = [...this.sessions.values()].filter(s => s.joined);
+    const joinedLeft = this.getJoinedSessions();
 
     if (joinedLeft.length === 0) {
-      this.game.phase = "waiting";
-      this.game.leaderId = null;
-      this.game.secret = null;
-      this.game.players = {};
-      this.game.countdown = 0;
-      this.game.finishOrder = [];
+      this.game = this.defaultGame();
+      this.broadcastState();
+      return;
+    }
+
+    if (wasJoined) {
+      this.broadcast({
+        type: "event",
+        message: `${oldName} heeft de lobby verlaten.`
+      });
     }
 
     this.broadcastState();
@@ -2703,6 +2813,7 @@ export class TigerWordRoom {
       if (result[i] === "correct") continue;
 
       const index = secretLetters.indexOf(guess[i]);
+
       if (index !== -1) {
         result[i] = "present";
         secretLetters[index] = null;
@@ -2712,19 +2823,22 @@ export class TigerWordRoom {
     return result;
   }
 
+  getJoinedSessions() {
+    return [...this.sessions.values()].filter(s => s.joined);
+  }
+
   getPublicPlayers() {
-    return [...this.sessions.values()]
-      .filter(s => s.joined)
-      .map(s => ({
-        id: s.id,
-        name: s.name,
-        role: s.role
-      }));
+    return this.getJoinedSessions().map(s => ({
+      id: s.id,
+      name: s.name,
+      role: s.role
+    }));
   }
 
   getScoreboard() {
     return Object.values(this.game.players)
       .map(p => ({
+        id: p.id,
         name: p.name,
         score: p.score,
         solved: p.solved,
@@ -2745,9 +2859,10 @@ export class TigerWordRoom {
       totalJoined: joinedPlayers.length,
       hasLeader: !!this.game.leaderId,
       leaderAvailable: !this.game.leaderId,
-      playerSlotsAvailable: joinedPlayers.length < this.game.maxPlayersTotal,
+      playerSlotsAvailable: Object.keys(this.game.players).length < this.game.maxPlayersOnly,
       hasSecret: !!this.game.secret,
-      maxPlayersTotal: this.game.maxPlayersTotal
+      maxPlayersTotal: this.game.maxPlayersTotal,
+      maxPlayersOnly: this.game.maxPlayersOnly
     };
   }
 
@@ -2757,7 +2872,7 @@ export class TigerWordRoom {
       .slice(0, 20);
   }
 
-  addHighscore(name, points, gamePlayed) {
+  async addHighscore(name, points, gamePlayed) {
     const key = String(name || "UNKNOWN").toUpperCase();
 
     if (!this.highscores[key]) {
@@ -2774,7 +2889,7 @@ export class TigerWordRoom {
       this.highscores[key].games += 1;
     }
 
-    this.state.storage.put("highscores", this.highscores);
+    await this.state.storage.put("highscores", this.highscores);
 
     this.broadcast({
       type: "highscores",
@@ -2783,21 +2898,25 @@ export class TigerWordRoom {
   }
 
   broadcastState() {
-    const publicState = {
+    const publicPlayers = this.getPublicPlayers();
+
+    const state = {
       type: "state",
       phase: this.game.phase,
-      players: this.getPublicPlayers(),
+      players: publicPlayers,
       playerCount: Object.keys(this.game.players).length,
-      totalJoined: this.getPublicPlayers().length,
+      totalJoined: publicPlayers.length,
       hasLeader: !!this.game.leaderId,
       leaderAvailable: !this.game.leaderId,
-      playerSlotsAvailable: this.getPublicPlayers().length < this.game.maxPlayersTotal,
+      playerSlotsAvailable: Object.keys(this.game.players).length < this.game.maxPlayersOnly,
       hasSecret: !!this.game.secret,
       countdown: this.game.countdown,
-      scoreboard: this.getScoreboard()
+      scoreboard: this.getScoreboard(),
+      maxPlayersTotal: this.game.maxPlayersTotal,
+      maxPlayersOnly: this.game.maxPlayersOnly
     };
 
-    this.broadcast(publicState);
+    this.broadcast(state);
     this.broadcast(this.getLobbyInfo());
     this.broadcastLeader();
   }
@@ -2812,6 +2931,7 @@ export class TigerWordRoom {
       type: "leaderView",
       secret: this.game.secret,
       players: Object.values(this.game.players).map(p => ({
+        id: p.id,
         name: p.name,
         current: p.current,
         guesses: p.guesses,
