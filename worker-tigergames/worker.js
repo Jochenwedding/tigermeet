@@ -1,17 +1,20 @@
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
     const id = env.TIGER_ROOM.idFromName("main-arena");
     return env.TIGER_ROOM.get(id).fetch(request);
   }
 };
 
 const WORLD = 4200;
-const FOOD_TARGET = 220;
-const MAX_FOOD = 700;
+
+const FOOD_TARGET = 280;
+const MAX_FOOD = 1000;
 const TICK_MS = 33;
 const BROADCAST_MS = 50;
-const MAX_FOOD_SEND = 220;
+const MAX_FOOD_SEND = 260;
+
+const BOOST_DURATION_MS = 3000;
+const BOOST_COOLDOWN_MS = 15000;
 
 const TOP_KEY = "top10_v2";
 const BESTS_KEY = "player_bests_v1";
@@ -21,7 +24,27 @@ const ATTEMPTS_KEY = "login_attempts_v1";
 const LEMMEGO_NAME = "lemmego";
 const BOT_REWARD = 500;
 
-const COLORS = ["#ff8a00", "#ffb000", "#ff6a00", "#d96b00", "#ff3b30", "#ffe14a"];
+const HUMAN_COLORS = [
+  "#ff8a00",
+  "#ffb000",
+  "#ff3b30",
+  "#2f80ff",
+  "#34c759",
+  "#ffcc00",
+  "#af52de",
+  "#ff5e99",
+  "#00c2a8",
+  "#f2994a"
+];
+
+const BOT_COLORS = [
+  "#00e5ff",
+  "#b14cff",
+  "#00ff88",
+  "#ff4fd8",
+  "#4dff4d",
+  "#fffb00"
+];
 
 const FLAGS = [
   "🇧🇪", "🇨🇿", "🇵🇱", "🇩🇪", "🇭🇺", "🇨🇭",
@@ -33,7 +56,7 @@ const DEFAULT_BOTS = [
   { name: "Goose", color: "#b14cff" },
   { name: "Iceman", color: "#00ff88" },
   { name: "Rooster", color: "#ff4fd8" },
-  { name: "Hangman", color: "#4dff4d" }
+  { name: "Hangman", color: "#fffb00" }
 ];
 
 export class TigerRoom {
@@ -49,6 +72,7 @@ export class TigerRoom {
     this.lastTick = Date.now();
     this.lastBroadcast = 0;
     this.tickHandle = null;
+    this.colorIndex = 0;
 
     this.top10 = [];
     this.playerBests = [];
@@ -125,24 +149,23 @@ export class TigerRoom {
       return json({ ok: false, error: "Unauthorized tiger move" }, 401);
     }
 
-    const online = this.allPlayers().map(p => ({
-      name: p.name,
-      nation: p.nation,
-      flag: flagOf(p.nation),
-      score: Math.round(p.score || 0),
-      alive: !!p.alive,
-      bot: !!p.autoPilot,
-      npc: !!p.npc,
-      len: p.body ? p.body.length : 0
-    })).sort((a, b) => b.score - a.score);
-
     return json({
       ok: true,
       game: "Tigergames Online",
       now: Date.now(),
       onlineCount: this.players.size,
       botCount: this.bots.size,
-      online,
+      online: this.allPlayers().map(p => ({
+        name: p.name,
+        nation: p.nation,
+        flag: flagOf(p.nation),
+        score: Math.round(p.score || 0),
+        alive: !!p.alive,
+        bot: !!p.autoPilot,
+        npc: !!p.npc,
+        boostReady: Date.now() >= Number(p.boostCooldownUntil || 0),
+        len: p.body ? p.body.length : 0
+      })).sort((a, b) => b.score - a.score),
       top10: this.top10,
       countryTop3: this.countryTop3(),
       knownPlayers: this.knownPlayers.slice(0, 200),
@@ -185,7 +208,7 @@ export class TigerRoom {
       this.broadcast({
         type: "event",
         text: isLemmego
-          ? `🤖 ${flagOf(nation)} ${name} entered AUTOPILOT mode. Kill him for +500 🐯`
+          ? `🤖 ${flagOf(nation)} ${name} entered AUTOPILOT. Kill = +500 for humans only 🐯`
           : `${flagOf(nation)} ${name} joined Tigergames Online 🐯`
       });
 
@@ -252,8 +275,8 @@ export class TigerRoom {
       if (!this.bots.has(id)) {
         const bot = this.createPlayer(id, cfg.name, "US", true, true);
         bot.color = cfg.color;
-        bot.skin = "topgunBot";
-        bot.score = 40;
+        bot.skin = "rainbowBot";
+        bot.score = 45;
         this.bots.set(id, bot);
       }
     }
@@ -307,8 +330,8 @@ export class TigerRoom {
 
   createPlayer(id, name, nation = "OTHER", autoPilot = false, npc = false) {
     const a = Math.random() * Math.PI * 2;
-    const x = rand(350, WORLD - 350);
-    const y = rand(350, WORLD - 350);
+    const x = rand(450, WORLD - 450);
+    const y = rand(450, WORLD - 450);
 
     const p = {
       id,
@@ -317,14 +340,18 @@ export class TigerRoom {
       x,
       y,
       angle: a,
-      color: autoPilot ? "#00e5ff" : COLORS[Math.floor(Math.random() * COLORS.length)],
-      skin: autoPilot ? "bot" : "tigerDragon",
+      color: autoPilot
+        ? BOT_COLORS[Math.floor(Math.random() * BOT_COLORS.length)]
+        : HUMAN_COLORS[(this.colorIndex++) % HUMAN_COLORS.length],
+      skin: autoPilot ? "rainbowBot" : "tigerDragon",
       score: 0,
       alive: true,
       body: [],
       radius: 13,
       autoPilot,
-      npc
+      npc,
+      boostActiveUntil: 0,
+      boostCooldownUntil: 0
     };
 
     for (let i = 0; i < 20; i++) {
@@ -345,9 +372,7 @@ export class TigerRoom {
     this.lastTick = Date.now();
     this.lastBroadcast = 0;
 
-    this.tickHandle = setInterval(() => {
-      this.tick();
-    }, TICK_MS);
+    this.tickHandle = setInterval(() => this.tick(), TICK_MS);
   }
 
   tick() {
@@ -361,7 +386,7 @@ export class TigerRoom {
 
     for (const p of this.allPlayers()) {
       if (p.alive) {
-        this.updatePlayer(p, dt);
+        this.updatePlayer(p, dt, now);
       }
     }
 
@@ -374,7 +399,7 @@ export class TigerRoom {
     }
   }
 
-  updatePlayer(p, dt) {
+  updatePlayer(p, dt, now) {
     let input = this.inputs.get(p.id) || {
       angle: p.angle,
       boost: false
@@ -384,7 +409,11 @@ export class TigerRoom {
       input = this.getBotInput(p);
     }
 
-    p.angle += angleDiff(p.angle, input.angle) * Math.min(1, dt * 11.5);
+    // Geen instant U-turns meer.
+    const turnRate = p.autoPilot ? 3.45 : 3.8;
+    const maxTurn = turnRate * dt;
+    const diff = angleDiff(p.angle, input.angle);
+    p.angle += clamp(diff, -maxTurn, maxTurn);
 
     const len = p.body.length || 20;
     const sizeSlowdown = Math.min(95, Math.log(len / 20 + 1) * 58);
@@ -392,10 +421,15 @@ export class TigerRoom {
     const baseSpeed = Math.max(115, 270 - sizeSlowdown);
     const boostBonus = Math.max(65, 145 - sizeSlowdown * 0.45);
 
-    const canBoost = input.boost && len > 28;
-    const speed = baseSpeed + (canBoost ? boostBonus : 0);
+    if (input.boost && len > 28 && now >= Number(p.boostCooldownUntil || 0)) {
+      p.boostActiveUntil = now + BOOST_DURATION_MS;
+      p.boostCooldownUntil = now + BOOST_DURATION_MS + BOOST_COOLDOWN_MS;
+    }
 
-    if (canBoost && Math.random() < 0.22) {
+    const boostActive = now < Number(p.boostActiveUntil || 0);
+    const speed = baseSpeed + (boostActive ? boostBonus : 0);
+
+    if (boostActive && Math.random() < 0.22) {
       const tail = p.body.pop();
 
       if (tail) {
@@ -425,6 +459,17 @@ export class TigerRoom {
   }
 
   getBotInput(p) {
+    const all = this.allPlayers();
+
+    // Als muur gevaarlijk dichtbij is: eerst naar center/veilige richting.
+    const wallEscape = this.wallEscapeAngle(p);
+    if (wallEscape !== null) {
+      return {
+        angle: wallEscape,
+        boost: false
+      };
+    }
+
     const options = [];
 
     const addOption = (type, x, y, weight, boostBias = 0) => {
@@ -438,54 +483,61 @@ export class TigerRoom {
         d,
         danger,
         boostBias,
-        score: weight - d * 0.45 - danger * 900
+        score: weight - d * 0.38 - danger * 1200
       });
     };
 
-    // 1. Food actief pakken
-    for (const f of this.food) {
-      addOption("food", f.x, f.y, 1500 + f.v * 500, 0.8);
-    }
-
-    // 2. Menselijke spelers extra hard targetten
-    for (const other of this.allPlayers()) {
+    // Menselijke spelers hard targetten.
+    for (const other of all) {
       if (!other.alive || other.id === p.id) continue;
 
       const d = Math.sqrt(dist2(p.x, p.y, other.x, other.y));
-      const isHuman = !other.npc;
+      const isHuman = !other.autoPilot;
 
-      if (d < 1500) {
-        addOption(
-          isHuman ? "human" : "bot",
-          other.x,
-          other.y,
-          isHuman ? 2600 - d * 0.15 : 1200 - d * 0.25,
-          isHuman ? 1.5 : 0.7
-        );
+      if (isHuman && d < 2100) {
+        addOption("human", other.x, other.y, 4200 - d * 0.18, 1.4);
+      }
+    }
+
+    // Daarna food/vlaggen.
+    for (const f of this.food) {
+      addOption("food", f.x, f.y, 2100 + f.v * 550, 0.7);
+    }
+
+    // Bots mogen bots aanvallen, maar minder prioriteit dan humans.
+    for (const other of all) {
+      if (!other.alive || other.id === p.id || !other.autoPilot) continue;
+
+      const d = Math.sqrt(dist2(p.x, p.y, other.x, other.y));
+
+      if (d < 1000) {
+        addOption("bot", other.x, other.y, 900 - d * 0.2, 0.2);
       }
     }
 
     options.sort((a, b) => b.score - a.score);
 
     let best = options[0];
-    let desiredAngle = best ? best.angle : p.angle + 0.35;
+    let desiredAngle = best ? best.angle : this.centerAngle(p);
 
     let avoidX = 0;
     let avoidY = 0;
 
-    const wallMargin = 760;
+    // Sterke, vroege wall avoidance.
+    const wallMargin = 980;
 
-    if (p.x < wallMargin) avoidX += ((wallMargin - p.x) / wallMargin) * 6;
-    if (p.x > WORLD - wallMargin) avoidX -= ((p.x - (WORLD - wallMargin)) / wallMargin) * 6;
-    if (p.y < wallMargin) avoidY += ((wallMargin - p.y) / wallMargin) * 6;
-    if (p.y > WORLD - wallMargin) avoidY -= ((p.y - (WORLD - wallMargin)) / wallMargin) * 6;
+    if (p.x < wallMargin) avoidX += ((wallMargin - p.x) / wallMargin) * 9;
+    if (p.x > WORLD - wallMargin) avoidX -= ((p.x - (WORLD - wallMargin)) / wallMargin) * 9;
+    if (p.y < wallMargin) avoidY += ((wallMargin - p.y) / wallMargin) * 9;
+    if (p.y > WORLD - wallMargin) avoidY -= ((p.y - (WORLD - wallMargin)) / wallMargin) * 9;
 
-    const dangerRadius = 350;
+    // Avoid tails/bodies.
+    const dangerRadius = 390;
 
-    for (const other of this.allPlayers()) {
+    for (const other of all) {
       if (!other.alive) continue;
 
-      const startIndex = other.id === p.id ? 24 : 6;
+      const startIndex = other.id === p.id ? 30 : 7;
 
       for (let i = startIndex; i < other.body.length; i += 4) {
         const seg = other.body[i];
@@ -498,8 +550,8 @@ export class TigerRoom {
           const d = Math.sqrt(d2);
           const force = (dangerRadius - d) / dangerRadius;
 
-          avoidX += (dx / d) * force * 7.5;
-          avoidY += (dy / d) * force * 7.5;
+          avoidX += (dx / d) * force * 8.5;
+          avoidY += (dy / d) * force * 8.5;
         }
       }
     }
@@ -509,17 +561,23 @@ export class TigerRoom {
 
     desiredAngle = Math.atan2(ty + avoidY, tx + avoidX);
 
+    // Als gekozen richting nog gevaarlijk is, scan alternatieven.
+    if (this.dangerScore(p, desiredAngle) > 6) {
+      desiredAngle = this.findSafeAngle(p, desiredAngle);
+    }
+
     const dangerAhead = this.dangerScore(p, desiredAngle);
+    const boostReady = Date.now() >= Number(p.boostCooldownUntil || 0);
 
     const shouldBoost =
-      p.body.length > 30 &&
-      dangerAhead < 5 &&
+      boostReady &&
+      p.body.length > 32 &&
       best &&
-      best.d > 130 &&
+      best.d > 180 &&
+      dangerAhead < 4 &&
       (
         best.type === "human" ||
-        best.type === "food" ||
-        Math.random() < 0.45
+        (best.type === "food" && best.d > 450)
       );
 
     return {
@@ -528,28 +586,86 @@ export class TigerRoom {
     };
   }
 
+  wallEscapeAngle(p) {
+    const danger = 210;
+    const soft = 420;
+
+    if (p.x < danger) return 0;
+    if (p.x > WORLD - danger) return Math.PI;
+    if (p.y < danger) return Math.PI / 2;
+    if (p.y > WORLD - danger) return -Math.PI / 2;
+
+    // In corners: stuur naar center.
+    const nearLeft = p.x < soft;
+    const nearRight = p.x > WORLD - soft;
+    const nearTop = p.y < soft;
+    const nearBottom = p.y > WORLD - soft;
+
+    if ((nearLeft || nearRight) && (nearTop || nearBottom)) {
+      return this.centerAngle(p);
+    }
+
+    return null;
+  }
+
+  centerAngle(p) {
+    return Math.atan2(WORLD / 2 - p.y, WORLD / 2 - p.x);
+  }
+
+  findSafeAngle(p, preferred) {
+    let bestAngle = preferred;
+    let bestScore = -Infinity;
+
+    const offsets = [
+      0,
+      0.35, -0.35,
+      0.7, -0.7,
+      1.05, -1.05,
+      1.4, -1.4,
+      1.9, -1.9
+    ];
+
+    for (const off of offsets) {
+      const a = preferred + off;
+      const danger = this.dangerScore(p, a);
+      const turnPenalty = Math.abs(angleDiff(p.angle, a)) * 2;
+      const score = -danger * 10 - turnPenalty;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestAngle = a;
+      }
+    }
+
+    return bestAngle;
+  }
+
   dangerScore(p, angle) {
     let danger = 0;
-    const checks = [90, 170, 260, 380];
+    const checks = [120, 240, 380, 560];
 
     for (const range of checks) {
       const lookX = p.x + Math.cos(angle) * range;
       const lookY = p.y + Math.sin(angle) * range;
 
-      if (lookX < 90 || lookX > WORLD - 90 || lookY < 90 || lookY > WORLD - 90) {
-        danger += 8;
+      if (lookX < 120 || lookX > WORLD - 120 || lookY < 120 || lookY > WORLD - 120) {
+        danger += 12;
+      }
+
+      if (lookX < 260 || lookX > WORLD - 260 || lookY < 260 || lookY > WORLD - 260) {
+        danger += 4;
       }
 
       for (const other of this.allPlayers()) {
         if (!other.alive) continue;
 
-        const startIndex = other.id === p.id ? 24 : 5;
+        const startIndex = other.id === p.id ? 30 : 5;
 
         for (let i = startIndex; i < other.body.length; i += 6) {
           const seg = other.body[i];
 
-          if (dist2(lookX, lookY, seg.x, seg.y) < 135 * 135) {
-            danger += 3;
+          if (dist2(lookX, lookY, seg.x, seg.y) < 145 * 145) {
+            danger += 4;
           }
         }
       }
@@ -616,7 +732,9 @@ export class TigerRoom {
     dead.alive = false;
 
     if (killer && killer !== dead) {
-      if (dead.autoPilot) {
+      const humanKilledBot = dead.autoPilot && !killer.autoPilot;
+
+      if (humanKilledBot) {
         killer.score += BOT_REWARD;
 
         const oldBody = killer.body.slice();
@@ -652,14 +770,14 @@ export class TigerRoom {
 
         const bot = this.createPlayer(dead.id, cfg.name, "US", true, true);
         bot.color = cfg.color;
-        bot.skin = "topgunBot";
-        bot.score = 40;
+        bot.skin = "rainbowBot";
+        bot.score = 45;
 
         this.bots.set(dead.id, bot);
 
         this.broadcast({
           type: "event",
-          text: `🤖 ${cfg.name} respawned. Kill bot = +500 🐯`
+          text: `🤖 ${cfg.name} respawned. Human kill = +500 🐯`
         });
 
         this.broadcastState(true);
@@ -671,9 +789,11 @@ export class TigerRoom {
     if (reason === "self") {
       text = `${flagOf(dead.nation)} ${dead.name} ate his own tiger tail 🐯`;
     } else if (reason === "border") {
-      text = `${flagOf(dead.nation)} ${dead.name} left the Tiger zone 💀`;
-    } else if (killer && dead.autoPilot) {
+      text = `${flagOf(dead.nation)} ${dead.name} smashed into the wall 💀`;
+    } else if (killer && dead.autoPilot && !killer.autoPilot) {
       text = `${flagOf(killer.nation)} ${killer.name} killed ${dead.name} BOT: +500 and DOUBLE SIZE 🐯🔥`;
+    } else if (killer && dead.autoPilot && killer.autoPilot) {
+      text = `${killer.name} bot destroyed ${dead.name} bot 🤖`;
     } else if (killer) {
       text = `${flagOf(killer.nation)} ${killer.name} destroyed ${flagOf(dead.nation)} ${dead.name} 🐯`;
     }
@@ -685,19 +805,22 @@ export class TigerRoom {
   seedFood() {
     while (this.food.length < FOOD_TARGET) {
       this.food.push(makeFood(
-        rand(50, WORLD - 50),
-        rand(50, WORLD - 50),
+        rand(80, WORLD - 80),
+        rand(80, WORLD - 80),
         rand(5, 8),
         rand(0.8, 2.2)
       ));
     }
 
+    // Niet agressief opruimen. Vlaggen mogen blijven.
     if (this.food.length > MAX_FOOD) {
       this.food.splice(0, this.food.length - MAX_FOOD);
     }
   }
 
   broadcastState(force = false) {
+    const now = Date.now();
+
     const players = this.allPlayers().map(p => ({
       id: p.id,
       name: p.name,
@@ -713,6 +836,8 @@ export class TigerRoom {
       len: p.body.length,
       bot: !!p.autoPilot,
       npc: !!p.npc,
+      boosting: now < Number(p.boostActiveUntil || 0),
+      boostCooldownMs: Math.max(0, Number(p.boostCooldownUntil || 0) - now),
       body: p.body
         .filter((_, i) => i % 3 === 0)
         .map(b => ({
