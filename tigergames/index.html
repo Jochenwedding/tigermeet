@@ -724,16 +724,152 @@
     ctx.strokeRect(0, 0, WORLD, WORLD);
   }
 
-  function drawFlagFood(f) {
-    ctx.save();
-    ctx.font = `${Math.max(20, f.r * 3.8)}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",Arial`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.shadowColor = "#ff8a00";
-    ctx.shadowBlur = 12;
-    ctx.fillText(f.flag || "🏳️", f.x, f.y);
-    ctx.restore();
+function drawFlagFood(f) {
+  const code = emojiToNation(f.flag);
+  drawMiniFlag(f.x, f.y, Math.max(18, f.r * 3.2), code);
+}
+
+function emojiToNation(flag) {
+  const map = {
+    "🇧🇪": "BE",
+    "🇨🇿": "CZ",
+    "🇵🇱": "PL",
+    "🇩🇪": "DE",
+    "🇭🇺": "HU",
+    "🇨🇭": "CH",
+    "🇮🇹": "IT",
+    "🇬🇧": "UK",
+    "🇫🇷": "FR",
+    "🇪🇸": "ES",
+    "🇬🇷": "GR"
+  };
+
+  return map[flag] || "OTHER";
+}
+
+function drawMiniFlag(x, y, size, code) {
+  const w = size * 1.35;
+  const h = size * 0.9;
+  const left = x - w / 2;
+  const top = y - h / 2;
+
+  ctx.save();
+
+  ctx.shadowColor = "#ff8a00";
+  ctx.shadowBlur = 10;
+
+  ctx.fillStyle = "#111";
+  roundRect(left - 2, top - 2, w + 4, h + 4, 4);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+
+  if (code === "BE") {
+    vStripes(left, top, w, h, ["#000000", "#ffd90c", "#ef3340"]);
+  } else if (code === "DE") {
+    hStripes(left, top, w, h, ["#000000", "#dd0000", "#ffce00"]);
+  } else if (code === "FR") {
+    vStripes(left, top, w, h, ["#0055a4", "#ffffff", "#ef4135"]);
+  } else if (code === "IT") {
+    vStripes(left, top, w, h, ["#009246", "#ffffff", "#ce2b37"]);
+  } else if (code === "ES") {
+    hStripes(left, top, w, h, ["#aa151b", "#f1bf00", "#aa151b"], [0.25, 0.5, 0.25]);
+  } else if (code === "PL") {
+    hStripes(left, top, w, h, ["#ffffff", "#dc143c"]);
+  } else if (code === "HU") {
+    hStripes(left, top, w, h, ["#ce2939", "#ffffff", "#477050"]);
+  } else if (code === "CZ") {
+    hStripes(left, top, w, h, ["#ffffff", "#d7141a"]);
+    ctx.fillStyle = "#11457e";
+    ctx.beginPath();
+    ctx.moveTo(left, top);
+    ctx.lineTo(left + w * 0.48, top + h / 2);
+    ctx.lineTo(left, top + h);
+    ctx.closePath();
+    ctx.fill();
+  } else if (code === "CH") {
+    ctx.fillStyle = "#d52b1e";
+    ctx.fillRect(left, top, w, h);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(x - w * 0.08, top + h * 0.2, w * 0.16, h * 0.6);
+    ctx.fillRect(left + w * 0.25, y - h * 0.08, w * 0.5, h * 0.16);
+  } else if (code === "GR") {
+    for (let i = 0; i < 9; i++) {
+      ctx.fillStyle = i % 2 === 0 ? "#0d5eaf" : "#ffffff";
+      ctx.fillRect(left, top + i * h / 9, w, h / 9);
+    }
+  } else if (code === "UK") {
+    ctx.fillStyle = "#012169";
+    ctx.fillRect(left, top, w, h);
+
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = h * 0.18;
+    ctx.beginPath();
+    ctx.moveTo(left, top);
+    ctx.lineTo(left + w, top + h);
+    ctx.moveTo(left + w, top);
+    ctx.lineTo(left, top + h);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#c8102e";
+    ctx.lineWidth = h * 0.09;
+    ctx.beginPath();
+    ctx.moveTo(left, top);
+    ctx.lineTo(left + w, top + h);
+    ctx.moveTo(left + w, top);
+    ctx.lineTo(left, top + h);
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(left, y - h * 0.12, w, h * 0.24);
+    ctx.fillRect(x - w * 0.08, top, w * 0.16, h);
+
+    ctx.fillStyle = "#c8102e";
+    ctx.fillRect(left, y - h * 0.06, w, h * 0.12);
+    ctx.fillRect(x - w * 0.04, top, w * 0.08, h);
+  } else {
+    ctx.fillStyle = "#eeeeee";
+    ctx.fillRect(left, top, w, h);
   }
+
+  ctx.strokeStyle = "rgba(255,255,255,.75)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(left, top, w, h);
+
+  ctx.restore();
+}
+
+function vStripes(x, y, w, h, colors) {
+  const sw = w / colors.length;
+  colors.forEach((c, i) => {
+    ctx.fillStyle = c;
+    ctx.fillRect(x + i * sw, y, sw, h);
+  });
+}
+
+function hStripes(x, y, w, h, colors, ratios) {
+  let yy = y;
+
+  colors.forEach((c, i) => {
+    const hh = ratios ? h * ratios[i] : h / colors.length;
+    ctx.fillStyle = c;
+    ctx.fillRect(x, yy, w, hh);
+    yy += hh;
+  });
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+}
 
   function drawTigerDragonSnake(p, view) {
     if (!p.alive) return;
