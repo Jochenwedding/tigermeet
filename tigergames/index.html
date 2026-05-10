@@ -1,136 +1,52 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Tigergames Online</title>
-
-  <style>
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{
-      margin:0;width:100%;height:100%;overflow:hidden;background:#050505;color:white;
-      font-family:Arial,Helvetica,"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif;
-      touch-action:none;user-select:none;
-    }
-    body{
-      background:radial-gradient(circle at top,rgba(255,136,0,.28),transparent 38%),
-      linear-gradient(135deg,#050505,#111,#000);
-    }
-    .screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;z-index:10;overflow-y:auto}
-    .hidden{display:none!important}
-    .card{
-      width:min(520px,94vw);max-height:96vh;overflow-y:auto;padding:22px;border-radius:28px;text-align:center;
-      background:linear-gradient(180deg,rgba(25,25,25,.96),rgba(5,5,5,.97));
-      border:1px solid rgba(255,136,0,.58);
-      box-shadow:0 0 65px rgba(255,136,0,.22),0 25px 85px rgba(0,0,0,.82);
-      position:relative;
-    }
-    .card:before{
-      content:"";position:absolute;inset:-70px;
-      background:repeating-linear-gradient(45deg,transparent 0,transparent 18px,rgba(255,136,0,.08) 18px,rgba(255,136,0,.08) 38px)
-    }
-    .card>*{position:relative}
-    .logo{font-size:54px;filter:drop-shadow(0 0 20px rgba(255,136,0,.85))}
-    h1{margin:2px 0;color:#ff8a00;font-size:clamp(36px,8vw,58px);letter-spacing:2px;text-shadow:0 0 22px rgba(255,136,0,.75)}
-    .versionBadge{
-      display:inline-block;margin:0 0 10px;padding:5px 11px;border-radius:999px;font-size:11px;font-weight:800;
-      letter-spacing:.4px;color:#ffd36a;background:rgba(255,136,0,.10);border:1px solid rgba(255,136,0,.32);
-      box-shadow:0 0 14px rgba(255,136,0,.16)
-    }
-    .tag{color:#ddd;line-height:1.42;margin:8px 0 14px;font-size:14px}
-    input,.nationSelect{
-      width:100%;padding:15px 16px;border-radius:17px;border:1px solid rgba(255,136,0,.45);
-      background:#111;color:white;font-size:18px;text-align:center;outline:none;
-    }
-    .nationSelect{margin-top:10px;font-size:16px;cursor:pointer}
-    input:focus,.nationSelect:focus{border-color:#ffc14d;box-shadow:0 0 18px rgba(255,136,0,.28)}
-    button{
-      border:0;border-radius:999px;padding:15px 22px;font-weight:900;color:#111;
-      background:linear-gradient(135deg,#ffd36a,#ff8a00 60%,#ff5700);
-      box-shadow:0 0 22px rgba(255,136,0,.35);cursor:pointer;
-    }
-    button:active{transform:scale(.97)}
-    .big{width:100%;font-size:18px;margin-top:12px}
-    .small{font-size:12px;color:#888;margin-top:11px}
-    .loginTop{margin-top:14px;padding:12px;border-radius:18px;background:rgba(0,0,0,.45);border:1px solid rgba(255,136,0,.28);text-align:left}
-    .countryTopBox{margin-top:10px;padding:10px}
-    .loginTopTitle{text-align:center;color:#ffb13b;font-weight:900;margin-bottom:7px}
-    .loginRow{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px}
-    .loginRow:last-child{border-bottom:0}
-    .king{color:#ffd36a;text-shadow:0 0 12px rgba(255,136,0,.55);font-weight:900}
-
-    #gameScreen{position:fixed;inset:0;overflow:hidden;background:#030303}
-    canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-    .hud{position:absolute;top:10px;left:10px;right:10px;z-index:4;display:flex;justify-content:space-between;gap:10px;pointer-events:none}
-    .box{background:rgba(7,7,7,.76);backdrop-filter:blur(10px);border:1px solid rgba(255,136,0,.32);border-radius:18px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
-    .mine{min-width:160px}
-    .name{font-size:13px;color:#bbb}
-    .score{font-size:28px;font-weight:900;color:#ffc14d;line-height:1}
-    .meta{font-size:12px;color:#ccc;margin-top:3px}
-    .board{width:min(300px,46vw)}
-    .title{font-size:13px;color:#ff8a00;font-weight:900;margin-bottom:5px}
-    .row{display:grid;grid-template-columns:18px 1fr auto;gap:7px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:12px}
-    .row:last-child{border-bottom:0}
-    .dot{width:11px;height:11px;border-radius:50%;box-shadow:0 0 10px currentColor}
-    .rname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .rscore{font-weight:900}
-    .buttons{position:absolute;top:92px;left:10px;z-index:5;display:flex;gap:8px;flex-wrap:wrap}
-    .buttons button{pointer-events:auto;padding:10px 12px;font-size:12px}
-    .net{position:absolute;right:12px;bottom:10px;z-index:5;background:rgba(0,0,0,.38);border:1px solid rgba(255,136,0,.18);border-radius:999px;padding:6px 10px;font-size:10px;color:#aaa;pointer-events:none;opacity:.55}
-    .controls{position:absolute;inset:0;z-index:5;pointer-events:none}
-    .joy{position:absolute;left:18px;bottom:18px;width:154px;height:154px;border-radius:50%;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.17);pointer-events:auto}
-    .stick{position:absolute;left:50%;top:50%;width:64px;height:64px;margin-left:-32px;margin-top:-32px;border-radius:50%;background:rgba(255,136,0,.86);box-shadow:0 0 26px rgba(255,136,0,.45)}
-    .boost{
-      position:absolute;right:20px;bottom:34px;width:108px;height:108px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-      background:radial-gradient(circle,#ffe07b,#ff8700);color:#111;font-weight:900;box-shadow:0 0 30px rgba(255,136,0,.45);
-      pointer-events:auto;border:3px solid rgba(255,255,255,.28);transition:transform .08s ease, box-shadow .08s ease;
-    }
-    .boost.active{transform:scale(1.08);box-shadow:0 0 46px rgba(255,136,0,.8)}
-    .toast{position:absolute;left:50%;top:54px;transform:translateX(-50%);z-index:7;background:rgba(0,0,0,.75);border:1px solid rgba(255,136,0,.45);border-radius:999px;padding:9px 14px;font-size:13px;color:#eee;opacity:0;transition:.2s opacity;pointer-events:none}
-    .toast.show{opacity:1}
-
-    @media(min-width:721px){
-      body{background:radial-gradient(circle at top,rgba(255,150,30,.34),transparent 42%),linear-gradient(135deg,#151515,#202020,#0b0b0b)}
-      #gameScreen{background:#111}
-      .box{background:rgba(20,20,20,.70)}
-    }
-    @media(max-width:720px){
-      .mine{min-width:135px}.score{font-size:23px}.box{padding:9px}.buttons{top:84px}.board{width:46vw}
-      .logo{font-size:48px}h1{font-size:36px}.net{display:none}.card{padding:18px}.tag{font-size:13px}
-    }
-  </style>
-</head>
-
 <body>
 <section id="login" class="screen">
   <div class="card">
     <div class="logo">🐯</div>
     <h1>Tigergames Online</h1>
-    <div class="versionBadge">Beta Release V1.1 · Jo Chen</div>
-    <p class="tag">Feed yourself on other countries. Make your legacy, become the biggest tiger of them all and ROAR your way to the top. Who has the biggest snake?</p>
+    <div class="versionBadge">Premium Bot Build · Jo Chen</div>
+    <p class="tag">Feed yourself on other countries. Make your legacy, become the biggest tiger of them all and ROAR your way to the top.</p>
     <input id="playerName" maxlength="16" placeholder="Naam / callsign" autocomplete="off" />
     <select id="playerNation" class="nationSelect">
       <option value="BE">🇧🇪 Belgium</option><option value="CZ">🇨🇿 Czech Republic</option><option value="HU">🇭🇺 Hungary</option>
       <option value="CH">🇨🇭 Switzerland</option><option value="IT">🇮🇹 Italy</option><option value="ES">🇪🇸 Spain</option>
       <option value="DE">🇩🇪 Germany</option><option value="GR">🇬🇷 Greece</option><option value="PL">🇵🇱 Poland</option>
-      <option value="UK">🇬🇧 UK</option><option value="OTHER">🏳️ Other</option>
+      <option value="UK">🇬🇧 UK</option><option value="US">🇺🇸 USA</option><option value="OTHER">🏳️ Other</option>
     </select>
     <button class="big" id="playBtn">ENTER TIGER ARENA</button>
     <div class="loginTop"><div class="loginTopTitle">🏆 TOP 5 ALL-TIME</div><div id="loginTopRows"><div class="small" style="text-align:center">Highscores laden...</div></div></div>
     <div class="loginTop countryTopBox"><div class="loginTopTitle">🌍 TOP 3 NATIONS</div><div id="countryTopRows"><div class="small" style="text-align:center">Nation stats laden...</div></div></div>
-    <p class="small">Joystick left. Boost right. On PC: hold SPACE or hold BOOST button. Eat flags to grow bigger. Eat other tigers by going for the head.</p>
+    <p class="small">Mobile: joystick links, boost rechts. PC: muis = sturen, SPACE of boostknop = boost. Boost: 3 sec actief, 15 sec cooldown.</p>
   </div>
 </section>
 
 <section id="gameScreen" class="hidden">
   <canvas id="game"></canvas>
   <div class="net" id="net">connecting...</div>
+
   <div class="hud">
-    <div class="box mine"><div class="name" id="meName">Tiger</div><div class="score" id="meScore">0</div><div class="meta" id="meMeta">Lengte 0</div></div>
+    <div class="box mine">
+      <div class="name" id="meName">Tiger</div>
+      <div class="score" id="meScore">0</div>
+      <div class="meta" id="meMeta">Lengte 0</div>
+      <div class="boostHud">
+        <div class="boostLine"><span id="boostLabel">BOOST READY</span><span id="boostTime">3.0s</span></div>
+        <div class="boostBar"><div id="boostFill" class="boostFill"></div></div>
+      </div>
+    </div>
     <div class="box board"><div class="title">🏆 LIVE</div><div id="liveRows"></div></div>
   </div>
-  <div class="buttons"><button id="respawnBtn">RESPAWN</button><button id="menuBtn">MENU</button><button id="musicBtn">MUSIC ON</button></div>
-  <div class="controls"><div id="joy" class="joy"><div id="stick" class="stick"></div></div><div id="boost" class="boost">BOOST</div></div>
+
+  <div class="buttons">
+    <button id="respawnBtn">RESPAWN</button>
+    <button id="menuBtn">MENU</button>
+    <button id="musicBtn">MUSIC ON</button>
+  </div>
+
+  <div class="controls">
+    <div id="joy" class="joy"><div id="stick" class="stick"></div></div>
+    <div id="boost" class="boost ready"><span>BOOST</span><small>READY</small></div>
+  </div>
+
   <div id="toast" class="toast">RAWR</div>
   <audio id="music" src="/Araxos%20Baby.mp3" preload="auto" loop></audio>
   <audio id="roar" src="/roar.mp3" preload="auto"></audio>
@@ -146,11 +62,17 @@
   const roar = document.getElementById("roar");
   const musicBtn = document.getElementById("musicBtn");
   const boostBtn = document.getElementById("boost");
+  const boostFill = document.getElementById("boostFill");
+  const boostLabel = document.getElementById("boostLabel");
+  const boostTime = document.getElementById("boostTime");
 
   const WORLD = 4200;
+  const BOOST_ACTIVE_MS = 3000;
+  const BOOST_TOTAL_COOLDOWN_MS = 18000;
+
   let ws = null, previewWs = null, myId = null, state = null;
   let renderPlayers = new Map();
-  let running = false, lastInput = 0, lastRoar = 0, angle = 0, boosting = false, musicEnabled = true;
+  let running = false, lastInput = 0, lastRoar = 0, angle = 0, boostPressed = false, musicEnabled = true;
   let playerNation = "BE";
   const camera = { x: WORLD / 2, y: WORLD / 2, zoom: 1 };
 
@@ -219,25 +141,19 @@
         document.getElementById("loginTopRows").innerHTML = `<div class="small" style="text-align:center">Top 5 niet bereikbaar</div>`;
         document.getElementById("countryTopRows").innerHTML = `<div class="small" style="text-align:center">Nation stats niet bereikbaar</div>`;
       };
-    }catch{
-      document.getElementById("loginTopRows").innerHTML = `<div class="small" style="text-align:center">Top 5 niet bereikbaar</div>`;
-      document.getElementById("countryTopRows").innerHTML = `<div class="small" style="text-align:center">Nation stats niet bereikbaar</div>`;
-    }
+    }catch{}
   }
 
   function drawLoginTop5(top10){
     const rows = document.getElementById("loginTopRows");
     if(!top10 || !top10.length){
-      rows.innerHTML = `<div class="small" style="text-align:center">Nog geen highscores. Word de eerste TigerKing.</div>`;
+      rows.innerHTML = `<div class="small" style="text-align:center">Nog geen highscores.</div>`;
       return;
     }
-    rows.innerHTML = top10.slice(0,5).map((p,i)=>{
-      const king = i === 0;
-      const label = `${flagOf(p.nation)} ${esc(p.name)}`;
-      return `<div class="loginRow ${king ? "king" : ""}">
-        <span>${i+1}</span><span>${king ? "🐯 " + label + " : you are the TigerKing" : label}</span><b>${Math.round(p.score)}</b>
-      </div>`;
-    }).join("");
+    rows.innerHTML = top10.slice(0,5).map((p,i)=>`
+      <div class="loginRow ${i===0 ? "king" : ""}">
+        <span>${i+1}</span><span>${i===0 ? "🐯 " : ""}${flagOf(p.nation)} ${esc(p.name)}</span><b>${Math.round(p.score)}</b>
+      </div>`).join("");
   }
 
   function drawCountryTop3(list){
@@ -257,7 +173,7 @@
       music.volume = .42;
       if(music.paused) await music.play();
       musicBtn.textContent = "MUSIC ON";
-    }catch{ showToast("Tik nog eens voor muziek"); }
+    }catch{}
   }
 
   function playRoar(){
@@ -272,9 +188,9 @@
     }catch{}
   }
 
-  function setBoost(value){
-    boosting = !!value;
-    boostBtn.classList.toggle("active", boosting);
+  function setBoostPressed(value){
+    boostPressed = !!value;
+    boostBtn.classList.toggle("active", boostPressed);
   }
 
   function connect(name,nation){
@@ -328,9 +244,7 @@
       }
       r.target = p;
     }
-    for(const id of renderPlayers.keys()){
-      if(!seen.has(id)) renderPlayers.delete(id);
-    }
+    for(const id of renderPlayers.keys()) if(!seen.has(id)) renderPlayers.delete(id);
   }
 
   function sendInput(force=false){
@@ -342,10 +256,7 @@
     ws.send(JSON.stringify({
       type:"input",
       angle,
-      boost:boosting,
-      boosting:boosting,
-      isBoosting:boosting,
-      turbo:boosting
+      boost:boostPressed === true
     }));
   }
 
@@ -363,13 +274,11 @@
       r.x = lerp(r.x ?? t.x, t.x, .28);
       r.y = lerp(r.y ?? t.y, t.y, .28);
       r.angle = lerpAngle(r.angle ?? t.angle, t.angle || 0, .25);
-      r.score = t.score;
-      r.name = t.name;
-      r.nation = t.nation || r.nation || "OTHER";
-      r.color = t.color;
-      r.alive = t.alive;
-      r.radius = lerp(r.radius ?? t.radius, t.radius, .22);
-      r.len = t.len;
+      Object.assign(r,{
+        score:t.score,name:t.name,nation:t.nation || "OTHER",color:t.color,alive:t.alive,
+        radius:lerp(r.radius ?? t.radius,t.radius,.22),len:t.len,bot:!!t.bot,npc:!!t.npc,
+        boosting:!!t.boosting,boostCooldownMs:Number(t.boostCooldownMs || 0),boostActiveMs:Number(t.boostActiveMs || 0)
+      });
       const tb = t.body || [];
       if(!r.body) r.body = tb.map(b => ({x:b.x,y:b.y}));
       const max = Math.min(r.body.length,tb.length);
@@ -377,9 +286,7 @@
         r.body[i].x = lerp(r.body[i].x,tb[i].x,.25);
         r.body[i].y = lerp(r.body[i].y,tb[i].y,.25);
       }
-      if(tb.length > r.body.length){
-        for(let i=r.body.length;i<tb.length;i++) r.body.push({x:tb[i].x,y:tb[i].y});
-      }
+      if(tb.length > r.body.length) for(let i=r.body.length;i<tb.length;i++) r.body.push({x:tb[i].x,y:tb[i].y});
       if(r.body.length > tb.length) r.body.length = tb.length;
     }
   }
@@ -402,17 +309,10 @@
     ctx.translate(-camera.x,-camera.y);
     drawWorld();
 
-    const view = {
-      x1:camera.x-w/camera.zoom/2-160,
-      y1:camera.y-h/camera.zoom/2-160,
-      x2:camera.x+w/camera.zoom/2+160,
-      y2:camera.y+h/camera.zoom/2+160
-    };
+    const view = {x1:camera.x-w/camera.zoom/2-160,y1:camera.y-h/camera.zoom/2-160,x2:camera.x+w/camera.zoom/2+160,y2:camera.y+h/camera.zoom/2+160};
 
     for(const f of state.food || []) if(inView(f.x,f.y,view)) drawFlagFood(f);
-
-    const players = [...renderPlayers.values()].sort((a,b)=>(a.len||0)-(b.len||0));
-    for(const p of players) drawTigerDragonSnake(p,view);
+    [...renderPlayers.values()].sort((a,b)=>(a.len||0)-(b.len||0)).forEach(p=>drawTigerDragonSnake(p,view));
 
     ctx.restore();
     drawVignette(w,h);
@@ -432,70 +332,21 @@
   }
 
   function drawFlagFood(f){
-    const code = emojiToNation(f.flag);
-    drawMiniFlag(f.x,f.y,Math.max(18,f.r*3.2),code);
-  }
-
-  function emojiToNation(flag){
-    const map = {"🇧🇪":"BE","🇨🇿":"CZ","🇵🇱":"PL","🇩🇪":"DE","🇭🇺":"HU","🇨🇭":"CH","🇮🇹":"IT","🇬🇧":"UK","🇫🇷":"FR","🇪🇸":"ES","🇬🇷":"GR"};
-    return map[flag] || "OTHER";
-  }
-
-  function drawMiniFlag(x,y,size,code){
-    const w=size*1.35,h=size*.9,left=x-w/2,top=y-h/2;
     ctx.save();
-    ctx.shadowColor="#ff8a00";ctx.shadowBlur=10;
-    ctx.fillStyle="#111";roundRect(left-2,top-2,w+4,h+4,4);ctx.fill();
-    ctx.shadowBlur=0;
-
-    if(code==="BE") vStripes(left,top,w,h,["#000","#ffd90c","#ef3340"]);
-    else if(code==="DE") hStripes(left,top,w,h,["#000","#dd0000","#ffce00"]);
-    else if(code==="FR") vStripes(left,top,w,h,["#0055a4","#fff","#ef4135"]);
-    else if(code==="IT") vStripes(left,top,w,h,["#009246","#fff","#ce2b37"]);
-    else if(code==="ES") hStripes(left,top,w,h,["#aa151b","#f1bf00","#aa151b"],[.25,.5,.25]);
-    else if(code==="PL") hStripes(left,top,w,h,["#fff","#dc143c"]);
-    else if(code==="HU") hStripes(left,top,w,h,["#ce2939","#fff","#477050"]);
-    else if(code==="CZ"){hStripes(left,top,w,h,["#fff","#d7141a"]);ctx.fillStyle="#11457e";ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left+w*.48,top+h/2);ctx.lineTo(left,top+h);ctx.closePath();ctx.fill();}
-    else if(code==="CH"){ctx.fillStyle="#d52b1e";ctx.fillRect(left,top,w,h);ctx.fillStyle="#fff";ctx.fillRect(x-w*.08,top+h*.2,w*.16,h*.6);ctx.fillRect(left+w*.25,y-h*.08,w*.5,h*.16);}
-    else if(code==="GR"){for(let i=0;i<9;i++){ctx.fillStyle=i%2===0?"#0d5eaf":"#fff";ctx.fillRect(left,top+i*h/9,w,h/9);}}
-    else if(code==="UK"){
-      ctx.fillStyle="#012169";ctx.fillRect(left,top,w,h);
-      ctx.strokeStyle="#fff";ctx.lineWidth=h*.18;ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left+w,top+h);ctx.moveTo(left+w,top);ctx.lineTo(left,top+h);ctx.stroke();
-      ctx.strokeStyle="#c8102e";ctx.lineWidth=h*.09;ctx.beginPath();ctx.moveTo(left,top);ctx.lineTo(left+w,top+h);ctx.moveTo(left+w,top);ctx.lineTo(left,top+h);ctx.stroke();
-      ctx.fillStyle="#fff";ctx.fillRect(left,y-h*.12,w,h*.24);ctx.fillRect(x-w*.08,top,w*.16,h);
-      ctx.fillStyle="#c8102e";ctx.fillRect(left,y-h*.06,w,h*.12);ctx.fillRect(x-w*.04,top,w*.08,h);
-    } else {ctx.fillStyle="#eee";ctx.fillRect(left,top,w,h);}
-
-    ctx.strokeStyle="rgba(255,255,255,.75)";
-    ctx.lineWidth=1;
-    ctx.strokeRect(left,top,w,h);
+    ctx.font = `${Math.max(18,f.r*3.2)}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji"`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.shadowColor = "#ff8a00";
+    ctx.shadowBlur = 10;
+    ctx.fillText(f.flag || "🏳️", f.x, f.y);
     ctx.restore();
-  }
-
-  function vStripes(x,y,w,h,colors){
-    const sw=w/colors.length;
-    colors.forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(x+i*sw,y,sw,h);});
-  }
-
-  function hStripes(x,y,w,h,colors,ratios){
-    let yy=y;
-    colors.forEach((c,i)=>{
-      const hh=ratios?h*ratios[i]:h/colors.length;
-      ctx.fillStyle=c;ctx.fillRect(x,yy,w,hh);yy+=hh;
-    });
-  }
-
-  function roundRect(x,y,w,h,r){
-    ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-    ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);
-    ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
   }
 
   function drawTigerDragonSnake(p,view){
     if(!p.alive) return;
     const body = p.body || [];
     const mainColor = playerColor(p);
-    const stripeColor = playerColor(p,160);
+    const stripeColor = p.bot ? rainbowColor(160) : darken(mainColor);
 
     ctx.save();
 
@@ -507,7 +358,7 @@
       for(const b of body) if(inView(b.x,b.y,view)) ctx.lineTo(b.x,b.y);
       ctx.stroke();
 
-      ctx.strokeStyle="rgba(10,10,10,.92)";
+      ctx.strokeStyle="rgba(10,10,10,.9)";
       ctx.lineWidth=Math.max(5,p.radius*.32);
       ctx.setLineDash([18,18]);
       ctx.beginPath();ctx.moveTo(p.x,p.y);
@@ -521,12 +372,12 @@
       if(!inView(b.x,b.y,view)) continue;
       const t=1-i/Math.max(1,body.length);
       const size=Math.max(10,p.radius*(.78+t*.66));
-      const segColor = playerColor(p,i*13);
+      const segColor = p.bot ? rainbowColor(i*7) : mainColor;
 
       ctx.beginPath();
       ctx.fillStyle=segColor;
       ctx.shadowColor=segColor;
-      ctx.shadowBlur=10;
+      ctx.shadowBlur=p.bot ? 15 : 8;
       ctx.arc(b.x,b.y,size,0,Math.PI*2);
       ctx.fill();
       ctx.shadowBlur=0;
@@ -555,10 +406,10 @@
 
     const r = p.radius * 1.08;
     const mainColor = playerColor(p);
-    const glowColor = playerColor(p,40);
+    const glowColor = p.bot ? rainbowColor(80) : mainColor;
 
     ctx.shadowColor=glowColor;
-    ctx.shadowBlur=22;
+    ctx.shadowBlur=p.bot?28:18;
     ctx.fillStyle=mainColor;
     ctx.beginPath();
     ctx.ellipse(0,0,r*1.72,r*1.14,0,0,Math.PI*2);
@@ -566,8 +417,6 @@
 
     ctx.shadowBlur=0;
     ctx.fillStyle="#050505";
-    ctx.beginPath();ctx.moveTo(-r*.25,-r*.92);ctx.lineTo(-r*.85,-r*1.68);ctx.lineTo(r*.22,-r*1.0);ctx.fill();
-    ctx.beginPath();ctx.moveTo(-r*.25,r*.92);ctx.lineTo(-r*.85,r*1.68);ctx.lineTo(r*.22,r*1.0);ctx.fill();
     ctx.fillRect(-r*.65,-r*.82,r*.24,r*1.64);
     ctx.fillRect(-r*.12,-r*.95,r*.23,r*1.9);
     ctx.fillRect(r*.42,-r*.78,r*.18,r*1.56);
@@ -582,18 +431,11 @@
     ctx.fillStyle="#111";
     ctx.beginPath();ctx.arc(r*1.34,0,3.2,0,Math.PI*2);ctx.fill();
 
-    ctx.strokeStyle="rgba(255,255,255,.85)";
-    ctx.lineWidth=2;
-    ctx.beginPath();
-    ctx.moveTo(r*1.05,-r*.18);ctx.lineTo(r*1.55,-r*.62);
-    ctx.moveTo(r*1.05,r*.18);ctx.lineTo(r*1.55,r*.62);
-    ctx.stroke();
-
     ctx.restore();
   }
 
   function drawName(p){
-    const label = `${flagOf(p.nation)} ${p.name}`;
+    const label = `${p.bot ? "🤖 " : ""}${flagOf(p.nation)} ${p.name}`;
     ctx.font='bold 13px Arial,"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji"';
     ctx.textAlign="center";
     ctx.fillStyle="rgba(0,0,0,.8)";
@@ -606,22 +448,67 @@
     if(!state) return;
     const players=[...renderPlayers.values()].filter(p=>p.alive).sort((a,b)=>b.score-a.score);
     const me=renderPlayers.get(myId);
+
     if(me){
       document.getElementById("meName").textContent=`${flagOf(me.nation)} ${me.name}`;
       document.getElementById("meScore").textContent=Math.round(me.score || 0);
       const rank=players.findIndex(p=>p.id===myId)+1;
       document.getElementById("meMeta").textContent=`Lengte ${me.len || 0} · Rank #${rank>0?rank:"-"}`;
+      updateBoostUi(me);
     }
+
     document.getElementById("liveRows").innerHTML =
-      players.slice(0,5).map((p,i)=>row(i,`${flagOf(p.nation)} ${p.name}`,p.score,playerColor(p))).join("");
+      players.slice(0,5).map((p,i)=>row(i,`${p.bot ? "🤖 " : ""}${flagOf(p.nation)} ${p.name}`,p.score,playerColor(p))).join("");
   }
 
-  function playerColor(p,offset=0){
-    const key = String(p.id || p.name || "tiger");
-    let hash = 0;
-    for(let i=0;i<key.length;i++) hash = key.charCodeAt(i) + ((hash << 5) - hash);
-    const hue = (Math.abs(hash) + offset) % 360;
+  function updateBoostUi(me){
+    const active = !!me.boosting;
+    const activeMs = Number(me.boostActiveMs || 0);
+    const cdMs = Number(me.boostCooldownMs || 0);
+
+    boostBtn.classList.remove("ready","active","cooldown");
+    boostFill.classList.remove("active","cooldown");
+
+    if(active){
+      const pct = clamp(activeMs / BOOST_ACTIVE_MS, 0, 1) * 100;
+      boostBtn.classList.add("active");
+      boostFill.classList.add("active");
+      boostBtn.style.setProperty("--boost-fill", pct + "%");
+      boostFill.style.width = pct + "%";
+      boostLabel.textContent = "BOOSTING";
+      boostTime.textContent = (activeMs/1000).toFixed(1) + "s";
+      boostBtn.innerHTML = `<span>BOOST</span><small>${(activeMs/1000).toFixed(1)}s</small>`;
+    } else if(cdMs > 0){
+      const pct = clamp(1 - (cdMs / BOOST_TOTAL_COOLDOWN_MS), 0, 1) * 100;
+      boostBtn.classList.add("cooldown");
+      boostFill.classList.add("cooldown");
+      boostBtn.style.setProperty("--boost-fill", pct + "%");
+      boostFill.style.width = pct + "%";
+      boostLabel.textContent = "COOLDOWN";
+      boostTime.textContent = Math.ceil(cdMs/1000) + "s";
+      boostBtn.innerHTML = `<span>WAIT</span><small>${Math.ceil(cdMs/1000)}s</small>`;
+    } else {
+      boostBtn.classList.add("ready");
+      boostBtn.style.setProperty("--boost-fill", "100%");
+      boostFill.style.width = "100%";
+      boostLabel.textContent = "BOOST READY";
+      boostTime.textContent = "3.0s";
+      boostBtn.innerHTML = `<span>BOOST</span><small>READY</small>`;
+    }
+  }
+
+  function playerColor(p){
+    if(p.bot) return rainbowColor(hashCode(p.id || p.name) % 360);
+    return p.color || "#ff8a00";
+  }
+
+  function rainbowColor(offset=0){
+    const hue = (performance.now()/35 + offset) % 360;
     return `hsl(${hue},95%,55%)`;
+  }
+
+  function darken(hex){
+    return "rgba(0,0,0,.9)";
   }
 
   function row(i,n,s,c){
@@ -639,32 +526,16 @@
     ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
   }
 
-  function drawText(t){
-    ctx.fillStyle="#ff8a00";ctx.font="bold 28px Arial";ctx.textAlign="center";ctx.fillText(t,innerWidth/2,innerHeight/2);
-  }
-
+  function drawText(t){ctx.fillStyle="#ff8a00";ctx.font="bold 28px Arial";ctx.textAlign="center";ctx.fillText(t,innerWidth/2,innerHeight/2);}
   function inView(x,y,v){ return x>=v.x1 && x<=v.x2 && y>=v.y1 && y<=v.y2; }
   function setNet(t){ document.getElementById("net").textContent=t; }
-
-  function showToast(t){
-    const e=document.getElementById("toast");
-    e.textContent=t;
-    e.classList.add("show");
-    clearTimeout(showToast.t);
-    showToast.t=setTimeout(()=>e.classList.remove("show"),1400);
-  }
-
-  function esc(s){
-    return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
-  }
-
-  function flagOf(nation){
-    const flags={BE:"🇧🇪",CZ:"🇨🇿",HU:"🇭🇺",CH:"🇨🇭",IT:"🇮🇹",ES:"🇪🇸",DE:"🇩🇪",GR:"🇬🇷",PL:"🇵🇱",UK:"🇬🇧",OTHER:"🏳️"};
-    return flags[String(nation || "OTHER").toUpperCase()] || "🏳️";
-  }
-
+  function showToast(t){const e=document.getElementById("toast");e.textContent=t;e.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>e.classList.remove("show"),1800);}
+  function esc(s){return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
+  function flagOf(nation){const flags={BE:"🇧🇪",CZ:"🇨🇿",HU:"🇭🇺",CH:"🇨🇭",IT:"🇮🇹",ES:"🇪🇸",DE:"🇩🇪",GR:"🇬🇷",PL:"🇵🇱",UK:"🇬🇧",US:"🇺🇸",OTHER:"🏳️"};return flags[String(nation || "OTHER").toUpperCase()] || "🏳️";}
   function lerp(a,b,t){ return a+(b-a)*t; }
   function lerpAngle(a,b,t){ return a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t; }
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+  function hashCode(str){let h=0;str=String(str||"");for(let i=0;i<str.length;i++){h=((h<<5)-h)+str.charCodeAt(i);h|=0;}return Math.abs(h);}
 
   function setDirFromScreen(x,y){
     const dx=x-innerWidth/2;
@@ -681,8 +552,8 @@
     if(k==="s" || k==="arrowdown") angle=Math.PI/2;
     if(k==="a" || k==="arrowleft") angle=Math.PI;
     if(k==="d" || k==="arrowright") angle=0;
-    if((k===" " || k==="spacebar") && !boosting){
-      setBoost(true);playRoar();sendInput(true);
+    if((k===" " || k==="spacebar") && !boostPressed){
+      setBoostPressed(true);playRoar();sendInput(true);
       if(musicEnabled && music.paused) startAudio();
     }
   });
@@ -691,7 +562,7 @@
     const k=e.key.toLowerCase();
     if(k===" " || k==="spacebar"){
       e.preventDefault();
-      setBoost(false);
+      setBoostPressed(false);
       sendInput(true);
     }
   });
@@ -702,42 +573,632 @@
 
   joy.addEventListener("touchstart",joyMove,{passive:false});
   joy.addEventListener("touchmove",joyMove,{passive:false});
-  joy.addEventListener("touchend",e=>{
-    e.preventDefault();
-    stick.style.transform="translate(0,0)";
-  },{passive:false});
+  joy.addEventListener("touchend",e=>{e.preventDefault();stick.style.transform="translate(0,0)";},{passive:false});
 
   boost.addEventListener("pointerdown",e=>{
     e.preventDefault();
     boost.setPointerCapture?.(e.pointerId);
-    setBoost(true);
+    setBoostPressed(true);
     playRoar();
     if(musicEnabled && music.paused) startAudio();
     sendInput(true);
   });
 
-  boost.addEventListener("pointerup",e=>{
+  boost.addEventListener("pointerup",e=>{e.preventDefault();setBoostPressed(false);sendInput(true);});
+  boost.addEventListener("pointercancel",e=>{e.preventDefault();setBoostPressed(false);sendInput(true);});
+  boost.addEventListener("lostpointercapture",()=>{setBoostPressed(false);sendInput(true);});
+
+  document.body.addEventListener("touchstart",()=>{if(musicEnabled) startAudio();},{passive:true,once:true});
+
+  function joyMove(e){
     e.preventDefault();
-    setBoost(false);
-    sendInput(true);
+    const t=e.changedTouches[0];
+    const r=joy.getBoundingClientRect();
+    const cx=r.left+r.width/2;
+    const cy=r.top+r.height/2;
+    let dx=t.clientX-cx;
+    let dy=t.clientY-cy;
+    const l=Math.hypot(dx,dy)||1;
+    const max=47;
+    if(l>max){dx=dx/l*max;dy=dy/l*max;}
+    stick.style.transform=`translate(${dx}px,${dy}px)`;
+    angle=Math.atan2(dy,dx);
+  }
+})();
+</script>
+</body>
+</html>
+<body>
+<section id="login" class="screen">
+  <div class="card">
+    <div class="logo">🐯</div>
+    <h1>Tigergames Online</h1>
+    <div class="versionBadge">Premium Bot Build · Jo Chen</div>
+    <p class="tag">Feed yourself on other countries. Make your legacy, become the biggest tiger of them all and ROAR your way to the top.</p>
+    <input id="playerName" maxlength="16" placeholder="Naam / callsign" autocomplete="off" />
+    <select id="playerNation" class="nationSelect">
+      <option value="BE">🇧🇪 Belgium</option><option value="CZ">🇨🇿 Czech Republic</option><option value="HU">🇭🇺 Hungary</option>
+      <option value="CH">🇨🇭 Switzerland</option><option value="IT">🇮🇹 Italy</option><option value="ES">🇪🇸 Spain</option>
+      <option value="DE">🇩🇪 Germany</option><option value="GR">🇬🇷 Greece</option><option value="PL">🇵🇱 Poland</option>
+      <option value="UK">🇬🇧 UK</option><option value="US">🇺🇸 USA</option><option value="OTHER">🏳️ Other</option>
+    </select>
+    <button class="big" id="playBtn">ENTER TIGER ARENA</button>
+    <div class="loginTop"><div class="loginTopTitle">🏆 TOP 5 ALL-TIME</div><div id="loginTopRows"><div class="small" style="text-align:center">Highscores laden...</div></div></div>
+    <div class="loginTop countryTopBox"><div class="loginTopTitle">🌍 TOP 3 NATIONS</div><div id="countryTopRows"><div class="small" style="text-align:center">Nation stats laden...</div></div></div>
+    <p class="small">Mobile: joystick links, boost rechts. PC: muis = sturen, SPACE of boostknop = boost. Boost: 3 sec actief, 15 sec cooldown.</p>
+  </div>
+</section>
+
+<section id="gameScreen" class="hidden">
+  <canvas id="game"></canvas>
+  <div class="net" id="net">connecting...</div>
+
+  <div class="hud">
+    <div class="box mine">
+      <div class="name" id="meName">Tiger</div>
+      <div class="score" id="meScore">0</div>
+      <div class="meta" id="meMeta">Lengte 0</div>
+      <div class="boostHud">
+        <div class="boostLine"><span id="boostLabel">BOOST READY</span><span id="boostTime">3.0s</span></div>
+        <div class="boostBar"><div id="boostFill" class="boostFill"></div></div>
+      </div>
+    </div>
+    <div class="box board"><div class="title">🏆 LIVE</div><div id="liveRows"></div></div>
+  </div>
+
+  <div class="buttons">
+    <button id="respawnBtn">RESPAWN</button>
+    <button id="menuBtn">MENU</button>
+    <button id="musicBtn">MUSIC ON</button>
+  </div>
+
+  <div class="controls">
+    <div id="joy" class="joy"><div id="stick" class="stick"></div></div>
+    <div id="boost" class="boost ready"><span>BOOST</span><small>READY</small></div>
+  </div>
+
+  <div id="toast" class="toast">RAWR</div>
+  <audio id="music" src="/Araxos%20Baby.mp3" preload="auto" loop></audio>
+  <audio id="roar" src="/roar.mp3" preload="auto"></audio>
+</section>
+
+<script>
+(() => {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const login = document.getElementById("login");
+  const gameScreen = document.getElementById("gameScreen");
+  const music = document.getElementById("music");
+  const roar = document.getElementById("roar");
+  const musicBtn = document.getElementById("musicBtn");
+  const boostBtn = document.getElementById("boost");
+  const boostFill = document.getElementById("boostFill");
+  const boostLabel = document.getElementById("boostLabel");
+  const boostTime = document.getElementById("boostTime");
+
+  const WORLD = 4200;
+  const BOOST_ACTIVE_MS = 3000;
+  const BOOST_TOTAL_COOLDOWN_MS = 18000;
+
+  let ws = null, previewWs = null, myId = null, state = null;
+  let renderPlayers = new Map();
+  let running = false, lastInput = 0, lastRoar = 0, angle = 0, boostPressed = false, musicEnabled = true;
+  let playerNation = "BE";
+  const camera = { x: WORLD / 2, y: WORLD / 2, zoom: 1 };
+
+  document.getElementById("playerName").value = localStorage.getItem("tigergames_name") || "";
+  document.getElementById("playerNation").value = localStorage.getItem("tigergames_nation") || "BE";
+  playerNation = document.getElementById("playerNation").value;
+
+  function wsUrl(){ return "wss://tigermeet-game.jochenmichels.workers.dev"; }
+
+  function resize(){
+    canvas.width = innerWidth * devicePixelRatio;
+    canvas.height = innerHeight * devicePixelRatio;
+    ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  }
+
+  addEventListener("resize", resize);
+  resize();
+  preloadLoginStats();
+
+  document.getElementById("playBtn").onclick = () => {
+    const name = (document.getElementById("playerName").value.trim() || "Unknown Tiger").slice(0,16);
+    const nation = document.getElementById("playerNation").value || "OTHER";
+    playerNation = nation;
+    localStorage.setItem("tigergames_name", name);
+    localStorage.setItem("tigergames_nation", nation);
+    if(previewWs){try{previewWs.close()}catch{} previewWs=null}
+    login.classList.add("hidden");
+    gameScreen.classList.remove("hidden");
+    if(musicEnabled) startAudio();
+    connect(name,nation);
+  };
+
+  document.getElementById("menuBtn").onclick = () => {
+    running = false;
+    if(ws) ws.close();
+    gameScreen.classList.add("hidden");
+    login.classList.remove("hidden");
+    renderPlayers.clear();
+    preloadLoginStats();
+  };
+
+  document.getElementById("respawnBtn").onclick = () => {
+    if(ws && ws.readyState === 1) ws.send(JSON.stringify({type:"respawn"}));
+  };
+
+  musicBtn.onclick = () => {
+    musicEnabled = !musicEnabled;
+    musicBtn.textContent = musicEnabled ? "MUSIC ON" : "MUSIC OFF";
+    if(musicEnabled) startAudio(); else music.pause();
+  };
+
+  function preloadLoginStats(){
+    try{
+      previewWs = new WebSocket(wsUrl());
+      previewWs.onmessage = e => {
+        try{
+          const msg = JSON.parse(e.data);
+          if(msg.type === "welcome"){
+            if(msg.top10) drawLoginTop5(msg.top10);
+            if(msg.countryTop3) drawCountryTop3(msg.countryTop3);
+            previewWs.close();
+          }
+        }catch{}
+      };
+      previewWs.onerror = () => {
+        document.getElementById("loginTopRows").innerHTML = `<div class="small" style="text-align:center">Top 5 niet bereikbaar</div>`;
+        document.getElementById("countryTopRows").innerHTML = `<div class="small" style="text-align:center">Nation stats niet bereikbaar</div>`;
+      };
+    }catch{}
+  }
+
+  function drawLoginTop5(top10){
+    const rows = document.getElementById("loginTopRows");
+    if(!top10 || !top10.length){
+      rows.innerHTML = `<div class="small" style="text-align:center">Nog geen highscores.</div>`;
+      return;
+    }
+    rows.innerHTML = top10.slice(0,5).map((p,i)=>`
+      <div class="loginRow ${i===0 ? "king" : ""}">
+        <span>${i+1}</span><span>${i===0 ? "🐯 " : ""}${flagOf(p.nation)} ${esc(p.name)}</span><b>${Math.round(p.score)}</b>
+      </div>`).join("");
+  }
+
+  function drawCountryTop3(list){
+    const rows = document.getElementById("countryTopRows");
+    if(!rows) return;
+    if(!list || !list.length){
+      rows.innerHTML = `<div class="small" style="text-align:center">Nog geen nation scores.</div>`;
+      return;
+    }
+    rows.innerHTML = list.slice(0,3).map((c,i)=>`
+      <div class="loginRow"><span>${i+1}</span><span>${c.flag || flagOf(c.nation)} ${esc(c.name || c.nation)}</span><b>${Math.round(c.score || 0)}</b></div>
+    `).join("");
+  }
+
+  async function startAudio(){
+    try{
+      music.volume = .42;
+      if(music.paused) await music.play();
+      musicBtn.textContent = "MUSIC ON";
+    }catch{}
+  }
+
+  function playRoar(){
+    const now = performance.now();
+    if(now - lastRoar < 650) return;
+    lastRoar = now;
+    try{
+      const r = roar.cloneNode(true);
+      r.volume = .75;
+      r.currentTime = 0;
+      r.play().catch(()=>{});
+    }catch{}
+  }
+
+  function setBoostPressed(value){
+    boostPressed = !!value;
+    boostBtn.classList.toggle("active", boostPressed);
+  }
+
+  function connect(name,nation){
+    running = true;
+    setNet("ONLINE");
+    showToast("Connecting websocket...");
+    try{ ws = new WebSocket(wsUrl()); }
+    catch{ setNet("WS ERROR"); showToast("WS create error"); return; }
+
+    ws.onopen = () => {
+      setNet("ONLINE ✅");
+      showToast("ONLINE ✅");
+      ws.send(JSON.stringify({type:"join",name,nation}));
+    };
+
+    ws.onmessage = e => {
+      try{
+        const msg = JSON.parse(e.data);
+        if(msg.type === "welcome"){
+          myId = msg.id;
+          if(msg.top10) drawLoginTop5(msg.top10);
+          if(msg.countryTop3) drawCountryTop3(msg.countryTop3);
+        }
+        if(msg.type === "state"){
+          state = msg;
+          ingestState(msg);
+          if(msg.countryTop3) drawCountryTop3(msg.countryTop3);
+        }
+        if(msg.type === "event") showToast(msg.text);
+      }catch{ setNet("MSG parse error"); }
+    };
+
+    ws.onerror = () => { setNet("WS ERROR"); showToast("WebSocket error"); };
+    ws.onclose = e => {
+      setNet("OFFLINE " + e.code);
+      if(running) setTimeout(() => connect(name,nation), 2500);
+    };
+
+    requestAnimationFrame(loop);
+  }
+
+  function ingestState(msg){
+    const seen = new Set();
+    for(const p of msg.players || []){
+      seen.add(p.id);
+      let r = renderPlayers.get(p.id);
+      if(!r){
+        r = JSON.parse(JSON.stringify(p));
+        r.target = p;
+        renderPlayers.set(p.id,r);
+      }
+      r.target = p;
+    }
+    for(const id of renderPlayers.keys()) if(!seen.has(id)) renderPlayers.delete(id);
+  }
+
+  function sendInput(force=false){
+    if(!ws || ws.readyState !== 1) return;
+    const now = performance.now();
+    if(!force && now - lastInput < 40) return;
+    lastInput = now;
+
+    ws.send(JSON.stringify({
+      type:"input",
+      angle,
+      boost:boostPressed === true
+    }));
+  }
+
+  function loop(){
+    if(!running) return;
+    sendInput();
+    smoothPlayers();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function smoothPlayers(){
+    for(const r of renderPlayers.values()){
+      const t = r.target || r;
+      r.x = lerp(r.x ?? t.x, t.x, .28);
+      r.y = lerp(r.y ?? t.y, t.y, .28);
+      r.angle = lerpAngle(r.angle ?? t.angle, t.angle || 0, .25);
+      Object.assign(r,{
+        score:t.score,name:t.name,nation:t.nation || "OTHER",color:t.color,alive:t.alive,
+        radius:lerp(r.radius ?? t.radius,t.radius,.22),len:t.len,bot:!!t.bot,npc:!!t.npc,
+        boosting:!!t.boosting,boostCooldownMs:Number(t.boostCooldownMs || 0),boostActiveMs:Number(t.boostActiveMs || 0)
+      });
+      const tb = t.body || [];
+      if(!r.body) r.body = tb.map(b => ({x:b.x,y:b.y}));
+      const max = Math.min(r.body.length,tb.length);
+      for(let i=0;i<max;i++){
+        r.body[i].x = lerp(r.body[i].x,tb[i].x,.25);
+        r.body[i].y = lerp(r.body[i].y,tb[i].y,.25);
+      }
+      if(tb.length > r.body.length) for(let i=r.body.length;i<tb.length;i++) r.body.push({x:tb[i].x,y:tb[i].y});
+      if(r.body.length > tb.length) r.body.length = tb.length;
+    }
+  }
+
+  function draw(){
+    const w = innerWidth, h = innerHeight;
+    ctx.clearRect(0,0,w,h);
+    if(!state){ drawText("Waiting for Tiger server..."); return; }
+
+    const me = renderPlayers.get(myId);
+    if(me){
+      camera.x += (me.x-camera.x)*.12;
+      camera.y += (me.y-camera.y)*.12;
+      camera.zoom += (Math.max(.64,1.08-(me.len || 20)/470)-camera.zoom)*.06;
+    }
+
+    ctx.save();
+    ctx.translate(w/2,h/2);
+    ctx.scale(camera.zoom,camera.zoom);
+    ctx.translate(-camera.x,-camera.y);
+    drawWorld();
+
+    const view = {x1:camera.x-w/camera.zoom/2-160,y1:camera.y-h/camera.zoom/2-160,x2:camera.x+w/camera.zoom/2+160,y2:camera.y+h/camera.zoom/2+160};
+
+    for(const f of state.food || []) if(inView(f.x,f.y,view)) drawFlagFood(f);
+    [...renderPlayers.values()].sort((a,b)=>(a.len||0)-(b.len||0)).forEach(p=>drawTigerDragonSnake(p,view));
+
+    ctx.restore();
+    drawVignette(w,h);
+    updateHud();
+  }
+
+  function drawWorld(){
+    ctx.fillStyle = innerWidth > 720 ? "#111111" : "#050505";
+    ctx.fillRect(0,0,WORLD,WORLD);
+    ctx.strokeStyle = innerWidth > 720 ? "rgba(255,136,0,.095)" : "rgba(255,136,0,.045)";
+    ctx.lineWidth = 1;
+    for(let x=0;x<WORLD;x+=160){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD);ctx.stroke();}
+    for(let y=0;y<WORLD;y+=160){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD,y);ctx.stroke();}
+    ctx.strokeStyle = "rgba(255,136,0,.78)";
+    ctx.lineWidth = 9;
+    ctx.strokeRect(0,0,WORLD,WORLD);
+  }
+
+  function drawFlagFood(f){
+    ctx.save();
+    ctx.font = `${Math.max(18,f.r*3.2)}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji"`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.shadowColor = "#ff8a00";
+    ctx.shadowBlur = 10;
+    ctx.fillText(f.flag || "🏳️", f.x, f.y);
+    ctx.restore();
+  }
+
+  function drawTigerDragonSnake(p,view){
+    if(!p.alive) return;
+    const body = p.body || [];
+    const mainColor = playerColor(p);
+    const stripeColor = p.bot ? rainbowColor(160) : darken(mainColor);
+
+    ctx.save();
+
+    if(body.length > 1){
+      ctx.lineCap="round";ctx.lineJoin="round";
+      ctx.strokeStyle=mainColor;
+      ctx.lineWidth=Math.max(18,p.radius*1.45);
+      ctx.beginPath();ctx.moveTo(p.x,p.y);
+      for(const b of body) if(inView(b.x,b.y,view)) ctx.lineTo(b.x,b.y);
+      ctx.stroke();
+
+      ctx.strokeStyle="rgba(10,10,10,.9)";
+      ctx.lineWidth=Math.max(5,p.radius*.32);
+      ctx.setLineDash([18,18]);
+      ctx.beginPath();ctx.moveTo(p.x,p.y);
+      for(const b of body) if(inView(b.x,b.y,view)) ctx.lineTo(b.x,b.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    for(let i=body.length-1;i>=0;i--){
+      const b=body[i];
+      if(!inView(b.x,b.y,view)) continue;
+      const t=1-i/Math.max(1,body.length);
+      const size=Math.max(10,p.radius*(.78+t*.66));
+      const segColor = p.bot ? rainbowColor(i*7) : mainColor;
+
+      ctx.beginPath();
+      ctx.fillStyle=segColor;
+      ctx.shadowColor=segColor;
+      ctx.shadowBlur=p.bot ? 15 : 8;
+      ctx.arc(b.x,b.y,size,0,Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur=0;
+
+      if(i%2===0){
+        ctx.save();
+        ctx.translate(b.x,b.y);
+        ctx.rotate((i*.75)+(p.angle||0));
+        ctx.fillStyle="#070707";
+        ctx.fillRect(-size*.82,-size*.18,size*1.64,size*.30);
+        ctx.fillStyle=stripeColor;
+        ctx.fillRect(-size*.36,size*.22,size*.72,size*.13);
+        ctx.restore();
+      }
+    }
+
+    drawTigerHead(p);
+    drawName(p);
+    ctx.restore();
+  }
+
+  function drawTigerHead(p){
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.rotate(p.angle || 0);
+
+    const r = p.radius * 1.08;
+    const mainColor = playerColor(p);
+    const glowColor = p.bot ? rainbowColor(80) : mainColor;
+
+    ctx.shadowColor=glowColor;
+    ctx.shadowBlur=p.bot?28:18;
+    ctx.fillStyle=mainColor;
+    ctx.beginPath();
+    ctx.ellipse(0,0,r*1.72,r*1.14,0,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.shadowBlur=0;
+    ctx.fillStyle="#050505";
+    ctx.fillRect(-r*.65,-r*.82,r*.24,r*1.64);
+    ctx.fillRect(-r*.12,-r*.95,r*.23,r*1.9);
+    ctx.fillRect(r*.42,-r*.78,r*.18,r*1.56);
+
+    ctx.fillStyle="#fff0c2";
+    ctx.beginPath();ctx.ellipse(r*.95,0,r*.55,r*.42,0,0,Math.PI*2);ctx.fill();
+
+    ctx.fillStyle="#00ffd5";ctx.shadowColor="#00ffd5";ctx.shadowBlur=9;
+    ctx.beginPath();ctx.arc(r*.58,-r*.38,3.7,0,Math.PI*2);ctx.arc(r*.58,r*.38,3.7,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+
+    ctx.fillStyle="#111";
+    ctx.beginPath();ctx.arc(r*1.34,0,3.2,0,Math.PI*2);ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawName(p){
+    const label = `${p.bot ? "🤖 " : ""}${flagOf(p.nation)} ${p.name}`;
+    ctx.font='bold 13px Arial,"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji"';
+    ctx.textAlign="center";
+    ctx.fillStyle="rgba(0,0,0,.8)";
+    ctx.fillText(label,p.x,p.y-p.radius-18);
+    ctx.fillStyle="#fff";
+    ctx.fillText(label,p.x,p.y-p.radius-19);
+  }
+
+  function updateHud(){
+    if(!state) return;
+    const players=[...renderPlayers.values()].filter(p=>p.alive).sort((a,b)=>b.score-a.score);
+    const me=renderPlayers.get(myId);
+
+    if(me){
+      document.getElementById("meName").textContent=`${flagOf(me.nation)} ${me.name}`;
+      document.getElementById("meScore").textContent=Math.round(me.score || 0);
+      const rank=players.findIndex(p=>p.id===myId)+1;
+      document.getElementById("meMeta").textContent=`Lengte ${me.len || 0} · Rank #${rank>0?rank:"-"}`;
+      updateBoostUi(me);
+    }
+
+    document.getElementById("liveRows").innerHTML =
+      players.slice(0,5).map((p,i)=>row(i,`${p.bot ? "🤖 " : ""}${flagOf(p.nation)} ${p.name}`,p.score,playerColor(p))).join("");
+  }
+
+  function updateBoostUi(me){
+    const active = !!me.boosting;
+    const activeMs = Number(me.boostActiveMs || 0);
+    const cdMs = Number(me.boostCooldownMs || 0);
+
+    boostBtn.classList.remove("ready","active","cooldown");
+    boostFill.classList.remove("active","cooldown");
+
+    if(active){
+      const pct = clamp(activeMs / BOOST_ACTIVE_MS, 0, 1) * 100;
+      boostBtn.classList.add("active");
+      boostFill.classList.add("active");
+      boostBtn.style.setProperty("--boost-fill", pct + "%");
+      boostFill.style.width = pct + "%";
+      boostLabel.textContent = "BOOSTING";
+      boostTime.textContent = (activeMs/1000).toFixed(1) + "s";
+      boostBtn.innerHTML = `<span>BOOST</span><small>${(activeMs/1000).toFixed(1)}s</small>`;
+    } else if(cdMs > 0){
+      const pct = clamp(1 - (cdMs / BOOST_TOTAL_COOLDOWN_MS), 0, 1) * 100;
+      boostBtn.classList.add("cooldown");
+      boostFill.classList.add("cooldown");
+      boostBtn.style.setProperty("--boost-fill", pct + "%");
+      boostFill.style.width = pct + "%";
+      boostLabel.textContent = "COOLDOWN";
+      boostTime.textContent = Math.ceil(cdMs/1000) + "s";
+      boostBtn.innerHTML = `<span>WAIT</span><small>${Math.ceil(cdMs/1000)}s</small>`;
+    } else {
+      boostBtn.classList.add("ready");
+      boostBtn.style.setProperty("--boost-fill", "100%");
+      boostFill.style.width = "100%";
+      boostLabel.textContent = "BOOST READY";
+      boostTime.textContent = "3.0s";
+      boostBtn.innerHTML = `<span>BOOST</span><small>READY</small>`;
+    }
+  }
+
+  function playerColor(p){
+    if(p.bot) return rainbowColor(hashCode(p.id || p.name) % 360);
+    return p.color || "#ff8a00";
+  }
+
+  function rainbowColor(offset=0){
+    const hue = (performance.now()/35 + offset) % 360;
+    return `hsl(${hue},95%,55%)`;
+  }
+
+  function darken(hex){
+    return "rgba(0,0,0,.9)";
+  }
+
+  function row(i,n,s,c){
+    return `<div class="row">
+      <span class="dot" style="background:${c};color:${c};box-shadow:0 0 12px ${c}"></span>
+      <span class="rname">#${i+1} ${esc(n)}</span>
+      <span class="rscore">${Math.round(s || 0)}</span>
+    </div>`;
+  }
+
+  function drawVignette(w,h){
+    const g=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.25,w/2,h/2,Math.max(w,h)*.72);
+    g.addColorStop(0,"rgba(0,0,0,0)");
+    g.addColorStop(1,innerWidth>720?"rgba(0,0,0,.34)":"rgba(0,0,0,.58)");
+    ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+  }
+
+  function drawText(t){ctx.fillStyle="#ff8a00";ctx.font="bold 28px Arial";ctx.textAlign="center";ctx.fillText(t,innerWidth/2,innerHeight/2);}
+  function inView(x,y,v){ return x>=v.x1 && x<=v.x2 && y>=v.y1 && y<=v.y2; }
+  function setNet(t){ document.getElementById("net").textContent=t; }
+  function showToast(t){const e=document.getElementById("toast");e.textContent=t;e.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>e.classList.remove("show"),1800);}
+  function esc(s){return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
+  function flagOf(nation){const flags={BE:"🇧🇪",CZ:"🇨🇿",HU:"🇭🇺",CH:"🇨🇭",IT:"🇮🇹",ES:"🇪🇸",DE:"🇩🇪",GR:"🇬🇷",PL:"🇵🇱",UK:"🇬🇧",US:"🇺🇸",OTHER:"🏳️"};return flags[String(nation || "OTHER").toUpperCase()] || "🏳️";}
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function lerpAngle(a,b,t){ return a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t; }
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+  function hashCode(str){let h=0;str=String(str||"");for(let i=0;i<str.length;i++){h=((h<<5)-h)+str.charCodeAt(i);h|=0;}return Math.abs(h);}
+
+  function setDirFromScreen(x,y){
+    const dx=x-innerWidth/2;
+    const dy=y-innerHeight/2;
+    angle=Math.atan2(dy,dx);
+  }
+
+  addEventListener("mousemove",e=>setDirFromScreen(e.clientX,e.clientY));
+
+  addEventListener("keydown",e=>{
+    const k=e.key.toLowerCase();
+    if([" ","spacebar","arrowup","arrowdown","arrowleft","arrowright"].includes(k)) e.preventDefault();
+    if(k==="w" || k==="arrowup") angle=-Math.PI/2;
+    if(k==="s" || k==="arrowdown") angle=Math.PI/2;
+    if(k==="a" || k==="arrowleft") angle=Math.PI;
+    if(k==="d" || k==="arrowright") angle=0;
+    if((k===" " || k==="spacebar") && !boostPressed){
+      setBoostPressed(true);playRoar();sendInput(true);
+      if(musicEnabled && music.paused) startAudio();
+    }
   });
 
-  boost.addEventListener("pointercancel",e=>{
-    e.preventDefault();
-    setBoost(false);
-    sendInput(true);
-  });
-
-  boost.addEventListener("pointerleave",e=>{
-    if(e.pointerType === "mouse"){
-      setBoost(false);
+  addEventListener("keyup",e=>{
+    const k=e.key.toLowerCase();
+    if(k===" " || k==="spacebar"){
+      e.preventDefault();
+      setBoostPressed(false);
       sendInput(true);
     }
   });
 
-  document.body.addEventListener("touchstart",()=>{
-    if(musicEnabled) startAudio();
-  },{passive:true,once:true});
+  const joy=document.getElementById("joy");
+  const stick=document.getElementById("stick");
+  const boost=document.getElementById("boost");
+
+  joy.addEventListener("touchstart",joyMove,{passive:false});
+  joy.addEventListener("touchmove",joyMove,{passive:false});
+  joy.addEventListener("touchend",e=>{e.preventDefault();stick.style.transform="translate(0,0)";},{passive:false});
+
+  boost.addEventListener("pointerdown",e=>{
+    e.preventDefault();
+    boost.setPointerCapture?.(e.pointerId);
+    setBoostPressed(true);
+    playRoar();
+    if(musicEnabled && music.paused) startAudio();
+    sendInput(true);
+  });
+
+  boost.addEventListener("pointerup",e=>{e.preventDefault();setBoostPressed(false);sendInput(true);});
+  boost.addEventListener("pointercancel",e=>{e.preventDefault();setBoostPressed(false);sendInput(true);});
+  boost.addEventListener("lostpointercapture",()=>{setBoostPressed(false);sendInput(true);});
+
+  document.body.addEventListener("touchstart",()=>{if(musicEnabled) startAudio();},{passive:true,once:true});
 
   function joyMove(e){
     e.preventDefault();
