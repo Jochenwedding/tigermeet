@@ -76,20 +76,11 @@ body{
   80%{transform:translate(7px,7px)}
 }
 
-#karaokeScreen{
-  position:fixed;inset:0;display:none;
-  background:#000;
-}
+#karaokeScreen{position:fixed;inset:0;display:none;background:#000}
 
 #bgVideo{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  z-index:0;
-  opacity:.86;
-  background:#000;
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;
+  opacity:.86;background:#000;
 }
 
 .overlay{
@@ -103,6 +94,27 @@ body{
   position:absolute;inset:0;z-index:2;pointer-events:none;opacity:.12;
   background:repeating-linear-gradient(to bottom,rgba(255,255,255,.08) 0,rgba(255,255,255,.08) 1px,transparent 1px,transparent 5px);
 }
+
+.disco{
+  position:absolute;top:82px;z-index:3;font-size:42px;opacity:.78;pointer-events:none;
+  filter:drop-shadow(0 0 18px #fff) drop-shadow(0 0 30px orange);
+  animation:discoSpin 3s linear infinite, discoFloat 4s ease-in-out infinite alternate;
+}
+.disco.left{left:24px}
+.disco.right{right:24px;animation-duration:3.8s,4.6s}
+@keyframes discoSpin{to{transform:rotate(360deg)}}
+@keyframes discoFloat{from{top:74px}to{top:105px}}
+
+.lightBeam{
+  position:absolute;top:0;width:38vw;height:100vh;z-index:2;pointer-events:none;opacity:.18;
+  background:linear-gradient(to bottom,rgba(255,170,0,.5),rgba(255,170,0,0));
+  clip-path:polygon(46% 0,54% 0,100% 100%,0 100%);
+  filter:blur(8px);
+  animation:beamMove 5s ease-in-out infinite alternate;
+}
+.lightBeam.one{left:5%;transform-origin:top center}
+.lightBeam.two{right:5%;animation-delay:1.2s;transform-origin:top center}
+@keyframes beamMove{from{transform:rotate(-14deg)}to{transform:rotate(14deg)}}
 
 .header{
   position:absolute;top:12px;left:12px;right:12px;z-index:5;
@@ -118,6 +130,34 @@ body{
   box-shadow:0 0 15px rgba(0,0,0,.4);
 }
 .controls button.active{background:#fff;box-shadow:0 0 15px orange}
+
+.tigerGamesBtn{
+  position:relative;
+  background:linear-gradient(90deg,#ff7700,#ffcc00,#fff200,#ff7700)!important;
+  color:#000!important;
+  animation:tigerGlow 1s ease-in-out infinite alternate, tigerWiggle 2.4s ease-in-out infinite;
+  box-shadow:0 0 18px orange,0 0 38px #ff4d00,0 0 70px rgba(255,170,0,.6)!important;
+}
+.tigerGamesBtn::after{
+  content:"PLAY";
+  position:absolute;
+  top:-11px;right:-9px;
+  background:#fff;color:#000;
+  font-size:9px;font-weight:1000;
+  padding:2px 5px;border-radius:99px;
+  box-shadow:0 0 12px #fff;
+}
+@keyframes tigerGlow{
+  from{filter:brightness(1);transform:scale(1)}
+  to{filter:brightness(1.35);transform:scale(1.08)}
+}
+@keyframes tigerWiggle{
+  0%,100%{rotate:0deg}
+  45%{rotate:0deg}
+  50%{rotate:2deg}
+  55%{rotate:-2deg}
+  60%{rotate:0deg}
+}
 
 #countdown{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
@@ -149,6 +189,27 @@ body{
   to{text-shadow:0 0 10px rgba(0,0,0,.98),0 0 24px #ff9900,0 0 42px rgba(255,140,0,.75),4px 4px 0 #000}
 }
 
+.tigerRunner{
+  position:absolute;z-index:7;font-size:44px;pointer-events:none;
+  filter:drop-shadow(0 0 12px orange);
+  animation:tigerRun 5.8s linear forwards;
+}
+@keyframes tigerRun{
+  0%{left:-80px;transform:scaleX(1) rotate(-4deg)}
+  50%{transform:scaleX(1) rotate(4deg)}
+  100%{left:110vw;transform:scaleX(1) rotate(-4deg)}
+}
+
+.confettiPiece{
+  position:absolute;z-index:20;width:10px;height:16px;pointer-events:none;
+  opacity:.95;border-radius:2px;
+  animation:confettiFall 2.8s linear forwards;
+}
+@keyframes confettiFall{
+  0%{transform:translateY(-20vh) rotate(0deg);opacity:1}
+  100%{transform:translateY(120vh) rotate(720deg);opacity:0}
+}
+
 .progressWrap{
   position:absolute;left:12px;right:12px;bottom:6px;height:5px;z-index:8;
   background:rgba(255,255,255,.18);border-radius:99px;overflow:hidden;
@@ -174,6 +235,9 @@ body{
   .controls{justify-content:flex-start}
   #jet{width:92vw}
   .watermark{bottom:62px}
+  .disco{font-size:32px;top:128px}
+  .disco.left{left:12px}
+  .disco.right{right:12px}
 }
 </style>
 </head>
@@ -185,9 +249,9 @@ body{
   <div class="loginOverlay"></div>
   <div class="enterContent">
     <div class="logo">TIGER KARAOKE</div>
-    <div class="sub">Tigermeet Araxos - V7.73<br>Jo Chen Edition</div>
+    <div class="sub">Tigermeet Araxos - V3.1<br>Double P con Jo Chen</div>
     <button class="enterBtn" onclick="enterKaraoke()">ENTER ARAXOS BABY</button>
-    <div class="creatorEnter">Created by Jochen M</div>
+    <div class="creatorEnter">Jochen M</div>
   </div>
 </div>
 
@@ -201,15 +265,19 @@ body{
 
   <div class="overlay"></div>
   <div class="scanlines"></div>
+  <div class="lightBeam one"></div>
+  <div class="lightBeam two"></div>
+  <div class="disco left">🪩</div>
+  <div class="disco right">🪩</div>
   <div id="countdown">3</div>
 
   <div class="header">
     <div>
       <div class="title">TIGERMEET ARAXOS — KARAOKE MODE</div>
-      <div class="creator">Jochen M embedded edition</div>
+      <div class="creator">Jochen M - Starring Félipé</div>
     </div>
     <div class="controls">
-      <a href="/tigergames/">TIGERGAMES</a>
+      <a class="tigerGamesBtn" href="/tigergames/">TIGERGAMES</a>
       <button onclick="playSong()">PLAY</button>
       <button onclick="pauseSong()">PAUSE</button>
       <button onclick="stopSong()">STOP</button>
@@ -249,6 +317,7 @@ const statusRight = document.getElementById("statusRight");
 const repeatBtn = document.getElementById("repeatBtn");
 const countdown = document.getElementById("countdown");
 const progressBar = document.getElementById("progressBar");
+const karaokeScreenEl = document.getElementById("karaokeScreen");
 
 const SONG_DELAY_MS = 3000;
 const JET_SOUND_MAX_MS = 3000;
@@ -256,14 +325,7 @@ const LYRIC_OFFSET_SECONDS = 0.15;
 
 const bgVideos = [
   "simone.mp4",
-  "1.mp4",
-  "2.mp4",
-  "3.mp4",
-  "4.mp4",
-  "5.mp4",
-  "6.mp4",
-  "7.mp4",
-  "8.mp4"
+  "1.mp4","2.mp4","3.mp4","4.mp4","5.mp4","6.mp4","7.mp4","8.mp4"
 ];
 
 let lyrics = [];
@@ -271,15 +333,16 @@ let repeat = false;
 let lastActiveIndex = -1;
 let startTimeout = null;
 let currentBgVideo = -1;
+let tigerTimer = null;
+let confettiTimer = null;
 
 loginVideo.addEventListener("loadeddata",()=>{loginVideo.style.display="block"});
 loginVideo.addEventListener("error",()=>{loginVideo.style.display="none"});
 
 function playRandomBgVideo(){
   let next;
-  do{
-    next = Math.floor(Math.random() * bgVideos.length);
-  }while(next === currentBgVideo && bgVideos.length > 1);
+  do{next = Math.floor(Math.random() * bgVideos.length)}
+  while(next === currentBgVideo && bgVideos.length > 1);
 
   currentBgVideo = next;
   bgVideo.src = bgVideos[currentBgVideo];
@@ -289,14 +352,9 @@ function playRandomBgVideo(){
   statusLeft.textContent = "Background: " + bgVideos[currentBgVideo];
 }
 
-function nextBgVideo(){
-  playRandomBgVideo();
-}
+function nextBgVideo(){playRandomBgVideo()}
 
-bgVideo.addEventListener("ended",()=>{
-  playRandomBgVideo();
-});
-
+bgVideo.addEventListener("ended",()=>{playRandomBgVideo()});
 bgVideo.addEventListener("error",()=>{
   statusLeft.textContent = "ERROR: background video niet gevonden: " + bgVideos[currentBgVideo];
   playRandomBgVideo();
@@ -366,6 +424,8 @@ async function enterKaraoke(){
     karaokeScreen.style.display = "block";
 
     playRandomBgVideo();
+    startTigerChaos();
+    startConfettiChaos();
 
     lastActiveIndex = -1;
     centerLine(0,true);
@@ -383,6 +443,7 @@ async function enterKaraoke(){
       countdown.style.display = "none";
       statusLeft.textContent = "Playing — Tiger mode";
       updateLyrics(true);
+      burstConfetti(45);
     }catch(e){
       countdown.style.display = "none";
       statusLeft.textContent = "Audio blocked. Druk op PLAY.";
@@ -473,6 +534,64 @@ function updateLyrics(force=false){
   });
 
   centerLine(activeIndex);
+
+  if(activeIndex > 0 && activeIndex % 8 === 0){
+    burstConfetti(22);
+  }
+}
+
+function startTigerChaos(){
+  clearInterval(tigerTimer);
+  tigerTimer = setInterval(()=>{
+    spawnTiger();
+  }, 5200);
+  setTimeout(spawnTiger, 1800);
+}
+
+function spawnTiger(){
+  const tiger = document.createElement("div");
+  tiger.className = "tigerRunner";
+  tiger.textContent = Math.random() > .45 ? "🐅" : "🐯";
+  tiger.style.top = (20 + Math.random() * 68) + "vh";
+  tiger.style.fontSize = (32 + Math.random() * 30) + "px";
+  tiger.style.animationDuration = (4.8 + Math.random() * 3.2) + "s";
+
+  if(Math.random() > .5){
+    tiger.style.transform = "scaleX(-1)";
+    tiger.style.left = "110vw";
+    tiger.style.animationName = "none";
+    tiger.animate([
+      {left:"110vw", transform:"scaleX(-1) rotate(4deg)"},
+      {left:"-90px", transform:"scaleX(-1) rotate(-4deg)"}
+    ], {duration:6000, easing:"linear", fill:"forwards"});
+  }
+
+  karaokeScreenEl.appendChild(tiger);
+  setTimeout(()=>tiger.remove(), 7500);
+}
+
+function startConfettiChaos(){
+  clearInterval(confettiTimer);
+  confettiTimer = setInterval(()=>{
+    if(!audio.paused) burstConfetti(18);
+  }, 18000);
+}
+
+function burstConfetti(amount=35){
+  const colors = ["#ff8800","#ffcc00","#ffffff","#ff3300","#111111"];
+  for(let i=0;i<amount;i++){
+    const piece = document.createElement("div");
+    piece.className = "confettiPiece";
+    piece.style.left = Math.random() * 100 + "vw";
+    piece.style.top = "-30px";
+    piece.style.background = colors[Math.floor(Math.random()*colors.length)];
+    piece.style.animationDuration = (2.2 + Math.random()*1.8) + "s";
+    piece.style.transform = `rotate(${Math.random()*360}deg)`;
+    piece.style.width = (6 + Math.random()*10) + "px";
+    piece.style.height = (8 + Math.random()*16) + "px";
+    karaokeScreenEl.appendChild(piece);
+    setTimeout(()=>piece.remove(), 4300);
+  }
 }
 
 function formatTime(seconds){
@@ -481,6 +600,11 @@ function formatTime(seconds){
   const s = Math.floor(seconds%60).toString().padStart(2,"0");
   return `${m}:${s}`;
 }
+
+karaokeScreenEl.addEventListener("click",(e)=>{
+  if(e.target.closest(".controls")) return;
+  nextBgVideo();
+});
 
 audio.addEventListener("timeupdate", updateLyrics);
 audio.addEventListener("error",()=>{statusLeft.textContent="ERROR: muziekbestand niet gevonden. Check exact: Araxos Baby .mp3"});
