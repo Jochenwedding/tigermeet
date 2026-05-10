@@ -79,8 +79,14 @@ body{
 #karaokeScreen{position:fixed;inset:0;display:none;background:#000}
 
 #bgVideo{
-  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;
-  opacity:.86;background:#000;
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  z-index:0;
+  opacity:.9;
+  background:#000;
 }
 
 .overlay{
@@ -238,6 +244,9 @@ body{
   .disco{font-size:32px;top:128px}
   .disco.left{left:12px}
   .disco.right{right:12px}
+  #bgVideo{
+  object-fit:cover;
+}
 }
 </style>
 </head>
@@ -321,7 +330,7 @@ const karaokeScreenEl = document.getElementById("karaokeScreen");
 
 const SONG_DELAY_MS = 3000;
 const JET_SOUND_MAX_MS = 3000;
-const LYRIC_OFFSET_SECONDS = 0.15;
+const LYRIC_OFFSET_SECONDS = 0.45;
 
 const bgVideos = [
   "simone.mp4",
