@@ -28,7 +28,7 @@ const BESTS_KEY = "player_bests_v1";
 const PLAYERS_KEY = "known_players_v1";
 const ATTEMPTS_KEY = "login_attempts_v1";
 
-const GOD_NAME = "lemmego";
+const BOT_NAME = "lemmego";
 
 const COLORS = [
   "#ff8a00",
@@ -132,8 +132,7 @@ export class TigerRoom {
       flag: flagOf(p.nation || "OTHER"),
       score: Math.round(p.score || 0),
       alive: !!p.alive,
-      god: !!p.god,
-      autoPilot: !!p.autoPilot,
+      bot: !!p.autoPilot,
       len: p.body ? p.body.length : 0
     })).sort((a, b) => b.score - a.score);
 
@@ -177,7 +176,9 @@ export class TigerRoom {
 
       this.broadcast({
         type: "event",
-        text: `${flagOf(nation)} ${name} joined Tigergames Online 🐯`
+        text: p.autoPilot
+          ? `🤖 ${flagOf(nation)} ${name} entered as TIGER BOT. Kill him for +500 🐯`
+          : `${flagOf(nation)} ${name} joined Tigergames Online 🐯`
       });
 
       this.ensureLoop();
@@ -189,6 +190,8 @@ export class TigerRoom {
       const p = this.players.get(ws);
 
       if (!p || !p.alive) return;
+
+      if (p.autoPilot) return;
 
       this.inputs.set(p.id, {
         angle: Number(msg.angle) || p.angle,
@@ -281,7 +284,7 @@ export class TigerRoom {
     const y = rand(300, WORLD - 300);
 
     const cleanName = safeName(name);
-    const isGod = cleanName.toLowerCase() === GOD_NAME;
+    const isBot = isBotName(cleanName);
 
     const p = {
       id,
@@ -290,14 +293,13 @@ export class TigerRoom {
       x,
       y,
       angle: a,
-      color: isGod ? "#ffffff" : COLORS[Math.floor(Math.random() * COLORS.length)],
-      skin: isGod ? "godTiger" : "tigerDragon",
+      color: isBot ? "#ffffff" : COLORS[Math.floor(Math.random() * COLORS.length)],
+      skin: isBot ? "botTiger" : "tigerDragon",
       score: 0,
       alive: true,
       body: [],
-      radius: isGod ? 18 : 13,
-      god: isGod,
-      autoPilot: isGod
+      radius: 13,
+      autoPilot: isBot
     };
 
     for (let i = 0; i < 20; i++) {
@@ -357,7 +359,7 @@ export class TigerRoom {
     };
 
     if (p.autoPilot) {
-      input = this.getGodInput(p);
+      input = this.getBotInput(p);
     }
 
     p.angle += angleDiff(p.angle, input.angle) * Math.min(1, dt * 9.5);
@@ -366,18 +368,13 @@ export class TigerRoom {
 
     const sizeSlowdown = Math.min(95, Math.log(len / 20 + 1) * 58);
 
-    let baseSpeed = Math.max(115, 270 - sizeSlowdown);
-    let boostBonus = Math.max(65, 145 - sizeSlowdown * 0.45);
+    const baseSpeed = Math.max(115, 270 - sizeSlowdown);
+    const boostBonus = Math.max(65, 145 - sizeSlowdown * 0.45);
 
-    if (p.god) {
-      baseSpeed = 335;
-      boostBonus = 120;
-    }
-
-    const canBoost = p.god || (input.boost && len > 28);
+    const canBoost = input.boost && len > 28;
     const speed = baseSpeed + (canBoost ? boostBonus : 0);
 
-    if (!p.god && canBoost && Math.random() < 0.22) {
+    if (canBoost && Math.random() < 0.22) {
       const tail = p.body.pop();
 
       if (tail) {
@@ -415,100 +412,125 @@ export class TigerRoom {
       p.body.pop();
     }
 
-    p.radius = p.god
-      ? clamp(16 + Math.sqrt(p.body.length) * 1.1, 18, 36)
-      : clamp(11 + Math.sqrt(p.body.length) * 1.04, 13, 30);
+    p.radius = clamp(
+      11 + Math.sqrt(p.body.length) * 1.04,
+      13,
+      30
+    );
   }
 
-  ggetGodInput(p) {
-  let target = null;
-  let bestD = Infinity;
+  getBotInput(p) {
+    let target = null;
+    let bestScore = -Infinity;
 
-  // 1) ALTIJD eerst dichtstbijzijnde vlag/food zoeken
-  for (const f of this.food) {
-    const d = dist2(p.x, p.y, f.x, f.y);
+    // Food/vlaggetjes prioriteit, maar niet blind de muur of tails in.
+    for (const f of this.food) {
+      const d = Math.sqrt(dist2(p.x, p.y, f.x, f.y));
+      const angle = Math.atan2(f.y - p.y, f.x - p.x);
+      const danger = this.dangerScore(p, angle);
 
-    if (d < bestD) {
-      bestD = d;
-      target = f;
-    }
-  }
+      const score = (f.v * 180) - d - danger * 420;
 
-  // 2) Alleen spelers aanvallen als ze echt dichtbij zijn
-  for (const other of this.players.values()) {
-    if (!other.alive || other.id === p.id) continue;
-
-    const d = dist2(p.x, p.y, other.x, other.y);
-
-    if (d < 500 * 500 && d < bestD) {
-      bestD = d;
-      target = other;
-    }
-  }
-
-  let desiredAngle = target
-    ? Math.atan2(target.y - p.y, target.x - p.x)
-    : p.angle + 0.25;
-
-  // 3) Smooth weg van de rand sturen
-  const margin = 520;
-  let avoidX = 0;
-  let avoidY = 0;
-
-  if (p.x < margin) avoidX += (margin - p.x) / margin;
-  if (p.x > WORLD - margin) avoidX -= (p.x - (WORLD - margin)) / margin;
-  if (p.y < margin) avoidY += (margin - p.y) / margin;
-  if (p.y > WORLD - margin) avoidY -= (p.y - (WORLD - margin)) / margin;
-
-  if (avoidX !== 0 || avoidY !== 0) {
-    const targetX = Math.cos(desiredAngle);
-    const targetY = Math.sin(desiredAngle);
-
-    const mixedX = targetX + avoidX * 2.4;
-    const mixedY = targetY + avoidY * 2.4;
-
-    desiredAngle = Math.atan2(mixedY, mixedX);
-  }
-
-  return {
-    angle: desiredAngle,
-    boost: false
-  };
-}
-
-    for (const other of this.players.values()) {
-      if (!other.alive || other.id === p.id) continue;
-
-      const d = dist2(p.x, p.y, other.x, other.y);
-
-      if (d < bestD) {
-        bestD = d;
-        target = other;
+      if (score > bestScore) {
+        bestScore = score;
+        target = f;
       }
     }
 
-    if (!target || bestD > 1300 * 1300) {
-      for (const f of this.food) {
-        const d = dist2(p.x, p.y, f.x, f.y);
+    let desiredAngle = target
+      ? Math.atan2(target.y - p.y, target.x - p.x)
+      : p.angle + 0.25;
 
-        if (d < bestD) {
-          bestD = d;
-          target = f;
+    // Avoidance vector tegen muren, eigen body en andere spelers.
+    let avoidX = 0;
+    let avoidY = 0;
+
+    const wallMargin = 620;
+
+    if (p.x < wallMargin) avoidX += ((wallMargin - p.x) / wallMargin) * 3.2;
+    if (p.x > WORLD - wallMargin) avoidX -= ((p.x - (WORLD - wallMargin)) / wallMargin) * 3.2;
+    if (p.y < wallMargin) avoidY += ((wallMargin - p.y) / wallMargin) * 3.2;
+    if (p.y > WORLD - wallMargin) avoidY -= ((p.y - (WORLD - wallMargin)) / wallMargin) * 3.2;
+
+    const dangerRadius = 230;
+
+    for (const other of this.players.values()) {
+      if (!other.alive) continue;
+
+      const startIndex = other.id === p.id ? 16 : 5;
+
+      for (let i = startIndex; i < other.body.length; i += 5) {
+        const seg = other.body[i];
+        const dx = p.x - seg.x;
+        const dy = p.y - seg.y;
+        const d2 = dx * dx + dy * dy;
+
+        if (d2 > 1 && d2 < dangerRadius * dangerRadius) {
+          const d = Math.sqrt(d2);
+          const force = (dangerRadius - d) / dangerRadius;
+
+          avoidX += (dx / d) * force * 4.5;
+          avoidY += (dy / d) * force * 4.5;
+        }
+      }
+
+      // Vijandelijke koppen ook mijden, want head-on is riskant.
+      if (other.id !== p.id) {
+        const dx = p.x - other.x;
+        const dy = p.y - other.y;
+        const d2 = dx * dx + dy * dy;
+
+        if (d2 > 1 && d2 < 360 * 360) {
+          const d = Math.sqrt(d2);
+          const force = (360 - d) / 360;
+
+          avoidX += (dx / d) * force * 2.6;
+          avoidY += (dy / d) * force * 2.6;
         }
       }
     }
 
-    if (!target) {
-      return {
-        angle: p.angle + 0.35,
-        boost: true
-      };
+    const targetX = Math.cos(desiredAngle);
+    const targetY = Math.sin(desiredAngle);
+
+    const mixedX = targetX + avoidX;
+    const mixedY = targetY + avoidY;
+
+    if (Math.abs(mixedX) > 0.001 || Math.abs(mixedY) > 0.001) {
+      desiredAngle = Math.atan2(mixedY, mixedX);
     }
 
     return {
-      angle: Math.atan2(target.y - p.y, target.x - p.x),
-      boost: true
+      angle: desiredAngle,
+      boost: false
     };
+  }
+
+  dangerScore(p, angle) {
+    const lookX = p.x + Math.cos(angle) * 150;
+    const lookY = p.y + Math.sin(angle) * 150;
+
+    let danger = 0;
+
+    if (lookX < 120 || lookX > WORLD - 120 || lookY < 120 || lookY > WORLD - 120) {
+      danger += 5;
+    }
+
+    for (const other of this.players.values()) {
+      if (!other.alive) continue;
+
+      const startIndex = other.id === p.id ? 16 : 5;
+
+      for (let i = startIndex; i < other.body.length; i += 6) {
+        const seg = other.body[i];
+
+        if (dist2(lookX, lookY, seg.x, seg.y) < 120 * 120) {
+          danger += 2;
+        }
+      }
+    }
+
+    return danger;
   }
 
   handleEating() {
@@ -533,8 +555,6 @@ export class TigerRoom {
     const all = [...this.players.values()].filter(p => p.alive);
 
     for (const p of all) {
-      if (p.god) continue;
-
       if (
         p.x <= 22 ||
         p.x >= WORLD - 22 ||
@@ -581,12 +601,26 @@ export class TigerRoom {
 
   kill(dead, killer, reason) {
     if (!dead.alive) return;
-    if (dead.god) return;
 
     dead.alive = false;
 
     if (killer && killer !== dead) {
-      killer.score += 10;
+      if (dead.autoPilot) {
+        killer.score += 500;
+
+        const oldBody = killer.body.slice();
+        for (const b of oldBody) {
+          killer.body.push({ x: b.x, y: b.y });
+        }
+
+        killer.radius = clamp(
+          11 + Math.sqrt(killer.body.length) * 1.04,
+          13,
+          30
+        );
+      } else {
+        killer.score += 10;
+      }
     }
 
     this.saveTop(dead.name, Math.round(dead.score), dead.nation);
@@ -608,6 +642,8 @@ export class TigerRoom {
       text = `${flagOf(dead.nation)} ${dead.name} ate his own tiger tail 🐯`;
     } else if (reason === "border") {
       text = `${flagOf(dead.nation)} ${dead.name} left the Tiger zone 💀`;
+    } else if (killer && dead.autoPilot) {
+      text = `${flagOf(killer.nation)} ${killer.name} killed the TIGER BOT and gained +500 🐯🔥`;
     } else if (killer) {
       text = `${flagOf(killer.nation)} ${killer.name} destroyed ${flagOf(dead.nation)} ${dead.name} 🐯`;
     }
@@ -624,10 +660,16 @@ export class TigerRoom {
     while (this.food.length < FOOD_TARGET) {
       this.food.push(makeFood(
         rand(50, WORLD - 50),
-        rand(50, WORLD - 50),
+        rand(5, 8),
         rand(5, 8),
         rand(0.8, 2.2)
       ));
+    }
+
+    for (const f of this.food) {
+      if (f.y < 50 || f.y > WORLD - 50) {
+        f.y = rand(50, WORLD - 50);
+      }
     }
 
     if (this.food.length > FOOD_TARGET + 130) {
@@ -649,8 +691,7 @@ export class TigerRoom {
       alive: p.alive,
       radius: Math.round(p.radius * 10) / 10,
       len: p.body.length,
-      god: !!p.god,
-      autoPilot: !!p.autoPilot,
+      bot: !!p.autoPilot,
       body: p.body
         .filter((_, i) => i % 3 === 0)
         .map(b => ({
@@ -807,6 +848,10 @@ function safeName(v) {
       .trim()
       .slice(0, 16) || "Tiger"
   );
+}
+
+function isBotName(v) {
+  return safeName(v).toLowerCase().replace(/\s+/g, "") === BOT_NAME;
 }
 
 function safeNation(v) {
