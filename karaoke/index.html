@@ -9,149 +9,64 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 
 html,body{
-  width:100%;
-  height:100%;
-  overflow:hidden;
-  background:#020202;
-  color:white;
+  width:100%;height:100%;overflow:hidden;background:#020202;color:white;
   font-family:Arial,Helvetica,sans-serif;
 }
 
 body{
-  background:
-    radial-gradient(circle at top,rgba(255,136,0,.35),transparent 42%),
-    linear-gradient(145deg,#030303,#111,#000);
+  background:radial-gradient(circle at top,rgba(255,136,0,.35),transparent 42%),
+  linear-gradient(145deg,#030303,#111,#000);
 }
 
 #enterScreen{
-  position:fixed;
-  inset:0;
-  z-index:50;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  text-align:center;
-  overflow:hidden;
-  background:
-    linear-gradient(rgba(0,0,0,.65),rgba(0,0,0,.84)),
-    repeating-linear-gradient(45deg,#ff8800 0,#ff8800 22px,#000 22px,#000 44px);
+  position:fixed;inset:0;z-index:50;display:flex;justify-content:center;align-items:center;
+  text-align:center;overflow:hidden;
+  background:linear-gradient(rgba(0,0,0,.65),rgba(0,0,0,.84)),
+  repeating-linear-gradient(45deg,#ff8800 0,#ff8800 22px,#000 22px,#000 44px);
 }
 
 #loginVideo{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  background:#000;
-  z-index:0;
-  opacity:.92;
-  display:none;
+  position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;
+  z-index:0;opacity:.92;display:none;
 }
 
 .loginOverlay{
-  position:absolute;
-  inset:0;
-  z-index:1;
-  background:
-    radial-gradient(circle at center,rgba(0,0,0,.05),rgba(0,0,0,.72)),
-    linear-gradient(rgba(0,0,0,.16),rgba(0,0,0,.62));
+  position:absolute;inset:0;z-index:1;
+  background:radial-gradient(circle at center,rgba(0,0,0,.02),rgba(0,0,0,.68)),
+  linear-gradient(rgba(0,0,0,.08),rgba(0,0,0,.58));
 }
 
-.enterContent{
-  position:relative;
-  z-index:5;
-  padding:22px;
-}
-
+.enterContent{position:relative;z-index:5;padding:24px}
 .logo{
-  font-size:clamp(38px,8vw,82px);
-  font-weight:1000;
-  color:#ff9d00;
-  text-shadow:0 0 22px orange,0 0 45px #ff5500;
-  letter-spacing:2px;
+  font-size:clamp(38px,8vw,82px);font-weight:1000;color:#ff9d00;
+  text-shadow:0 0 22px orange,0 0 45px #ff5500;letter-spacing:2px;
 }
-
-.sub{
-  color:#eee;
-  font-size:18px;
-  margin:14px 0 30px;
-  text-shadow:0 0 8px #000;
-}
-
+.sub{color:#eee;font-size:18px;margin:14px 0 30px;text-shadow:0 0 8px #000}
 .enterBtn{
-  background:linear-gradient(180deg,#ffb000,#ff7700);
-  color:#000;
-  border:none;
-  padding:19px 36px;
-  border-radius:18px;
-  font-size:23px;
-  font-weight:1000;
-  box-shadow:0 0 35px rgba(255,136,0,.85);
-  cursor:pointer;
+  background:linear-gradient(180deg,#ffb000,#ff7700);color:#000;border:none;
+  padding:19px 36px;border-radius:18px;font-size:23px;font-weight:1000;
+  box-shadow:0 0 35px rgba(255,136,0,.85);cursor:pointer;
 }
-
-.enterBtn:active{transform:scale(.96)}
-
-.creatorEnter{
-  margin-top:18px;
-  font-size:13px;
-  letter-spacing:2px;
-  color:#ddd;
-  text-shadow:0 0 8px #000;
-}
-
-/* JET INTRO */
+.creatorEnter{margin-top:18px;font-size:13px;letter-spacing:2px;color:#ddd;text-shadow:0 0 8px #000}
 
 #jet{
-  position:fixed;
-  left:-55vw;
-  top:42%;
-  z-index:90;
-  width:min(560px,78vw);
-  display:none;
-  filter:
-    drop-shadow(0 0 20px orange)
-    drop-shadow(0 0 55px #ff4d00);
+  position:fixed;left:-55vw;top:42%;z-index:90;width:min(560px,78vw);display:none;
+  filter:drop-shadow(0 0 20px orange) drop-shadow(0 0 55px #ff4d00);
 }
-
-#jet.fly{
-  display:block;
-  animation:flyby 3.1s cubic-bezier(.08,.9,.18,1) forwards;
-}
-
+#jet.fly{display:block;animation:flyby 3s cubic-bezier(.08,.9,.18,1) forwards}
 .afterburner{
-  position:absolute;
-  left:-170px;
-  top:50%;
-  width:230px;
-  height:44px;
-  transform:translateY(-50%);
-  border-radius:50%;
-  background:linear-gradient(90deg,rgba(255,60,0,0),rgba(255,136,0,.95),rgba(255,255,255,.95));
-  filter:blur(5px);
-  animation:burn .09s infinite alternate;
+  position:absolute;left:-170px;top:50%;width:230px;height:44px;transform:translateY(-50%);
+  border-radius:50%;background:linear-gradient(90deg,rgba(255,60,0,0),rgba(255,136,0,.95),rgba(255,255,255,.95));
+  filter:blur(5px);animation:burn .09s infinite alternate;
 }
-
-#jet img{
-  width:100%;
-  display:block;
-  transform:rotate(5deg);
-}
-
-@keyframes burn{
-  from{transform:translateY(-50%) scaleX(.8);opacity:.7}
-  to{transform:translateY(-50%) scaleX(1.25);opacity:1}
-}
-
+#jet img{width:100%;display:block;transform:rotate(5deg)}
+@keyframes burn{from{transform:translateY(-50%) scaleX(.8);opacity:.7}to{transform:translateY(-50%) scaleX(1.25);opacity:1}}
 @keyframes flyby{
   0%{left:-60vw;top:56%;transform:scale(.65) rotate(2deg)}
   35%{left:24%;top:37%;transform:scale(1.45) rotate(0deg)}
   58%{left:48%;top:31%;transform:scale(1.85) rotate(-2deg)}
   100%{left:125%;top:12%;transform:scale(.85) rotate(-8deg)}
 }
-
 .shake{animation:shake .55s}
 @keyframes shake{
   0%,100%{transform:translate(0,0)}
@@ -161,226 +76,103 @@ body{
   80%{transform:translate(7px,7px)}
 }
 
-/* KARAOKE SCREEN */
-
 #karaokeScreen{
-  position:fixed;
-  inset:0;
-  display:none;
-  background:
-    radial-gradient(circle at center,rgba(255,136,0,.18),transparent 48%),
-    linear-gradient(145deg,#080808,#171717,#000);
+  position:fixed;inset:0;display:none;
+  background:radial-gradient(circle at center,rgba(255,136,0,.18),transparent 48%),
+  linear-gradient(145deg,#080808,#171717,#000);
 }
 
 .videoFrame{
-  position:absolute;
-  top:50%;
-  left:50%;
-  width:min(58vw,860px);
-  aspect-ratio:16/9;
-  transform:translate(-50%,-50%);
-  z-index:0;
-  border-radius:30px;
-  overflow:hidden;
-  background:#000;
-  box-shadow:
-    0 0 40px rgba(255,136,0,.62),
-    0 0 110px rgba(255,80,0,.32);
+  position:absolute;top:50%;left:50%;width:min(58vw,860px);aspect-ratio:16/9;
+  transform:translate(-50%,-50%);z-index:0;border-radius:30px;overflow:hidden;background:#000;
+  box-shadow:0 0 40px rgba(255,136,0,.62),0 0 110px rgba(255,80,0,.32);
   opacity:.92;
 }
-
-#bgVideo{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  background:#000;
-}
+#bgVideo{width:100%;height:100%;object-fit:contain;background:#000}
 
 .overlay{
-  position:absolute;
-  inset:0;
-  z-index:1;
-  background:
-    radial-gradient(circle at center,rgba(0,0,0,.02),rgba(0,0,0,.58) 78%),
-    linear-gradient(rgba(0,0,0,.08),rgba(0,0,0,.45));
+  position:absolute;inset:0;z-index:1;
+  background:radial-gradient(circle at center,rgba(0,0,0,.02),rgba(0,0,0,.54) 78%),
+  linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.42));
   pointer-events:none;
+}
+
+.scanlines{
+  position:absolute;inset:0;z-index:2;pointer-events:none;opacity:.12;
+  background:repeating-linear-gradient(to bottom,rgba(255,255,255,.08) 0,rgba(255,255,255,.08) 1px,transparent 1px,transparent 5px);
 }
 
 .header{
-  position:absolute;
-  top:12px;
-  left:12px;
-  right:12px;
-  z-index:5;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
+  position:absolute;top:12px;left:12px;right:12px;z-index:5;
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
 }
+.title{font-size:20px;font-weight:1000;color:#ff9d00;text-shadow:0 0 15px #000}
+.creator{font-size:12px;color:#ddd;letter-spacing:2px;text-transform:uppercase}
 
-.titleBlock{
-  display:flex;
-  flex-direction:column;
-  gap:3px;
-}
-
-.title{
-  font-size:20px;
-  font-weight:1000;
-  color:#ff9d00;
-  text-shadow:0 0 15px #000;
-}
-
-.creator{
-  font-size:12px;
-  color:#ddd;
-  letter-spacing:2px;
-  text-transform:uppercase;
-}
-
-.controls{
-  display:flex;
-  gap:7px;
-  flex-wrap:wrap;
-  justify-content:flex-end;
-}
-
-.controls button,
-.controls a{
-  text-decoration:none;
-  border:none;
-  background:rgba(255,136,0,.94);
-  color:#000;
-  font-weight:1000;
-  border-radius:12px;
-  padding:10px 13px;
-  cursor:pointer;
-  font-size:13px;
+.controls{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.controls button,.controls a{
+  text-decoration:none;border:none;background:rgba(255,136,0,.94);color:#000;font-weight:1000;
+  border-radius:12px;padding:10px 13px;cursor:pointer;font-size:13px;
   box-shadow:0 0 15px rgba(0,0,0,.4);
 }
+.controls button.active{background:#fff;box-shadow:0 0 15px orange}
 
-.controls button.active{
-  background:#fff;
-  box-shadow:0 0 15px orange;
+#countdown{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:8;font-size:clamp(42px,9vw,115px);font-weight:1000;color:#ff9d00;
+  text-shadow:0 0 25px orange,0 0 70px #ff4d00;display:none;
 }
 
 #lyricsViewport{
-  position:absolute;
-  inset:92px 0 58px 0;
-  z-index:4;
-  overflow:hidden;
-  text-align:center;
-  pointer-events:none;
+  position:absolute;inset:92px 0 58px 0;z-index:4;overflow:hidden;text-align:center;pointer-events:none;
 }
-
 #lyricsTrack{
-  position:absolute;
-  top:50%;
-  left:0;
-  right:0;
-  transform:translateY(0);
-  transition:transform 1.15s cubic-bezier(.22,.75,.22,1);
-  will-change:transform;
+  position:absolute;top:50%;left:0;right:0;transform:translateY(0);
+  transition:transform 1.25s cubic-bezier(.18,.75,.2,1);will-change:transform;
 }
 
 .line{
-  font-size:clamp(29px,6.4vw,76px);
-  line-height:1.08;
-  font-weight:1000;
-  letter-spacing:1px;
-  text-transform:uppercase;
-  opacity:.38;
-  margin:32px auto;
-  max-width:1200px;
-  color:white;
-  text-shadow:
-    0 0 8px rgba(0,0,0,.95),
-    0 0 18px rgba(0,0,0,.95),
-    4px 4px 0 #000;
-  transition:opacity .45s, color .45s, transform .45s, text-shadow .45s;
+  font-size:clamp(29px,6.4vw,76px);line-height:1.08;font-weight:1000;letter-spacing:1px;
+  text-transform:uppercase;opacity:.38;margin:32px auto;max-width:1200px;color:white;
+  text-shadow:0 0 8px rgba(0,0,0,.95),0 0 18px rgba(0,0,0,.95),4px 4px 0 #000;
+  transition:opacity .45s,color .45s,transform .45s,text-shadow .45s;
 }
-
 .line.active{
-  opacity:1;
-  color:#ffae00;
-  transform:scale(1.08);
+  opacity:1;color:#ffae00;transform:scale(1.08);
   animation:karaokeGlow 1.2s ease-in-out infinite alternate;
 }
-
-.line.passed{
-  opacity:.3;
+.line.passed{opacity:.3}
+@keyframes karaokeGlow{
+  from{text-shadow:0 0 8px rgba(0,0,0,.95),0 0 14px orange,4px 4px 0 #000}
+  to{text-shadow:0 0 10px rgba(0,0,0,.98),0 0 24px #ff9900,0 0 42px rgba(255,140,0,.75),4px 4px 0 #000}
 }
 
-@keyframes karaokeGlow{
-  from{
-    text-shadow:
-      0 0 8px rgba(0,0,0,.95),
-      0 0 14px orange,
-      4px 4px 0 #000;
-  }
-
-  to{
-    text-shadow:
-      0 0 10px rgba(0,0,0,.98),
-      0 0 24px #ff9900,
-      0 0 38px rgba(255,140,0,.7),
-      4px 4px 0 #000;
-  }
+.progressWrap{
+  position:absolute;left:12px;right:12px;bottom:6px;height:5px;z-index:8;
+  background:rgba(255,255,255,.18);border-radius:99px;overflow:hidden;
+}
+#progressBar{
+  height:100%;width:0%;background:linear-gradient(90deg,#ff7700,#ffcc00,#fff);
+  box-shadow:0 0 15px orange;
 }
 
 .status{
-  position:absolute;
-  bottom:10px;
-  left:12px;
-  right:12px;
-  z-index:6;
-  font-size:13px;
-  color:#eee;
-  opacity:.95;
-  text-shadow:0 0 8px #000;
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
+  position:absolute;bottom:18px;left:12px;right:12px;z-index:6;font-size:13px;color:#eee;
+  opacity:.95;text-shadow:0 0 8px #000;display:flex;justify-content:space-between;gap:10px;
 }
-
 .watermark{
-  position:absolute;
-  right:16px;
-  bottom:34px;
-  z-index:6;
-  font-size:12px;
-  letter-spacing:3px;
-  color:rgba(255,255,255,.65);
-  text-shadow:0 0 10px #000;
+  position:absolute;right:16px;bottom:42px;z-index:6;font-size:12px;letter-spacing:3px;
+  color:rgba(255,255,255,.65);text-shadow:0 0 10px #000;
 }
-
 #audio,#jetSound{display:none}
 
 @media(max-width:700px){
-  .videoFrame{
-    width:88vw;
-  }
-
-  .header{
-    flex-direction:column;
-    align-items:flex-start;
-  }
-
-  #lyricsViewport{
-    inset:150px 0 58px 0;
-  }
-
-  .controls{
-    justify-content:flex-start;
-  }
-
-  #jet{
-    width:92vw;
-  }
-
-  .watermark{
-    bottom:55px;
-  }
+  .videoFrame{width:88vw}
+  .header{flex-direction:column;align-items:flex-start}
+  #lyricsViewport{inset:150px 0 65px 0}
+  .controls{justify-content:flex-start}
+  #jet{width:92vw}
+  .watermark{bottom:62px}
 }
 </style>
 </head>
@@ -390,7 +182,6 @@ body{
 <div id="enterScreen">
   <video id="loginVideo" src="login.mp4" autoplay muted loop playsinline></video>
   <div class="loginOverlay"></div>
-
   <div class="enterContent">
     <div class="logo">TIGER KARAOKE</div>
     <div class="sub">Tigermeet Araxos - V7.73<br>Jo Chen Edition</div>
@@ -410,13 +201,14 @@ body{
   </div>
 
   <div class="overlay"></div>
+  <div class="scanlines"></div>
+  <div id="countdown">3</div>
 
   <div class="header">
-    <div class="titleBlock">
+    <div>
       <div class="title">TIGERMEET ARAXOS — KARAOKE MODE</div>
       <div class="creator">Jochen M embedded edition</div>
     </div>
-
     <div class="controls">
       <a href="/tigergames/">TIGERGAMES</a>
       <button onclick="playSong()">PLAY</button>
@@ -439,6 +231,8 @@ body{
     <span id="statusLeft">Loading...</span>
     <span id="statusRight">Tiger mode standby</span>
   </div>
+
+  <div class="progressWrap"><div id="progressBar"></div></div>
 </div>
 
 <script>
@@ -449,66 +243,56 @@ const audio = document.getElementById("audio");
 const jetSound = document.getElementById("jetSound");
 const bgVideo = document.getElementById("bgVideo");
 const loginVideo = document.getElementById("loginVideo");
+const lyricsViewport = document.getElementById("lyricsViewport");
 const lyricsTrack = document.getElementById("lyricsTrack");
 const statusLeft = document.getElementById("statusLeft");
 const statusRight = document.getElementById("statusRight");
 const repeatBtn = document.getElementById("repeatBtn");
+const countdown = document.getElementById("countdown");
+const progressBar = document.getElementById("progressBar");
 
-const SONG_DELAY_MS = 4000;
+const SONG_DELAY_MS = 3000;
+const JET_SOUND_MAX_MS = 3000;
 const LYRIC_OFFSET_SECONDS = 0.15;
 
 let lyrics = [];
 let repeat = false;
 let lastActiveIndex = -1;
+let startTimeout = null;
 
-loginVideo.addEventListener("loadeddata", () => {
-  loginVideo.style.display = "block";
-});
-
-loginVideo.addEventListener("error", () => {
-  loginVideo.style.display = "none";
-});
+loginVideo.addEventListener("loadeddata",()=>{loginVideo.style.display="block"});
+loginVideo.addEventListener("error",()=>{loginVideo.style.display="none"});
 
 async function loadLRC(){
   try{
     const res = await fetch("Araxos Baby.lrc?cache=" + Date.now());
-
-    if(!res.ok){
-      throw new Error("Araxos Baby.lrc not found");
-    }
+    if(!res.ok) throw new Error("Araxos Baby.lrc not found");
 
     const text = await res.text();
     lyrics = [];
 
-    text.split(/\r?\n/).forEach(line => {
+    text.split(/\r?\n/).forEach(line=>{
       const matches = [...line.matchAll(/\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]/g)];
       const cleanText = line.replace(/\[[^\]]+\]/g,"").trim();
-
       if(!matches.length || !cleanText) return;
 
-      matches.forEach(m => {
+      matches.forEach(m=>{
         const min = parseInt(m[1],10);
         const sec = parseInt(m[2],10);
         const ms = m[3] ? parseFloat("0." + m[3].padEnd(3,"0")) : 0;
-
-        lyrics.push({
-          time: min * 60 + sec + ms,
-          text: cleanText
-        });
+        lyrics.push({time:min*60+sec+ms,text:cleanText});
       });
     });
 
-    lyrics.sort((a,b) => a.time - b.time);
+    lyrics.sort((a,b)=>a.time-b.time);
+    if(!lyrics.length) throw new Error("LRC leeg");
 
-    if(!lyrics.length){
-      throw new Error("LRC leeg of verkeerd formaat");
-    }
-
-    lyricsTrack.innerHTML = lyrics.map((l,i) =>
+    lyricsTrack.innerHTML = lyrics.map((l,i)=>
       `<div class="line" id="line-${i}">${escapeHtml(l.text)}</div>`
     ).join("");
 
     statusLeft.textContent = lyrics.length + " lyric lines loaded";
+    requestAnimationFrame(()=>centerLine(0,true));
   }catch(e){
     statusLeft.textContent = "ERROR: Araxos Baby.lrc niet gevonden of verkeerd formaat";
     lyricsTrack.innerHTML = `<div class="line active">ARAXOS BABY.LRC NIET GELADEN</div>`;
@@ -516,60 +300,70 @@ async function loadLRC(){
 }
 
 function escapeHtml(str){
-  return str.replace(/[&<>"']/g, c => ({
-    "&":"&amp;",
-    "<":"&lt;",
-    ">":"&gt;",
-    '"':"&quot;",
-    "'":"&#039;"
-  }[c]));
+  return str.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 }
 
 async function enterKaraoke(){
+  clearTimeout(startTimeout);
+
   jetSound.currentTime = 0;
   jetSound.volume = 1;
   jetSound.play().catch(()=>{});
+
+  setTimeout(()=>{
+    jetSound.pause();
+    jetSound.currentTime = 0;
+  }, JET_SOUND_MAX_MS);
 
   jet.classList.remove("fly");
   void jet.offsetWidth;
   jet.classList.add("fly");
 
   document.body.classList.add("shake");
+  setTimeout(()=>document.body.classList.remove("shake"),700);
 
-  setTimeout(() => {
-    document.body.classList.remove("shake");
-  }, 700);
-
-  setTimeout(() => {
+  setTimeout(()=>{
     enterScreen.style.display = "none";
     karaokeScreen.style.display = "block";
 
     bgVideo.currentTime = 0;
     bgVideo.play().catch(()=>{});
 
-    statusLeft.textContent = "Araxos Baby starts in 4 seconds...";
+    lastActiveIndex = -1;
+    centerLine(0,true);
+    showCountdown();
+    statusLeft.textContent = "Araxos Baby starts in 3 seconds...";
     statusRight.textContent = "Jet intro complete";
-  }, 1700);
+  },900);
 
-  setTimeout(async () => {
+  startTimeout = setTimeout(async()=>{
     audio.currentTime = 0;
     audio.volume = 1;
 
     try{
       await audio.play();
+      countdown.style.display = "none";
       statusLeft.textContent = "Playing — Tiger mode";
       updateLyrics(true);
     }catch(e){
+      countdown.style.display = "none";
       statusLeft.textContent = "Audio blocked. Druk op PLAY.";
     }
   }, SONG_DELAY_MS);
 }
 
+function showCountdown(){
+  countdown.style.display = "block";
+  countdown.textContent = "3";
+  setTimeout(()=>countdown.textContent="2",1000);
+  setTimeout(()=>countdown.textContent="1",2000);
+}
+
 function playSong(){
-  audio.play().then(() => {
+  audio.play().then(()=>{
     bgVideo.play().catch(()=>{});
     statusLeft.textContent = "Playing";
-  }).catch(() => {
+  }).catch(()=>{
     statusLeft.textContent = "Audio speelt niet. Check exact: Araxos Baby .mp3";
   });
 }
@@ -581,13 +375,14 @@ function pauseSong(){
 }
 
 function stopSong(){
+  clearTimeout(startTimeout);
   audio.pause();
   audio.currentTime = 0;
-
   bgVideo.pause();
   bgVideo.currentTime = 0;
-
+  progressBar.style.width = "0%";
   lastActiveIndex = -1;
+  centerLine(0,true);
   updateLyrics(true);
   statusLeft.textContent = "Stopped";
 }
@@ -595,9 +390,24 @@ function stopSong(){
 function toggleRepeat(){
   repeat = !repeat;
   audio.loop = repeat;
-
   repeatBtn.textContent = repeat ? "REPEAT ON" : "REPEAT OFF";
   repeatBtn.classList.toggle("active", repeat);
+}
+
+function centerLine(index, instant=false){
+  const activeLine = document.getElementById("line-" + index);
+  if(!activeLine) return;
+
+  if(instant) lyricsTrack.style.transition = "none";
+
+  const lineCenter = activeLine.offsetTop + activeLine.offsetHeight / 2;
+  lyricsTrack.style.transform = `translateY(${-lineCenter}px)`;
+
+  if(instant){
+    requestAnimationFrame(()=>{
+      lyricsTrack.style.transition = "transform 1.25s cubic-bezier(.18,.75,.2,1)";
+    });
+  }
 }
 
 function updateLyrics(force=false){
@@ -606,60 +416,40 @@ function updateLyrics(force=false){
   const t = audio.currentTime + LYRIC_OFFSET_SECONDS;
   let activeIndex = 0;
 
-  for(let i = 0; i < lyrics.length; i++){
+  for(let i=0;i<lyrics.length;i++){
     if(t >= lyrics[i].time) activeIndex = i;
     else break;
   }
 
-  statusRight.textContent =
-    formatTime(audio.currentTime) + " / " + formatTime(audio.duration || 0);
+  statusRight.textContent = formatTime(audio.currentTime) + " / " + formatTime(audio.duration || 0);
+
+  if(isFinite(audio.duration) && audio.duration > 0){
+    progressBar.style.width = Math.min(100,(audio.currentTime/audio.duration)*100) + "%";
+  }
 
   if(activeIndex === lastActiveIndex && !force) return;
-
   lastActiveIndex = activeIndex;
 
-  document.querySelectorAll(".line").forEach((el,i) => {
+  document.querySelectorAll(".line").forEach((el,i)=>{
     el.classList.toggle("active", i === activeIndex);
     el.classList.toggle("passed", i < activeIndex);
   });
 
-  const activeLine = document.getElementById("line-" + activeIndex);
-
-  if(activeLine){
-    const viewportCenter = document.getElementById("lyricsViewport").clientHeight / 2;
-    const lineCenter = activeLine.offsetTop + activeLine.offsetHeight / 2;
-    const target = viewportCenter - lineCenter;
-
-    lyricsTrack.style.transform = `translateY(${target}px)`;
-  }
+  centerLine(activeIndex);
 }
 
 function formatTime(seconds){
   if(!isFinite(seconds)) return "0:00";
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60).toString().padStart(2,"0");
+  const m = Math.floor(seconds/60);
+  const s = Math.floor(seconds%60).toString().padStart(2,"0");
   return `${m}:${s}`;
 }
 
 audio.addEventListener("timeupdate", updateLyrics);
-
-audio.addEventListener("error", () => {
-  statusLeft.textContent = "ERROR: muziekbestand niet gevonden. Check exact: Araxos Baby .mp3";
-});
-
-bgVideo.addEventListener("error", () => {
-  statusLeft.textContent = "ERROR: simone.mp4 niet gevonden";
-});
-
-jetSound.addEventListener("error", () => {
-  statusLeft.textContent = "ERROR: jet.mp3 niet gevonden";
-});
-
-audio.addEventListener("ended", () => {
-  if(!repeat){
-    statusLeft.textContent = "Finished — Tiger mode complete";
-  }
-});
+audio.addEventListener("error",()=>{statusLeft.textContent="ERROR: muziekbestand niet gevonden. Check exact: Araxos Baby .mp3"});
+bgVideo.addEventListener("error",()=>{statusLeft.textContent="ERROR: simone.mp4 niet gevonden"});
+jetSound.addEventListener("error",()=>{statusLeft.textContent="ERROR: jet.mp3 niet gevonden"});
+audio.addEventListener("ended",()=>{if(!repeat) statusLeft.textContent="Finished — Tiger mode complete"});
 
 loadLRC();
 </script>
