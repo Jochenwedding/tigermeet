@@ -23,6 +23,8 @@ body{
     linear-gradient(145deg,#030303,#111,#000);
 }
 
+/* ================= ENTER SCREEN ================= */
+
 #enterScreen{
   position:fixed;
   inset:0;
@@ -32,9 +34,36 @@ body{
   justify-content:center;
   align-items:center;
   text-align:center;
+  overflow:hidden;
   background:
     linear-gradient(rgba(0,0,0,.78),rgba(0,0,0,.94)),
     repeating-linear-gradient(45deg,#ff8800 0,#ff8800 22px,#000 22px,#000 44px);
+}
+
+#loginVideo{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  z-index:0;
+  opacity:.55;
+  display:none;
+}
+
+.loginOverlay{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  background:
+    radial-gradient(circle at center,rgba(0,0,0,.2),rgba(0,0,0,.9)),
+    linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.85));
+}
+
+.enterContent{
+  position:relative;
+  z-index:5;
+  padding:22px;
 }
 
 .logo{
@@ -66,12 +95,22 @@ body{
 
 .enterBtn:active{transform:scale(.96)}
 
+.creatorEnter{
+  margin-top:18px;
+  font-size:13px;
+  letter-spacing:2px;
+  color:#bbb;
+  text-shadow:0 0 8px #000;
+}
+
+/* ================= JET INTRO ================= */
+
 #jet{
   position:fixed;
   left:-55vw;
   top:42%;
   z-index:90;
-  width:min(520px,70vw);
+  width:min(560px,78vw);
   display:none;
   filter:
     drop-shadow(0 0 20px orange)
@@ -85,10 +124,10 @@ body{
 
 .afterburner{
   position:absolute;
-  left:-160px;
+  left:-170px;
   top:50%;
-  width:210px;
-  height:42px;
+  width:230px;
+  height:44px;
   transform:translateY(-50%);
   border-radius:50%;
   background:linear-gradient(90deg,rgba(255,60,0,0),rgba(255,136,0,.95),rgba(255,255,255,.95));
@@ -123,35 +162,39 @@ body{
   80%{transform:translate(7px,7px)}
 }
 
+/* ================= KARAOKE SCREEN ================= */
+
 #karaokeScreen{
   position:fixed;
   inset:0;
   display:none;
   background:
-    radial-gradient(circle at center,rgba(255,136,0,.16),transparent 42%),
-    #000;
+    radial-gradient(circle at center,rgba(255,136,0,.14),transparent 42%),
+    linear-gradient(145deg,#050505,#111,#000);
 }
 
 .videoFrame{
   position:absolute;
   top:50%;
   left:50%;
-  width:min(54vw,760px);
-  height:min(54vh,430px);
+  width:min(58vw,860px);
+  aspect-ratio:16/9;
   transform:translate(-50%,-50%);
   z-index:0;
-  border-radius:28px;
+  border-radius:30px;
   overflow:hidden;
+  background:#000;
   box-shadow:
-    0 0 35px rgba(255,136,0,.5),
-    0 0 90px rgba(255,80,0,.22);
-  opacity:.78;
+    0 0 35px rgba(255,136,0,.52),
+    0 0 100px rgba(255,80,0,.24);
+  opacity:.82;
 }
 
 #bgVideo{
   width:100%;
   height:100%;
-  object-fit:cover;
+  object-fit:contain;
+  background:#000;
 }
 
 .overlay{
@@ -159,8 +202,8 @@ body{
   inset:0;
   z-index:1;
   background:
-    radial-gradient(circle at center,rgba(0,0,0,.08),rgba(0,0,0,.84) 72%),
-    linear-gradient(rgba(0,0,0,.28),rgba(0,0,0,.75));
+    radial-gradient(circle at center,rgba(0,0,0,.05),rgba(0,0,0,.82) 76%),
+    linear-gradient(rgba(0,0,0,.24),rgba(0,0,0,.78));
   pointer-events:none;
 }
 
@@ -176,11 +219,24 @@ body{
   gap:10px;
 }
 
+.titleBlock{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+
 .title{
   font-size:20px;
   font-weight:1000;
   color:#ff9d00;
   text-shadow:0 0 15px #000;
+}
+
+.creator{
+  font-size:12px;
+  color:#ccc;
+  letter-spacing:2px;
+  text-transform:uppercase;
 }
 
 .controls{
@@ -190,14 +246,18 @@ body{
   justify-content:flex-end;
 }
 
-.controls button{
+.controls button,
+.controls a{
+  text-decoration:none;
   border:none;
   background:rgba(255,136,0,.94);
   color:#000;
   font-weight:1000;
-  border-radius:11px;
-  padding:9px 12px;
+  border-radius:12px;
+  padding:10px 13px;
   cursor:pointer;
+  font-size:13px;
+  box-shadow:0 0 15px rgba(0,0,0,.4);
 }
 
 .controls button.active{
@@ -205,14 +265,23 @@ body{
   box-shadow:0 0 15px orange;
 }
 
-#lyricsBox{
+#lyricsViewport{
   position:absolute;
-  inset:82px 0 48px 0;
+  inset:92px 0 58px 0;
   z-index:4;
   overflow:hidden;
-  padding:34vh 18px 40vh;
-  scroll-behavior:smooth;
   text-align:center;
+  pointer-events:none;
+}
+
+#lyricsTrack{
+  position:absolute;
+  top:50%;
+  left:0;
+  right:0;
+  transform:translateY(0);
+  transition:transform 1.15s cubic-bezier(.22,.75,.22,1);
+  will-change:transform;
 }
 
 .line{
@@ -221,22 +290,33 @@ body{
   font-weight:1000;
   letter-spacing:1px;
   text-transform:uppercase;
-  opacity:.18;
-  margin:30px auto;
+  opacity:.16;
+  margin:32px auto;
   max-width:1200px;
   color:white;
   text-shadow:0 0 8px #000,0 0 18px #000,4px 4px 0 #000;
-  transition:.22s;
+  transition:opacity .45s, color .45s, transform .45s, text-shadow .45s;
 }
 
 .line.active{
   opacity:1;
   color:#ff9d00;
-  transform:scale(1.13);
-  text-shadow:0 0 8px #000,0 0 20px #000,0 0 30px orange,5px 5px 0 #000;
+  transform:scale(1.12);
+  animation:karaokeGlow 1s ease-in-out infinite alternate;
 }
 
-#audio,#jetSound{display:none}
+.line.passed{
+  opacity:.27;
+}
+
+@keyframes karaokeGlow{
+  from{
+    text-shadow:0 0 8px #000,0 0 20px #000,0 0 24px orange,5px 5px 0 #000;
+  }
+  to{
+    text-shadow:0 0 10px #000,0 0 25px #000,0 0 44px #ff9d00,0 0 65px #ff4d00,5px 5px 0 #000;
+  }
+}
 
 .status{
   position:absolute;
@@ -248,12 +328,27 @@ body{
   color:#ddd;
   opacity:.9;
   text-shadow:0 0 8px #000;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
 }
+
+.watermark{
+  position:absolute;
+  right:16px;
+  bottom:34px;
+  z-index:6;
+  font-size:12px;
+  letter-spacing:3px;
+  color:rgba(255,255,255,.55);
+  text-shadow:0 0 10px #000;
+}
+
+#audio,#jetSound{display:none}
 
 @media(max-width:700px){
   .videoFrame{
-    width:86vw;
-    height:38vh;
+    width:88vw;
   }
 
   .header{
@@ -261,8 +356,8 @@ body{
     align-items:flex-start;
   }
 
-  #lyricsBox{
-    inset:128px 0 45px 0;
+  #lyricsViewport{
+    inset:150px 0 58px 0;
   }
 
   .controls{
@@ -270,7 +365,11 @@ body{
   }
 
   #jet{
-    width:88vw;
+    width:92vw;
+  }
+
+  .watermark{
+    bottom:55px;
   }
 }
 </style>
@@ -279,9 +378,15 @@ body{
 <body>
 
 <div id="enterScreen">
-  <div class="logo">TIGER KARAOKE</div>
-  <div class="sub">Tigermeet Araxos - V7.73<br>Jo Chen Edition</div>
-  <button class="enterBtn" onclick="enterKaraoke()">ENTER ARAXOS BABY</button>
+  <video id="loginVideo" src="login.mp4" autoplay muted loop playsinline></video>
+  <div class="loginOverlay"></div>
+
+  <div class="enterContent">
+    <div class="logo">TIGER KARAOKE</div>
+    <div class="sub">Tigermeet Araxos - V7.73<br>Jo Chen Edition</div>
+    <button class="enterBtn" onclick="enterKaraoke()">ENTER ARAXOS BABY</button>
+    <div class="creatorEnter">Created by Jochen M</div>
+  </div>
 </div>
 
 <div id="jet">
@@ -297,9 +402,13 @@ body{
   <div class="overlay"></div>
 
   <div class="header">
-    <div class="title">TIGERMEET ARAXOS — KARAOKE MODE</div>
+    <div class="titleBlock">
+      <div class="title">TIGERMEET ARAXOS — KARAOKE MODE</div>
+      <div class="creator">Jochen M embedded edition</div>
+    </div>
 
     <div class="controls">
+      <a href="/tigergames/">TIGERGAMES</a>
       <button onclick="playSong()">PLAY</button>
       <button onclick="pauseSong()">PAUSE</button>
       <button onclick="stopSong()">STOP</button>
@@ -307,12 +416,19 @@ body{
     </div>
   </div>
 
-  <div id="lyricsBox"></div>
+  <div id="lyricsViewport">
+    <div id="lyricsTrack"></div>
+  </div>
 
   <audio id="audio" preload="auto" src="Araxos Baby .mp3"></audio>
   <audio id="jetSound" preload="auto" src="jet.mp3"></audio>
 
-  <div class="status" id="status">Loading...</div>
+  <div class="watermark">JOCHEN M</div>
+
+  <div class="status">
+    <span id="statusLeft">Loading...</span>
+    <span id="statusRight">Tiger mode standby</span>
+  </div>
 </div>
 
 <script>
@@ -322,15 +438,26 @@ const jet = document.getElementById("jet");
 const audio = document.getElementById("audio");
 const jetSound = document.getElementById("jetSound");
 const bgVideo = document.getElementById("bgVideo");
-const lyricsBox = document.getElementById("lyricsBox");
-const statusText = document.getElementById("status");
+const loginVideo = document.getElementById("loginVideo");
+const lyricsTrack = document.getElementById("lyricsTrack");
+const statusLeft = document.getElementById("statusLeft");
+const statusRight = document.getElementById("statusRight");
 const repeatBtn = document.getElementById("repeatBtn");
 
 const SONG_DELAY_MS = 4000;
+const LYRIC_OFFSET_SECONDS = 1.0;
 
 let lyrics = [];
 let repeat = false;
 let lastActiveIndex = -1;
+
+loginVideo.addEventListener("loadeddata", () => {
+  loginVideo.style.display = "block";
+});
+
+loginVideo.addEventListener("error", () => {
+  loginVideo.style.display = "none";
+});
 
 async function loadLRC(){
   try{
@@ -367,14 +494,14 @@ async function loadLRC(){
       throw new Error("LRC leeg of verkeerd formaat");
     }
 
-    lyricsBox.innerHTML = lyrics.map((l,i) =>
+    lyricsTrack.innerHTML = lyrics.map((l,i) =>
       `<div class="line" id="line-${i}">${escapeHtml(l.text)}</div>`
     ).join("");
 
-    statusText.textContent = lyrics.length + " lyric lines loaded";
+    statusLeft.textContent = lyrics.length + " lyric lines loaded";
   }catch(e){
-    statusText.textContent = "ERROR: Araxos Baby.lrc niet gevonden of verkeerd formaat";
-    lyricsBox.innerHTML = `<div class="line active">ARAXOS BABY.LRC NIET GELADEN</div>`;
+    statusLeft.textContent = "ERROR: Araxos Baby.lrc niet gevonden of verkeerd formaat";
+    lyricsTrack.innerHTML = `<div class="line active">ARAXOS BABY.LRC NIET GELADEN</div>`;
   }
 }
 
@@ -410,7 +537,8 @@ async function enterKaraoke(){
     bgVideo.currentTime = 0;
     bgVideo.play().catch(()=>{});
 
-    statusText.textContent = "Araxos Baby starts in 4 seconds...";
+    statusLeft.textContent = "Araxos Baby starts in 4 seconds...";
+    statusRight.textContent = "Jet intro complete";
   }, 1700);
 
   setTimeout(async () => {
@@ -419,10 +547,10 @@ async function enterKaraoke(){
 
     try{
       await audio.play();
-      statusText.textContent = "Playing — Tiger mode";
+      statusLeft.textContent = "Playing — Tiger mode";
       updateLyrics(true);
     }catch(e){
-      statusText.textContent = "Audio blocked. Druk op PLAY.";
+      statusLeft.textContent = "Audio blocked. Druk op PLAY.";
     }
   }, SONG_DELAY_MS);
 }
@@ -430,16 +558,16 @@ async function enterKaraoke(){
 function playSong(){
   audio.play().then(() => {
     bgVideo.play().catch(()=>{});
-    statusText.textContent = "Playing";
+    statusLeft.textContent = "Playing";
   }).catch(() => {
-    statusText.textContent = "Audio speelt niet. Check exact: Araxos Baby .mp3";
+    statusLeft.textContent = "Audio speelt niet. Check exact: Araxos Baby .mp3";
   });
 }
 
 function pauseSong(){
   audio.pause();
   bgVideo.pause();
-  statusText.textContent = "Paused";
+  statusLeft.textContent = "Paused";
 }
 
 function stopSong(){
@@ -451,7 +579,7 @@ function stopSong(){
 
   lastActiveIndex = -1;
   updateLyrics(true);
-  statusText.textContent = "Stopped";
+  statusLeft.textContent = "Stopped";
 }
 
 function toggleRepeat(){
@@ -465,7 +593,7 @@ function toggleRepeat(){
 function updateLyrics(force=false){
   if(!lyrics.length) return;
 
-  const t = audio.currentTime;
+  const t = audio.currentTime + LYRIC_OFFSET_SECONDS;
   let activeIndex = 0;
 
   for(let i = 0; i < lyrics.length; i++){
@@ -473,22 +601,29 @@ function updateLyrics(force=false){
     else break;
   }
 
-  if(activeIndex === lastActiveIndex && !force) return;
+  if(activeIndex === lastActiveIndex && !force){
+    statusRight.textContent = formatTime(audio.currentTime) + " / " + formatTime(audio.duration || 0);
+    return;
+  }
+
   lastActiveIndex = activeIndex;
 
   document.querySelectorAll(".line").forEach((el,i) => {
     el.classList.toggle("active", i === activeIndex);
+    el.classList.toggle("passed", i < activeIndex);
   });
 
   const activeLine = document.getElementById("line-" + activeIndex);
+
   if(activeLine){
-    activeLine.scrollIntoView({
-      behavior:"smooth",
-      block:"center"
-    });
+    const centerY = window.innerHeight / 2;
+    const lineCenter = activeLine.offsetTop + activeLine.offsetHeight / 2;
+    const target = centerY - lineCenter;
+
+    lyricsTrack.style.transform = `translateY(${target}px)`;
   }
 
-  statusText.textContent =
+  statusRight.textContent =
     formatTime(audio.currentTime) + " / " + formatTime(audio.duration || 0);
 }
 
@@ -502,20 +637,20 @@ function formatTime(seconds){
 audio.addEventListener("timeupdate", updateLyrics);
 
 audio.addEventListener("error", () => {
-  statusText.textContent = "ERROR: muziekbestand niet gevonden. Check exact: Araxos Baby .mp3";
+  statusLeft.textContent = "ERROR: muziekbestand niet gevonden. Check exact: Araxos Baby .mp3";
 });
 
 bgVideo.addEventListener("error", () => {
-  statusText.textContent = "ERROR: simone.mp4 niet gevonden";
+  statusLeft.textContent = "ERROR: simone.mp4 niet gevonden";
 });
 
 jetSound.addEventListener("error", () => {
-  statusText.textContent = "ERROR: jet.mp3 niet gevonden";
+  statusLeft.textContent = "ERROR: jet.mp3 niet gevonden";
 });
 
 audio.addEventListener("ended", () => {
   if(!repeat){
-    statusText.textContent = "Finished — Tiger mode complete";
+    statusLeft.textContent = "Finished — Tiger mode complete";
   }
 });
 
