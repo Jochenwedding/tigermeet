@@ -420,27 +420,61 @@ export class TigerRoom {
       : clamp(11 + Math.sqrt(p.body.length) * 1.04, 13, 30);
   }
 
-  getGodInput(p) {
-    let target = null;
-    let bestD = Infinity;
+  ggetGodInput(p) {
+  let target = null;
+  let bestD = Infinity;
 
-    const margin = 320;
+  // 1) ALTIJD eerst dichtstbijzijnde vlag/food zoeken
+  for (const f of this.food) {
+    const d = dist2(p.x, p.y, f.x, f.y);
 
-    if (p.x < margin) {
-      return { angle: 0, boost: true };
+    if (d < bestD) {
+      bestD = d;
+      target = f;
     }
+  }
 
-    if (p.x > WORLD - margin) {
-      return { angle: Math.PI, boost: true };
-    }
+  // 2) Alleen spelers aanvallen als ze echt dichtbij zijn
+  for (const other of this.players.values()) {
+    if (!other.alive || other.id === p.id) continue;
 
-    if (p.y < margin) {
-      return { angle: Math.PI / 2, boost: true };
-    }
+    const d = dist2(p.x, p.y, other.x, other.y);
 
-    if (p.y > WORLD - margin) {
-      return { angle: -Math.PI / 2, boost: true };
+    if (d < 500 * 500 && d < bestD) {
+      bestD = d;
+      target = other;
     }
+  }
+
+  let desiredAngle = target
+    ? Math.atan2(target.y - p.y, target.x - p.x)
+    : p.angle + 0.25;
+
+  // 3) Smooth weg van de rand sturen
+  const margin = 520;
+  let avoidX = 0;
+  let avoidY = 0;
+
+  if (p.x < margin) avoidX += (margin - p.x) / margin;
+  if (p.x > WORLD - margin) avoidX -= (p.x - (WORLD - margin)) / margin;
+  if (p.y < margin) avoidY += (margin - p.y) / margin;
+  if (p.y > WORLD - margin) avoidY -= (p.y - (WORLD - margin)) / margin;
+
+  if (avoidX !== 0 || avoidY !== 0) {
+    const targetX = Math.cos(desiredAngle);
+    const targetY = Math.sin(desiredAngle);
+
+    const mixedX = targetX + avoidX * 2.4;
+    const mixedY = targetY + avoidY * 2.4;
+
+    desiredAngle = Math.atan2(mixedY, mixedX);
+  }
+
+  return {
+    angle: desiredAngle,
+    boost: false
+  };
+}
 
     for (const other of this.players.values()) {
       if (!other.alive || other.id === p.id) continue;
