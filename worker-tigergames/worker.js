@@ -38,7 +38,7 @@ const COLORS = [
 ];
 
 const FLAGS = [
-  "🇨🇿", "🇵🇱", "🇩🇪", "🇭🇺", "🇨🇭",
+  "🇧🇪", "🇨🇿", "🇵🇱", "🇩🇪", "🇭🇺", "🇨🇭",
   "🇮🇹", "🇬🇧", "🇫🇷", "🇪🇸", "🇬🇷"
 ];
 
@@ -349,12 +349,21 @@ export class TigerRoom {
 
     p.angle += angleDiff(p.angle, input.angle) * Math.min(1, dt * 9.5);
 
-    const canBoost = input.boost && p.body.length > 28;
+    const len = p.body.length || 20;
 
-    const speed =
-      205 +
-      Math.max(0, 55 - p.body.length * 0.14) +
-      (canBoost ? 135 : 0);
+    /*
+      Movement balance:
+      - Kleine spelers blijven snel en wendbaar.
+      - Grote spelers worden trager.
+      - Boost blijft nuttig, maar grote spelers worden geen raket meer.
+    */
+    const sizeSlowdown = Math.min(95, Math.log(len / 20 + 1) * 58);
+
+    const baseSpeed = Math.max(115, 270 - sizeSlowdown);
+    const boostBonus = Math.max(65, 145 - sizeSlowdown * 0.45);
+
+    const canBoost = input.boost && len > 28;
+    const speed = baseSpeed + (canBoost ? boostBonus : 0);
 
     if (canBoost && Math.random() < 0.22) {
       const tail = p.body.pop();
