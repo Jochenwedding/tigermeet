@@ -28,6 +28,8 @@ const BESTS_KEY = "player_bests_v1";
 const PLAYERS_KEY = "known_players_v1";
 const ATTEMPTS_KEY = "login_attempts_v1";
 
+const GOD_NAME = "lemmego";
+
 const COLORS = [
   "#ff8a00",
   "#ffb000",
@@ -130,6 +132,8 @@ export class TigerRoom {
       flag: flagOf(p.nation || "OTHER"),
       score: Math.round(p.score || 0),
       alive: !!p.alive,
+      god: !!p.god,
+      autoPilot: !!p.autoPilot,
       len: p.body ? p.body.length : 0
     })).sort((a, b) => b.score - a.score);
 
@@ -276,19 +280,24 @@ export class TigerRoom {
     const x = rand(300, WORLD - 300);
     const y = rand(300, WORLD - 300);
 
+    const cleanName = safeName(name);
+    const isGod = cleanName.toLowerCase() === GOD_NAME;
+
     const p = {
       id,
-      name,
+      name: cleanName,
       nation: safeNation(nation),
       x,
       y,
       angle: a,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      skin: "tigerDragon",
+      color: isGod ? "#ffffff" : COLORS[Math.floor(Math.random() * COLORS.length)],
+      skin: isGod ? "godTiger" : "tigerDragon",
       score: 0,
       alive: true,
       body: [],
-      radius: 13
+      radius: isGod ? 18 : 13,
+      god: isGod,
+      autoPilot: isGod
     };
 
     for (let i = 0; i < 20; i++) {
@@ -342,30 +351,33 @@ export class TigerRoom {
   }
 
   updatePlayer(p, dt) {
-    const input = this.inputs.get(p.id) || {
+    let input = this.inputs.get(p.id) || {
       angle: p.angle,
       boost: false
     };
+
+    if (p.autoPilot) {
+      input = this.getGodInput(p);
+    }
 
     p.angle += angleDiff(p.angle, input.angle) * Math.min(1, dt * 9.5);
 
     const len = p.body.length || 20;
 
-    /*
-      Movement balance:
-      - Kleine spelers blijven snel en wendbaar.
-      - Grote spelers worden trager.
-      - Boost blijft nuttig, maar grote spelers worden geen raket meer.
-    */
     const sizeSlowdown = Math.min(95, Math.log(len / 20 + 1) * 58);
 
-    const baseSpeed = Math.max(115, 270 - sizeSlowdown);
-    const boostBonus = Math.max(65, 145 - sizeSlowdown * 0.45);
+    let baseSpeed = Math.max(115, 270 - sizeSlowdown);
+    let boostBonus = Math.max(65, 145 - sizeSlowdown * 0.45);
 
-    const canBoost = input.boost && len > 28;
+    if (p.god) {
+      baseSpeed = 335;
+      boostBonus = 120;
+    }
+
+    const canBoost = p.god || (input.boost && len > 28);
     const speed = baseSpeed + (canBoost ? boostBonus : 0);
 
-    if (canBoost && Math.random() < 0.22) {
+    if (!p.god && canBoost && Math.random() < 0.22) {
       const tail = p.body.pop();
 
       if (tail) {
@@ -403,11 +415,66 @@ export class TigerRoom {
       p.body.pop();
     }
 
-    p.radius = clamp(
-      11 + Math.sqrt(p.body.length) * 1.04,
-      13,
-      30
-    );
+    p.radius = p.god
+      ? clamp(16 + Math.sqrt(p.body.length) * 1.1, 18, 36)
+      : clamp(11 + Math.sqrt(p.body.length) * 1.04, 13, 30);
+  }
+
+  getGodInput(p) {
+    let target = null;
+    let bestD = Infinity;
+
+    const margin = 320;
+
+    if (p.x < margin) {
+      return { angle: 0, boost: true };
+    }
+
+    if (p.x > WORLD - margin) {
+      return { angle: Math.PI, boost: true };
+    }
+
+    if (p.y < margin) {
+      return { angle: Math.PI / 2, boost: true };
+    }
+
+    if (p.y > WORLD - margin) {
+      return { angle: -Math.PI / 2, boost: true };
+    }
+
+    for (const other of this.players.values()) {
+      if (!other.alive || other.id === p.id) continue;
+
+      const d = dist2(p.x, p.y, other.x, other.y);
+
+      if (d < bestD) {
+        bestD = d;
+        target = other;
+      }
+    }
+
+    if (!target || bestD > 1300 * 1300) {
+      for (const f of this.food) {
+        const d = dist2(p.x, p.y, f.x, f.y);
+
+        if (d < bestD) {
+          bestD = d;
+          target = f;
+        }
+      }
+    }
+
+    if (!target) {
+      return {
+        angle: p.angle + 0.35,
+        boost: true
+      };
+    }
+
+    return {
+      angle: Math.atan2(target.y - p.y, target.x - p.x),
+      boost: true
+    };
   }
 
   handleEating() {
@@ -432,6 +499,8 @@ export class TigerRoom {
     const all = [...this.players.values()].filter(p => p.alive);
 
     for (const p of all) {
+      if (p.god) continue;
+
       if (
         p.x <= 22 ||
         p.x >= WORLD - 22 ||
@@ -478,6 +547,7 @@ export class TigerRoom {
 
   kill(dead, killer, reason) {
     if (!dead.alive) return;
+    if (dead.god) return;
 
     dead.alive = false;
 
@@ -545,6 +615,8 @@ export class TigerRoom {
       alive: p.alive,
       radius: Math.round(p.radius * 10) / 10,
       len: p.body.length,
+      god: !!p.god,
+      autoPilot: !!p.autoPilot,
       body: p.body
         .filter((_, i) => i % 3 === 0)
         .map(b => ({
