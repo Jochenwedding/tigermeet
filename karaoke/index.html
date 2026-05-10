@@ -47,7 +47,6 @@ body{
   padding:19px 36px;border-radius:18px;font-size:23px;font-weight:1000;
   box-shadow:0 0 35px rgba(255,136,0,.85);cursor:pointer;
 }
-.creatorEnter{margin-top:18px;font-size:13px;letter-spacing:2px;color:#ddd;text-shadow:0 0 8px #000}
 
 #jet{
   position:fixed;left:-55vw;top:42%;z-index:90;width:min(560px,78vw);display:none;
@@ -79,14 +78,8 @@ body{
 #karaokeScreen{position:fixed;inset:0;display:none;background:#000}
 
 #bgVideo{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  z-index:0;
-  opacity:.9;
-  background:#000;
+  position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:0;
+  opacity:.9;background:#000;
 }
 
 .overlay{
@@ -145,25 +138,11 @@ body{
   box-shadow:0 0 18px orange,0 0 38px #ff4d00,0 0 70px rgba(255,170,0,.6)!important;
 }
 .tigerGamesBtn::after{
-  content:"PLAY";
-  position:absolute;
-  top:-11px;right:-9px;
-  background:#fff;color:#000;
-  font-size:9px;font-weight:1000;
-  padding:2px 5px;border-radius:99px;
-  box-shadow:0 0 12px #fff;
+  content:"PLAY";position:absolute;top:-11px;right:-9px;background:#fff;color:#000;
+  font-size:9px;font-weight:1000;padding:2px 5px;border-radius:99px;box-shadow:0 0 12px #fff;
 }
-@keyframes tigerGlow{
-  from{filter:brightness(1);transform:scale(1)}
-  to{filter:brightness(1.35);transform:scale(1.08)}
-}
-@keyframes tigerWiggle{
-  0%,100%{rotate:0deg}
-  45%{rotate:0deg}
-  50%{rotate:2deg}
-  55%{rotate:-2deg}
-  60%{rotate:0deg}
-}
+@keyframes tigerGlow{from{filter:brightness(1);transform:scale(1)}to{filter:brightness(1.35);transform:scale(1.08)}}
+@keyframes tigerWiggle{0%,100%{rotate:0deg}45%{rotate:0deg}50%{rotate:2deg}55%{rotate:-2deg}60%{rotate:0deg}}
 
 #countdown{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
@@ -229,6 +208,26 @@ body{
   position:absolute;bottom:18px;left:12px;right:12px;z-index:6;font-size:13px;color:#eee;
   opacity:.95;text-shadow:0 0 8px #000;display:flex;justify-content:space-between;gap:10px;
 }
+
+#tigerStats{
+  position:absolute;
+  left:12px;
+  bottom:42px;
+  z-index:25;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:1px;
+  color:rgba(255,255,255,.82);
+  background:rgba(0,0,0,.30);
+  border:1px solid rgba(255,170,0,.25);
+  border-radius:12px;
+  padding:7px 10px;
+  text-shadow:0 0 8px #000,0 0 14px rgba(255,136,0,.35);
+  box-shadow:0 0 20px rgba(255,136,0,.16);
+  backdrop-filter:blur(4px);
+}
+#tigerStats span{color:#ffb000;font-weight:1000}
+
 .watermark{
   position:absolute;right:16px;bottom:42px;z-index:6;font-size:12px;letter-spacing:3px;
   color:rgba(255,255,255,.65);text-shadow:0 0 10px #000;
@@ -244,9 +243,8 @@ body{
   .disco{font-size:32px;top:128px}
   .disco.left{left:12px}
   .disco.right{right:12px}
-  #bgVideo{
-  object-fit:cover;
-}
+  #bgVideo{object-fit:cover}
+  #tigerStats{bottom:72px;font-size:10px;max-width:calc(100vw - 24px)}
 }
 </style>
 </head>
@@ -260,7 +258,6 @@ body{
     <div class="logo">TIGER KARAOKE</div>
     <div class="sub">Araxos Baby - V3.1<br>Double P con Jo Chen</div>
     <button class="enterBtn" onclick="enterKaraoke()">ENTER ARAXOS BABY</button>
- 
   </div>
 </div>
 
@@ -309,6 +306,14 @@ body{
     <span id="statusRight">Tiger mode standby</span>
   </div>
 
+  <div id="tigerStats">
+    🐯 ONLINE: <span id="onlineCount">--</span>
+    &nbsp;&nbsp;
+    🔥 VISITS: <span id="visitCount">--</span>
+    &nbsp;&nbsp;
+    🌍 COUNTRIES: <span id="countryCount">--</span>
+  </div>
+
   <div class="progressWrap"><div id="progressBar"></div></div>
 </div>
 
@@ -328,6 +333,10 @@ const countdown = document.getElementById("countdown");
 const progressBar = document.getElementById("progressBar");
 const karaokeScreenEl = document.getElementById("karaokeScreen");
 
+const onlineCount = document.getElementById("onlineCount");
+const visitCount = document.getElementById("visitCount");
+const countryCount = document.getElementById("countryCount");
+
 const SONG_DELAY_MS = 3000;
 const JET_SOUND_MAX_MS = 3000;
 const LYRIC_OFFSET_SECONDS = 0.45;
@@ -345,8 +354,37 @@ let currentBgVideo = -1;
 let tigerTimer = null;
 let confettiTimer = null;
 
+let tigerId = localStorage.getItem("tigerVisitorId");
+if(!tigerId){
+  tigerId = crypto.randomUUID();
+  localStorage.setItem("tigerVisitorId", tigerId);
+}
+
 loginVideo.addEventListener("loadeddata",()=>{loginVideo.style.display="block"});
 loginVideo.addEventListener("error",()=>{loginVideo.style.display="none"});
+
+async function updateTigerStats(isVisit=false){
+  try{
+    const res = await fetch("/api/tigerstats",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        id:tigerId,
+        visit:isVisit
+      })
+    });
+
+    const data = await res.json();
+
+    if(data.success){
+      onlineCount.textContent = data.online;
+      visitCount.textContent = data.visits;
+      countryCount.textContent = data.countries;
+    }
+  }catch(e){
+    console.log("Tiger stats offline");
+  }
+}
 
 function playRandomBgVideo(){
   let next;
@@ -621,6 +659,11 @@ jetSound.addEventListener("error",()=>{statusLeft.textContent="ERROR: jet.mp3 ni
 audio.addEventListener("ended",()=>{if(!repeat) statusLeft.textContent="Finished — Tiger mode complete"});
 
 loadLRC();
+
+updateTigerStats(true);
+setInterval(()=>{
+  updateTigerStats(false);
+},30000);
 </script>
 
 </body>
