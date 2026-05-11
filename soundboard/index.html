@@ -20,9 +20,7 @@ body:before{
   content:"";position:fixed;inset:0;pointer-events:none;
   background:repeating-linear-gradient(135deg,rgba(255,140,0,.035) 0 2px,transparent 2px 12px);
 }
-.header{
-  display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:16px;
-}
+.header{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:16px}
 .brand{display:flex;align-items:center;gap:15px}
 .logo{
   width:66px;height:66px;border-radius:22px;display:grid;place-items:center;font-size:36px;
@@ -31,195 +29,111 @@ body:before{
 }
 h1{font-size:28px;letter-spacing:2px}
 .subtitle{font-size:12px;color:#aaa;margin-top:5px}
-
 .bgBar{
-  background:rgba(10,10,10,.78);
-  border:1px solid rgba(255,140,0,.28);
-  border-radius:20px;
-  padding:10px;
-  backdrop-filter:blur(14px);
-  margin-bottom:14px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  flex-wrap:wrap;
+  background:rgba(10,10,10,.78);border:1px solid rgba(255,140,0,.28);border-radius:20px;
+  padding:10px;backdrop-filter:blur(14px);margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap
 }
 .bgTitle{font-size:11px;color:#ffb347;font-weight:900;letter-spacing:1px;margin-right:6px}
 .bgBtn{
-  min-width:135px;
-  padding:9px 11px;
-  border-radius:13px;
-  border:1px solid rgba(255,140,0,.25);
-  background:linear-gradient(145deg,#181818,#080808);
-  color:#ddd;
-  cursor:pointer;
-  font-size:12px;
-  font-weight:900;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:8px;
+  min-width:135px;padding:9px 11px;border-radius:13px;border:1px solid rgba(255,140,0,.25);
+  background:linear-gradient(145deg,#181818,#080808);color:#ddd;cursor:pointer;font-size:12px;font-weight:900;
+  display:flex;justify-content:space-between;align-items:center;gap:8px
 }
-.bgBtn.active{
-  color:black;
-  background:linear-gradient(145deg,#ffe08a,#ff8a00);
-  box-shadow:0 0 22px rgba(255,140,0,.55);
-}
+.bgBtn.active{color:black;background:linear-gradient(145deg,#ffe08a,#ff8a00);box-shadow:0 0 22px rgba(255,140,0,.55)}
 .miniBars{display:none;gap:2px;height:14px;align-items:end}
 .bgBtn.active .miniBars{display:flex}
-.miniBars i{
-  width:3px;background:black;border-radius:4px;
-  animation:eqMini .55s infinite ease-in-out;
-}
-.miniBars i:nth-child(2){animation-delay:.12s}
-.miniBars i:nth-child(3){animation-delay:.24s}
+.miniBars i{width:3px;background:black;border-radius:4px;animation:eqMini .55s infinite ease-in-out}
+.miniBars i:nth-child(2){animation-delay:.12s}.miniBars i:nth-child(3){animation-delay:.24s}
 @keyframes eqMini{0%,100%{height:4px}50%{height:14px}}
-
 .panel{
-  background:rgba(12,12,12,.78);
-  border:1px solid rgba(255,140,0,.25);
-  border-radius:22px;
-  padding:13px;
-  backdrop-filter:blur(15px);
-  box-shadow:0 0 38px rgba(0,0,0,.42);
+  background:rgba(12,12,12,.78);border:1px solid rgba(255,140,0,.25);border-radius:22px;padding:13px;
+  backdrop-filter:blur(15px);box-shadow:0 0 38px rgba(0,0,0,.42)
 }
 .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
 .btn{
   border:1px solid rgba(255,211,106,.45);
   background:linear-gradient(145deg,rgba(255,170,0,.16),rgba(20,20,20,.96)),linear-gradient(180deg,#1f1f1f,#090909);
-  color:white;
-  padding:12px 17px;
-  border-radius:16px;
-  cursor:pointer;
-  font-weight:950;
-  transition:.18s;
-  box-shadow:inset 0 0 14px rgba(255,255,255,.04),0 10px 22px rgba(0,0,0,.32);
+  color:white;padding:12px 17px;border-radius:16px;cursor:pointer;font-weight:950;transition:.18s;
+  box-shadow:inset 0 0 14px rgba(255,255,255,.04),0 10px 22px rgba(0,0,0,.32)
 }
-.btn:hover{
-  background:linear-gradient(145deg,#ffe08a,#ff8a00);
-  color:black;transform:translateY(-2px) scale(1.02);
-  box-shadow:0 0 28px rgba(255,140,0,.35);
-}
+.btn:hover{background:linear-gradient(145deg,#ffe08a,#ff8a00);color:black;transform:translateY(-2px) scale(1.02);box-shadow:0 0 28px rgba(255,140,0,.35)}
 .sliderBox{display:flex;align-items:center;gap:8px;color:#bbb;font-size:12px}
 input[type=range]{accent-color:var(--orange)}
-
-.sectionTitle{
-  margin:18px 0 10px;color:#ffb347;font-size:14px;letter-spacing:1.6px;text-transform:uppercase;
-}
+.sectionTitle{margin:18px 0 10px;color:#ffb347;font-size:14px;letter-spacing:1.6px;text-transform:uppercase}
 .sectionHint{color:#888;font-size:12px;margin-top:-5px;margin-bottom:10px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:13px}
 .card{
   position:relative;overflow:hidden;min-height:132px;border-radius:22px;padding:16px;cursor:pointer;
   background:radial-gradient(circle at 20% 0%,rgba(255,190,80,.12),transparent 28%),linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.025));
-  border:1px solid rgba(255,140,0,.22);
-  box-shadow:0 12px 28px rgba(0,0,0,.34), inset 0 0 18px rgba(255,255,255,.025);
-  transition:.18s;
+  border:1px solid rgba(255,140,0,.22);box-shadow:0 12px 28px rgba(0,0,0,.34), inset 0 0 18px rgba(255,255,255,.025);
+  transition:.18s
 }
 .card:before{
-  content:"";position:absolute;inset:-40%;
-  background:linear-gradient(120deg,transparent,rgba(255,255,255,.11),transparent);
-  transform:translateX(-70%) rotate(12deg);transition:.45s;
+  content:"";position:absolute;inset:-40%;background:linear-gradient(120deg,transparent,rgba(255,255,255,.11),transparent);
+  transform:translateX(-70%) rotate(12deg);transition:.45s
 }
 .card:hover:before{transform:translateX(70%) rotate(12deg)}
-.card:hover{
-  transform:translateY(-5px) scale(1.018);
-  border-color:rgba(255,211,106,.9);
-  box-shadow:0 0 38px rgba(255,120,0,.28), inset 0 0 20px rgba(255,160,0,.08);
-}
+.card:hover{transform:translateY(-5px) scale(1.018);border-color:rgba(255,211,106,.9);box-shadow:0 0 38px rgba(255,120,0,.28), inset 0 0 20px rgba(255,160,0,.08)}
 .card:active{transform:scale(.95)}
 .card.flash{animation:flash .45s ease}
 @keyframes flash{40%{box-shadow:0 0 55px rgba(255,140,0,.85);border-color:#ffdd7a}}
-
 .premiumCard{
   border:1px solid rgba(255,211,106,.8);
-  background:radial-gradient(circle at top,rgba(255,211,106,.18),transparent 34%),linear-gradient(180deg,rgba(255,190,70,.16),rgba(255,255,255,.025));
+  background:radial-gradient(circle at top,rgba(255,211,106,.18),transparent 34%),linear-gradient(180deg,rgba(255,190,70,.16),rgba(255,255,255,.025))
 }
+.premiumCard.unlocked{border-color:#00ff9d;box-shadow:0 0 22px rgba(0,255,157,.16)}
 .premiumCard:after{
-  content:"PREMIUM";position:absolute;top:12px;right:12px;
-  background:linear-gradient(145deg,#ffe08a,#ff9d00);
-  color:black;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:1000;
+  content:"PREMIUM";position:absolute;top:12px;right:12px;background:linear-gradient(145deg,#ffe08a,#ff9d00);
+  color:black;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:1000
 }
-.emoji{font-size:28px;margin-bottom:12px}
-.name{font-size:16px;font-weight:950;margin-bottom:7px}
-.meta{font-size:11px;color:#999;padding-right:30px}
-.playTag{position:absolute;right:14px;bottom:13px;color:#ff9d00;font-size:11px;font-weight:1000}
-
+.premiumCard.unlocked:after{content:"UNLOCKED";background:linear-gradient(145deg,#99ffd6,#00ff9d)}
+.emoji{font-size:28px;margin-bottom:12px}.name{font-size:16px;font-weight:950;margin-bottom:7px}
+.meta{font-size:11px;color:#999;padding-right:30px}.playTag{position:absolute;right:14px;bottom:13px;color:#ff9d00;font-size:11px;font-weight:1000}
 .now{
-  position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
-  width:min(720px,calc(100% - 28px));
-  display:flex;justify-content:space-between;align-items:center;gap:10px;
-  background:rgba(10,10,10,.94);
-  border:1px solid rgba(255,140,0,.38);
-  border-radius:18px;padding:11px 15px;
-  box-shadow:0 0 30px rgba(255,120,0,.18);z-index:20;
+  position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(720px,calc(100% - 28px));
+  display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(10,10,10,.94);
+  border:1px solid rgba(255,140,0,.38);border-radius:18px;padding:11px 15px;box-shadow:0 0 30px rgba(255,120,0,.18);z-index:20
 }
 .equalizer{display:flex;gap:4px;height:22px;align-items:end}
 .equalizer span{width:4px;background:#ff8800;border-radius:4px;animation:eq .7s infinite ease-in-out}
-.equalizer span:nth-child(2){animation-delay:.12s}
-.equalizer span:nth-child(3){animation-delay:.24s}
-.equalizer span:nth-child(4){animation-delay:.36s}
+.equalizer span:nth-child(2){animation-delay:.12s}.equalizer span:nth-child(3){animation-delay:.24s}.equalizer span:nth-child(4){animation-delay:.36s}
 @keyframes eq{0%,100%{height:5px}50%{height:22px}}
 .footer{text-align:center;color:#777;font-size:11px;margin:32px 0 76px}
-
 .modal{
-  position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-  padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(10px);z-index:100;
+  position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:18px;
+  background:rgba(0,0,0,.78);backdrop-filter:blur(10px);z-index:100
 }
 .modal.show{display:flex}
 .paywall{
-  width:min(540px,100%);
-  border-radius:30px;padding:24px;
+  width:min(560px,100%);border-radius:30px;padding:24px;
   background:radial-gradient(circle at top,rgba(255,210,90,.25),transparent 35%),linear-gradient(180deg,#19120a,#090909);
-  border:1px solid rgba(255,211,106,.65);
-  box-shadow:0 0 65px rgba(255,155,0,.3);
+  border:1px solid rgba(255,211,106,.65);box-shadow:0 0 65px rgba(255,155,0,.3)
 }
 .payTop{display:flex;justify-content:space-between;gap:12px;align-items:start}
-.payBadge{
-  display:inline-block;background:linear-gradient(145deg,#ffe08a,#ff9500);color:black;
-  padding:6px 11px;border-radius:999px;font-size:11px;font-weight:1000;
-}
-.close{
-  background:#211;border:1px solid rgba(255,255,255,.18);color:white;
-  width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;
-}
-.paywall h2{font-size:25px;margin:16px 0 8px}
-.paywall p{color:#cfcfcf;line-height:1.45;font-size:14px}
-.price{
-  margin:18px 0;padding:16px;border-radius:20px;
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,211,106,.35);
-}
-.old{text-decoration:line-through;color:#888;font-size:17px}
-.new{font-size:25px;color:#ffd36a;font-weight:1000;margin-top:5px}
+.payBadge{display:inline-block;background:linear-gradient(145deg,#ffe08a,#ff9500);color:black;padding:6px 11px;border-radius:999px;font-size:11px;font-weight:1000}
+.close{background:#211;border:1px solid rgba(255,255,255,.18);color:white;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px}
+.paywall h2{font-size:25px;margin:16px 0 8px}.paywall p{color:#cfcfcf;line-height:1.45;font-size:14px}
+.price{margin:18px 0;padding:16px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,211,106,.35)}
+.old{text-decoration:line-through;color:#888;font-size:17px}.new{font-size:25px;color:#ffd36a;font-weight:1000;margin-top:5px}
 .formFake{display:grid;gap:10px;margin-top:14px}
-.formFake input{
-  width:100%;padding:13px;border-radius:14px;
-  border:1px solid rgba(255,255,255,.12);background:#0e0e0e;color:#aaa;
-}
+.formFake input{width:100%;padding:13px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:#0e0e0e;color:#aaa}
 .payBtn{
-  width:100%;padding:14px;border-radius:15px;border:0;cursor:pointer;
-  font-weight:1000;background:linear-gradient(145deg,#ffe08a,#ff8a00);color:black;margin-top:12px;
+  width:100%;padding:14px;border-radius:15px;border:0;cursor:pointer;font-weight:1000;
+  background:linear-gradient(145deg,#ffe08a,#ff8a00);color:black;margin-top:12px
 }
-.tiny{font-size:11px;color:#777;margin-top:10px}
-.thanks{text-align:center}
-.thanks .big{font-size:44px;margin-bottom:10px}
-.countdown{
-  font-size:31px;
-  color:#ffd36a;
-  font-weight:1000;
-  letter-spacing:2px;
-  margin-top:10px;
+.payBtn:disabled{opacity:.35;cursor:not-allowed}
+.tiny{font-size:11px;color:#777;margin-top:10px}.thanks{text-align:center}.thanks .big{font-size:44px;margin-bottom:10px}
+.countdown{font-size:31px;color:#ffd36a;font-weight:1000;letter-spacing:2px;margin-top:10px}
+.termsBox{
+  height:330px;overflow-y:auto;padding:14px;border-radius:18px;background:#080808;
+  border:1px solid rgba(255,211,106,.22);color:#bbb;font-size:13px;line-height:1.55;margin-top:14px
 }
-
+.termsBox h3{color:#ffd36a;margin:12px 0 6px}
+.termsNotice{font-size:12px;color:#ffb347;margin-top:10px}
 @media(max-width:650px){
-  body{padding:14px}
-  h1{font-size:22px}
-  .logo{width:58px;height:58px}
-  .bgBar{align-items:stretch}
-  .bgBtn{min-width:calc(50% - 4px)}
-  .grid{grid-template-columns:1fr 1fr;gap:10px}
-  .card{min-height:126px;padding:14px}
-  .name{font-size:14px}
-  .emoji{font-size:27px}
+  body{padding:14px}h1{font-size:22px}.logo{width:58px;height:58px}
+  .bgBar{align-items:stretch}.bgBtn{min-width:calc(50% - 4px)}
+  .grid{grid-template-columns:1fr 1fr;gap:10px}.card{min-height:126px;padding:14px}.name{font-size:14px}.emoji{font-size:27px}
 }
 </style>
 </head>
@@ -255,42 +169,67 @@ input[type=range]{accent-color:var(--orange)}
 <div class="grid" id="soundGrid"></div>
 
 <div class="sectionTitle">Tiger Premium Locked Sounds</div>
-<div class="sectionHint">First sample is free. After that: tactical subscription required.</div>
+<div class="sectionHint">First sample is free. After that: tactical subscription required. Resets every midnight.</div>
 <div class="grid" id="premiumGrid"></div>
 
-<div class="footer">Made by Jo Chen · V1.3</div>
+<div class="footer">Made by Jo Chen · V1.4</div>
 
 <div class="now">
   <div id="nowText">Ready for deployment...</div>
-  <div class="equalizer" id="eq" style="display:none">
-    <span></span><span></span><span></span><span></span>
-  </div>
+  <div class="equalizer" id="eq" style="display:none"><span></span><span></span><span></span><span></span></div>
 </div>
 
 <div class="modal" id="payModal">
   <div class="paywall">
-    <div class="payTop">
-      <span class="payBadge">TIGER PREMIUM™</span>
-      <button class="close" onclick="closePaywall()">×</button>
-    </div>
-
+    <div class="payTop"><span class="payBadge">TIGER PREMIUM™</span><button class="close" onclick="closePaywall()">×</button></div>
     <h2>Premium sound locked</h2>
     <p id="lockedText">You already used your free tactical sample.</p>
-
     <div class="price">
       <div class="old">Normal price: €11.99 / month</div>
       <div class="new">Today only: 1 hemdvest + 1x 31 badge</div>
-      <p style="margin-top:10px">Special offer: <b>1 beer = 5 sounds</b>
+      <p style="margin-top:10px">Special offer: <b>1 beer = 1 sound</b><br>6 beers = unlimited chaos until sunrise.</p>
     </div>
-
     <div class="formFake">
-      <input placeholder="31 badge" disabled>
+      <input placeholder="Name on 31 badge" disabled>
       <input placeholder="Hemdvest size: S / M / L / Gunny" disabled>
-      <input placeholder="Payment method: Beer / Patch " disabled>
+      <input placeholder="Payment method: Beer / Patch / Emotional Damage" disabled>
+    </div>
+    <button class="payBtn" onclick="openTerms()">Subscribe with Beer</button>
+    <div class="tiny">No real payment. This is a very serious fake military-grade subscription system.</div>
+  </div>
+</div>
+
+<div class="modal" id="termsModal">
+  <div class="paywall">
+    <div class="payTop"><span class="payBadge">TERMS & SERVICES</span><button class="close" onclick="closeTerms()">×</button></div>
+    <h2>CIS Premium Beer Agreement</h2>
+    <p>You must scroll all the way down before accepting these extremely official terms.</p>
+
+    <div class="termsBox" id="termsBox" onscroll="checkTermsScroll()">
+      <h3>1. General Tactical Liability</h3>
+      <p>CIS is not responsible for spontaneous dancing, emotional damage, sudden tiger noises, unexpected Gunny acceleration, overuse of the word “premium”, or any beer-related operational decisions made after pressing a golden button.</p>
+      <h3>2. Audio Exposure</h3>
+      <p>By using Tiger Premium™, the user accepts that all sounds may be too powerful for normal human morale levels. Any increase in squadron confidence, random shouting, or “GO GO GO” behaviour is considered a feature, not a bug.</p>
+      <h3>3. Payment Conditions</h3>
+      <p>The discounted subscription price of one hemdvest and one 31 badge is legally binding in exactly zero jurisdictions. Beer payments must be delivered cold, unopened, and preferably before the background music becomes awkward.</p>
+      <h3>4. Premium Access</h3>
+      <p>Premium access remains valid until thirsty, until 21:00 HR, until morale collapses, or until the browser decides to forget localStorage. At midnight the system may reset itself because even fake capitalism needs administration.</p>
+      <h3>5. Forbidden Actions</h3>
+      <p>The user may not inspect element, reverse engineer the beer economy, claim “I already paid yesterday”, blame DNS, blame Cloudflare, blame the router, blame Annex R, or say “it worked on my laptop” unless holding a valid tactical beverage.</p>
+      <h3>6. Technical Disclaimer</h3>
+      <p>No actual payment processing occurs. No badge is scanned. No hemdvest is verified. No tiger is harmed. No official CIS asset is responsible. Any resemblance to a real subscription service is purely caused by premium orange gradients.</p>
+      <h3>7. Operational Use</h3>
+      <p>Premium sounds should only be deployed in controlled environments such as Tigermeet, questionable briefings, late evenings, or moments where someone says “one more beer” and everyone knows that was a lie.</p>
+      <h3>8. Extended Bullshit Clause</h3>
+      <p>The user agrees that scrolling is part of the payment experience. The longer the scrolling, the more official the system becomes. By continuing, the user acknowledges that this document was written with unnecessary confidence and excessive legal energy.</p>
+      <p>Furthermore, the user accepts that the CIS department is not responsible for broken speakers, broken morale, broken promises, broken formations, or broken dreams caused by pressing “Fucking Go Gunny” more than medically recommended.</p>
+      <p>If a user believes they have been unfairly denied premium access, they may submit a written complaint in triplicate to the nearest bartender. Processing time is estimated between one beer and never.</p>
+      <h3>9. Final Scroll Requirement</h3>
+      <p>This is the final part. By reaching the bottom, you have demonstrated patience, discipline, and poor decision-making. You may now accept the terms and continue to Tiger Premium™.</p>
     </div>
 
-    <button class="payBtn" onclick="fakePay()">Subscribe with Beer</button>
-    <div class="tiny">No real payment. This is a very serious fake subscription system.</div>
+    <div class="termsNotice" id="termsNotice">Scroll to the bottom to unlock the accept button.</div>
+    <button class="payBtn" id="acceptTermsBtn" onclick="acceptTerms()" disabled>I accept the totally official terms</button>
   </div>
 </div>
 
@@ -301,7 +240,7 @@ input[type=range]{accent-color:var(--orange)}
     <p>Your Tiger Premium™ subscription is now active.</p>
     <div class="price">
       <div class="new">Subscription active until thirsty</div>
-      <p style="margin-top:10px">Premium access expires tonight at 21:00 HR.</p>
+      <p style="margin-top:10px">Premium access resets at midnight. Fake premium expires tonight at 21:00 HR.</p>
       <div class="countdown" id="countdown">--:--:--</div>
     </div>
     <button class="payBtn" onclick="closeThanks()">Return to Soundboard</button>
@@ -319,13 +258,13 @@ const backgrounds = [
 ];
 
 const mainSounds = [
-  {name:"31 Tigers", file:"31 Tigers.mp3", emoji:"🐯"},
-  {name:"31best", file:"31best.mp3", emoji:"🔥"},
+  {name:"31 Tigers", file:"ThreeoneTigers.mp3", emoji:"🐯"},
+  {name:"31best", file:"Go31.mp3", emoji:"🔥"},
   {name:"Afuckraxos", file:"Afuckraxos.mp3", emoji:"💀"},
   {name:"Araxos Baby", file:"Araxos Baby.mp3", emoji:"✈️"},
   {name:"Beer is cold", file:"Beer is cold.mp3", emoji:"🍺"},
   {name:"Belgium Power", file:"Belgium Power.mp3", emoji:"🇧🇪"},
-  {name:"Go31", file:"Go31.mp3", emoji:"🎖️"},
+  {name:"Go31", file:"GoThreeOne.mp3", emoji:"🎖️"},
   {name:"Gunny Gunny", file:"Gunny Gunny.mp3", emoji:"📡"},
   {name:"Gunny", file:"Gunny.mp3", emoji:"🎤"},
   {name:"Hands up", file:"Hands up.mp3", emoji:"🙌"},
@@ -349,20 +288,34 @@ const eq = document.getElementById("eq");
 const effectVol = document.getElementById("effectVol");
 const bgVol = document.getElementById("bgVol");
 const payModal = document.getElementById("payModal");
+const termsModal = document.getElementById("termsModal");
 const thanksModal = document.getElementById("thanksModal");
 const lockedText = document.getElementById("lockedText");
 const countdown = document.getElementById("countdown");
+const termsBox = document.getElementById("termsBox");
+const acceptTermsBtn = document.getElementById("acceptTermsBtn");
+const termsNotice = document.getElementById("termsNotice");
 
 let currentEffect = null;
 let currentBackground = null;
 let activeBgButton = null;
 let activeBgIndex = null;
 let countdownInterval = null;
-let premiumUsed = JSON.parse(localStorage.getItem("tigerPremiumUsed") || "{}");
 
-function fileUrl(file){
-  return soundPath + file;
+const todayKey = new Date().toISOString().slice(0,10);
+let savedDay = localStorage.getItem("tigerPremiumDay");
+let premiumUsed = JSON.parse(localStorage.getItem("tigerPremiumUsed") || "{}");
+let premiumActive = localStorage.getItem("tigerPremiumActiveDay") === todayKey;
+
+if(savedDay !== todayKey){
+  localStorage.setItem("tigerPremiumDay", todayKey);
+  localStorage.removeItem("tigerPremiumUsed");
+  localStorage.removeItem("tigerPremiumActiveDay");
+  premiumUsed = {};
+  premiumActive = false;
 }
+
+function fileUrl(file){ return soundPath + file; }
 
 function makeCard(item){
   const card = document.createElement("div");
@@ -379,14 +332,15 @@ function makeCard(item){
 
 mainSounds.forEach(s => soundGrid.appendChild(makeCard(s)));
 premiumSounds.forEach(s => premiumGrid.appendChild(makeCard(s)));
+updatePremiumCards();
 
 function playEffect(sound, card){
-  if(sound.premium && premiumUsed[sound.name]){
+  if(sound.premium && !premiumActive && premiumUsed[sound.name]){
     showPaywall(sound.name);
     return;
   }
 
-  if(sound.premium){
+  if(sound.premium && !premiumActive){
     premiumUsed[sound.name] = true;
     localStorage.setItem("tigerPremiumUsed", JSON.stringify(premiumUsed));
   }
@@ -402,10 +356,7 @@ function playEffect(sound, card){
 
   currentEffect = new Audio(fileUrl(sound.file));
   currentEffect.volume = effectVol.value;
-  currentEffect.play().catch((err) => {
-    console.log(err);
-    alert("Kan sound niet afspelen: " + fileUrl(sound.file));
-  });
+  currentEffect.play().catch(() => alert("Kan sound niet afspelen: " + fileUrl(sound.file)));
 
   nowText.textContent = "▶ " + sound.name;
   eq.style.display = "flex";
@@ -417,10 +368,7 @@ function playEffect(sound, card){
 }
 
 function toggleBackground(index, button){
-  if(activeBgIndex === index && currentBackground){
-    stopBackground();
-    return;
-  }
+  if(activeBgIndex === index && currentBackground){ stopBackground(); return; }
 
   if(currentBackground){
     currentBackground.pause();
@@ -472,7 +420,6 @@ function stopBackground(){
 
   activeBgButton = null;
   activeBgIndex = null;
-
   nowText.textContent = currentEffect ? "▶ Sound still playing" : "Background stopped.";
   if(!currentEffect) eq.style.display = "none";
 }
@@ -482,18 +429,43 @@ function showPaywall(name){
   payModal.classList.add("show");
 }
 
-function closePaywall(){
+function closePaywall(){ payModal.classList.remove("show"); }
+
+function openTerms(){
   payModal.classList.remove("show");
+  termsModal.classList.add("show");
+  termsBox.scrollTop = 0;
+  acceptTermsBtn.disabled = true;
+  termsNotice.textContent = "Scroll to the bottom to unlock the accept button.";
 }
 
-function fakePay(){
-  payModal.classList.remove("show");
+function closeTerms(){ termsModal.classList.remove("show"); }
+
+function checkTermsScroll(){
+  const atBottom = termsBox.scrollTop + termsBox.clientHeight >= termsBox.scrollHeight - 8;
+  if(atBottom){
+    acceptTermsBtn.disabled = false;
+    termsNotice.textContent = "You survived the legal briefing. You may now accept.";
+  }
+}
+
+function acceptTerms(){
+  premiumActive = true;
+  localStorage.setItem("tigerPremiumActiveDay", todayKey);
+  localStorage.setItem("tigerPremiumUsed", JSON.stringify({}));
+  premiumUsed = {};
+  updatePremiumCards();
+  termsModal.classList.remove("show");
   thanksModal.classList.add("show");
   startCountdown();
 }
 
-function closeThanks(){
-  thanksModal.classList.remove("show");
+function closeThanks(){ thanksModal.classList.remove("show"); }
+
+function updatePremiumCards(){
+  document.querySelectorAll(".premiumCard").forEach(card => {
+    card.classList.toggle("unlocked", premiumActive);
+  });
 }
 
 function startCountdown(){
@@ -503,16 +475,12 @@ function startCountdown(){
     const now = new Date();
     let target = new Date();
     target.setHours(21,0,0,0);
-
-    if(now > target){
-      target.setDate(target.getDate() + 1);
-    }
+    if(now > target) target.setDate(target.getDate() + 1);
 
     const diff = target - now;
     const h = String(Math.floor(diff / 1000 / 60 / 60)).padStart(2,"0");
     const m = String(Math.floor(diff / 1000 / 60) % 60).padStart(2,"0");
     const s = String(Math.floor(diff / 1000) % 60).padStart(2,"0");
-
     countdown.textContent = `${h}:${m}:${s}`;
   }
 
