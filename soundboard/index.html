@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>Tiger Soundboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at top, rgba(255,140,0,.18), transparent 30%),
+    linear-gradient(180deg,#050505,#0f0f0f,#050505);
+  color:white;
+  font-family:'Orbitron',sans-serif;
+  padding:24px;
+}
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:30px;
+  gap:20px;
+  flex-wrap:wrap;
+}
+
+.logoWrap{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.logo{
+  width:62px;
+  height:62px;
+  border-radius:18px;
+  background:linear-gradient(145deg,#ff9900,#ff6600);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:32px;
+  box-shadow:
+    0 0 20px rgba(255,140,0,.35),
+    inset 0 0 20px rgba(255,255,255,.12);
+}
+
+.titleBox h1{
+  font-size:28px;
+  letter-spacing:2px;
+}
+
+.titleBox p{
+  color:#999;
+  margin-top:4px;
+  font-size:13px;
+}
+
+.controls{
+  display:flex;
+  gap:12px;
+  align-items:center;
+}
+
+.controlBtn{
+  background:#151515;
+  border:1px solid rgba(255,140,0,.3);
+  color:white;
+  padding:12px 18px;
+  border-radius:14px;
+  cursor:pointer;
+  transition:.2s;
+  font-family:'Orbitron',sans-serif;
+}
+
+.controlBtn:hover{
+  background:#ff8800;
+  color:black;
+  transform:translateY(-2px);
+}
+
+.volume{
+  accent-color:#ff8800;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:18px;
+}
+
+.soundCard{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+  border:1px solid rgba(255,140,0,.18);
+  border-radius:22px;
+  padding:20px;
+  position:relative;
+  overflow:hidden;
+  cursor:pointer;
+  transition:.22s;
+  backdrop-filter:blur(10px);
+}
+
+.soundCard::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(120deg,transparent,rgba(255,140,0,.08),transparent);
+  transform:translateX(-100%);
+  transition:.5s;
+}
+
+.soundCard:hover::before{
+  transform:translateX(100%);
+}
+
+.soundCard:hover{
+  transform:translateY(-4px) scale(1.02);
+  border-color:#ff8800;
+  box-shadow:
+    0 0 24px rgba(255,140,0,.18),
+    inset 0 0 20px rgba(255,140,0,.05);
+}
+
+.soundEmoji{
+  font-size:28px;
+  margin-bottom:16px;
+}
+
+.soundTitle{
+  font-size:18px;
+  margin-bottom:8px;
+  line-height:1.2;
+}
+
+.soundSub{
+  color:#8b8b8b;
+  font-size:12px;
+  margin-bottom:20px;
+}
+
+.playBtn{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:14px;
+  background:linear-gradient(145deg,#ff9900,#ff6a00);
+  color:black;
+  font-weight:700;
+  cursor:pointer;
+  font-family:'Orbitron',sans-serif;
+  transition:.2s;
+}
+
+.playBtn:hover{
+  transform:scale(1.02);
+}
+
+.nowPlaying{
+  position:fixed;
+  bottom:18px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#111;
+  border:1px solid rgba(255,140,0,.4);
+  padding:14px 20px;
+  border-radius:16px;
+  font-size:14px;
+  color:#ffb347;
+  box-shadow:0 0 20px rgba(255,140,0,.15);
+  z-index:999;
+}
+
+@media(max-width:700px){
+
+  body{
+    padding:16px;
+  }
+
+  .titleBox h1{
+    font-size:22px;
+  }
+
+  .grid{
+    grid-template-columns:1fr;
+  }
+
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+
+  <div class="logoWrap">
+    <div class="logo">🐯</div>
+
+    <div class="titleBox">
+      <h1>TIGER SOUNDBOARD</h1>
+      <p>Araxos Premium Audio Control Panel</p>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="controlBtn" onclick="stopAllSounds()">STOP ALL</button>
+    <input class="volume" type="range" min="0" max="1" step="0.01" value="1" id="volumeSlider">
+  </div>
+
+</div>
+
+<div class="grid" id="soundGrid"></div>
+
+<div class="nowPlaying" id="nowPlaying">
+  Ready for deployment...
+</div>
+
+<script>
+
+const sounds = [
+
+  {name:"31 Tigers", file:"sounds/31 Tigers.mp3", emoji:"🐯"},
+  {name:"31best", file:"sounds/31best.mp3", emoji:"🔥"},
+  {name:"Afuckraxos", file:"sounds/Afuckraxos.mp3", emoji:"💀"},
+  {name:"Araxos Baby", file:"sounds/Araxos Baby.mp3", emoji:"✈️"},
+  {name:"Beer is cold", file:"sounds/Beer is cold.mp3", emoji:"🍺"},
+  {name:"Belgium Power", file:"sounds/Belgium Power.mp3", emoji:"🇧🇪"},
+  {name:"CarefulGunny", file:"sounds/CarefulGunny.mp3", emoji:"⚠️"},
+  {name:"Fucking Go Gunny", file:"sounds/Fucking Go Gunny.mp3", emoji:"🚀"},
+  {name:"Go31", file:"sounds/Go31.mp3", emoji:"🎖️"},
+  {name:"Gunny flying high", file:"sounds/Gunny flying high.mp3", emoji:"🛩️"},
+  {name:"Gunny Gunny", file:"sounds/Gunny Gunny.mp3", emoji:"📡"},
+  {name:"Gunny", file:"sounds/Gunny.mp3", emoji:"🎤"},
+  {name:"Hands up", file:"sounds/Hands up.mp3", emoji:"🙌"},
+  {name:"Harderfastergunny", file:"sounds/Harderfastergunny.mp3", emoji:"⚡"},
+  {name:"MaleAraxos", file:"sounds/MaleAraxos.mp3", emoji:"🗿"},
+  {name:"Number one", file:"sounds/Number one.mp3", emoji:"🏆"},
+  {name:"oohgunny", file:"sounds/oohgunny.mp3", emoji:"😩"},
+  {name:"Roaring Tiger", file:"sounds/Roaring Tiger.mp3", emoji:"🐅"}
+
+];
+
+const grid = document.getElementById("soundGrid");
+const volumeSlider = document.getElementById("volumeSlider");
+const nowPlaying = document.getElementById("nowPlaying");
+
+let currentAudio = null;
+
+sounds.forEach(sound => {
+
+  const card = document.createElement("div");
+  card.className = "soundCard";
+
+  card.innerHTML = `
+    <div class="soundEmoji">${sound.emoji}</div>
+    <div class="soundTitle">${sound.name}</div>
+    <div class="soundSub">Tigermeet Premium Audio</div>
+    <button class="playBtn">PLAY SOUND</button>
+  `;
+
+  card.onclick = () => playSound(sound);
+
+  grid.appendChild(card);
+
+});
+
+function playSound(sound){
+
+  if(currentAudio){
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+  }
+
+  const audio = new Audio(sound.file);
+
+  audio.volume = volumeSlider.value;
+
+  audio.play();
+
+  currentAudio = audio;
+
+  nowPlaying.innerHTML = `▶ NOW PLAYING: ${sound.name}`;
+
+}
+
+function stopAllSounds(){
+
+  if(currentAudio){
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+  }
+
+  nowPlaying.innerHTML = "Audio stopped.";
+
+}
+
+</script>
+
+</body>
+</html>
