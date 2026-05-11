@@ -11,74 +11,84 @@
 body{
   min-height:100vh;color:white;font-family:Arial,Helvetica,sans-serif;
   background:
-    radial-gradient(circle at 20% 0%,rgba(255,136,0,.35),transparent 28%),
-    radial-gradient(circle at 80% 10%,rgba(255,210,90,.12),transparent 30%),
+    radial-gradient(circle at 20% 0%,rgba(255,136,0,.35),transparent 26%),
+    radial-gradient(circle at 80% 8%,rgba(255,210,90,.12),transparent 30%),
     linear-gradient(160deg,#020202,#101010 48%,#050505);
-  padding:22px;
+  padding:20px;
 }
 body:before{
   content:"";position:fixed;inset:0;pointer-events:none;
-  background:repeating-linear-gradient(135deg,rgba(255,140,0,.03) 0 2px,transparent 2px 12px);
+  background:repeating-linear-gradient(135deg,rgba(255,140,0,.035) 0 2px,transparent 2px 12px);
 }
 .header{
-  display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:18px;
+  display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:16px;
 }
 .brand{display:flex;align-items:center;gap:15px}
 .logo{
-  width:72px;height:72px;border-radius:24px;display:grid;place-items:center;font-size:39px;
+  width:66px;height:66px;border-radius:22px;display:grid;place-items:center;font-size:36px;
   background:linear-gradient(145deg,#ffb300,#ff6200);
   box-shadow:0 0 45px rgba(255,130,0,.38), inset 0 0 20px rgba(255,255,255,.22);
 }
-h1{font-size:30px;letter-spacing:2px}
-.subtitle{font-size:13px;color:#aaa;margin-top:5px}
+h1{font-size:28px;letter-spacing:2px}
+.subtitle{font-size:12px;color:#aaa;margin-top:5px}
 
-.bgMini{
-  width:220px;
-  background:rgba(10,10,10,.75);
+.bgBar{
+  background:rgba(10,10,10,.78);
   border:1px solid rgba(255,140,0,.28);
-  border-radius:18px;
+  border-radius:20px;
   padding:10px;
   backdrop-filter:blur(14px);
+  margin-bottom:14px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
 }
-.bgMiniTitle{font-size:11px;color:#ffb347;margin-bottom:8px;font-weight:900;letter-spacing:1px}
-.bgMiniBtn{
-  width:100%;
-  margin-bottom:6px;
-  padding:8px 10px;
-  border-radius:12px;
-  border:1px solid rgba(255,140,0,.22);
+.bgTitle{font-size:11px;color:#ffb347;font-weight:900;letter-spacing:1px;margin-right:6px}
+.bgBtn{
+  min-width:135px;
+  padding:9px 11px;
+  border-radius:13px;
+  border:1px solid rgba(255,140,0,.25);
   background:linear-gradient(145deg,#181818,#080808);
   color:#ddd;
   cursor:pointer;
   font-size:12px;
-  font-weight:800;
+  font-weight:900;
   display:flex;
   justify-content:space-between;
   align-items:center;
+  gap:8px;
 }
-.bgMiniBtn.active{
+.bgBtn.active{
   color:black;
   background:linear-gradient(145deg,#ffe08a,#ff8a00);
-  box-shadow:0 0 18px rgba(255,140,0,.45);
+  box-shadow:0 0 22px rgba(255,140,0,.55);
 }
-.bgMiniBtn span:last-child{font-size:10px;opacity:.8}
+.miniBars{display:none;gap:2px;height:14px;align-items:end}
+.bgBtn.active .miniBars{display:flex}
+.miniBars i{
+  width:3px;background:black;border-radius:4px;
+  animation:eqMini .55s infinite ease-in-out;
+}
+.miniBars i:nth-child(2){animation-delay:.12s}
+.miniBars i:nth-child(3){animation-delay:.24s}
+@keyframes eqMini{0%,100%{height:4px}50%{height:14px}}
 
 .panel{
   background:rgba(12,12,12,.78);
   border:1px solid rgba(255,140,0,.25);
-  border-radius:24px;
-  padding:15px;
+  border-radius:22px;
+  padding:13px;
   backdrop-filter:blur(15px);
   box-shadow:0 0 38px rgba(0,0,0,.42);
 }
-.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:24px}
+.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
 .btn{
   border:1px solid rgba(255,211,106,.45);
-  background:
-    linear-gradient(145deg,rgba(255,170,0,.16),rgba(20,20,20,.96)),
-    linear-gradient(180deg,#1f1f1f,#090909);
+  background:linear-gradient(145deg,rgba(255,170,0,.16),rgba(20,20,20,.96)),linear-gradient(180deg,#1f1f1f,#090909);
   color:white;
-  padding:13px 18px;
+  padding:12px 17px;
   border-radius:16px;
   cursor:pointer;
   font-weight:950;
@@ -87,23 +97,20 @@ h1{font-size:30px;letter-spacing:2px}
 }
 .btn:hover{
   background:linear-gradient(145deg,#ffe08a,#ff8a00);
-  color:black;
-  transform:translateY(-2px) scale(1.02);
+  color:black;transform:translateY(-2px) scale(1.02);
   box-shadow:0 0 28px rgba(255,140,0,.35);
 }
 .sliderBox{display:flex;align-items:center;gap:8px;color:#bbb;font-size:12px}
 input[type=range]{accent-color:var(--orange)}
 
 .sectionTitle{
-  margin:20px 0 12px;color:#ffb347;font-size:14px;letter-spacing:1.6px;text-transform:uppercase;
+  margin:18px 0 10px;color:#ffb347;font-size:14px;letter-spacing:1.6px;text-transform:uppercase;
 }
-.sectionHint{color:#888;font-size:12px;margin-top:-6px;margin-bottom:12px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:15px}
+.sectionHint{color:#888;font-size:12px;margin-top:-5px;margin-bottom:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:13px}
 .card{
-  position:relative;overflow:hidden;min-height:148px;border-radius:24px;padding:18px;cursor:pointer;
-  background:
-    radial-gradient(circle at 20% 0%,rgba(255,190,80,.12),transparent 28%),
-    linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.025));
+  position:relative;overflow:hidden;min-height:132px;border-radius:22px;padding:16px;cursor:pointer;
+  background:radial-gradient(circle at 20% 0%,rgba(255,190,80,.12),transparent 28%),linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.025));
   border:1px solid rgba(255,140,0,.22);
   box-shadow:0 12px 28px rgba(0,0,0,.34), inset 0 0 18px rgba(255,255,255,.025);
   transition:.18s;
@@ -125,28 +132,25 @@ input[type=range]{accent-color:var(--orange)}
 
 .premiumCard{
   border:1px solid rgba(255,211,106,.8);
-  background:
-    radial-gradient(circle at top,rgba(255,211,106,.18),transparent 34%),
-    linear-gradient(180deg,rgba(255,190,70,.16),rgba(255,255,255,.025));
+  background:radial-gradient(circle at top,rgba(255,211,106,.18),transparent 34%),linear-gradient(180deg,rgba(255,190,70,.16),rgba(255,255,255,.025));
 }
 .premiumCard:after{
-  content:"PREMIUM";
-  position:absolute;top:13px;right:13px;
+  content:"PREMIUM";position:absolute;top:12px;right:12px;
   background:linear-gradient(145deg,#ffe08a,#ff9d00);
   color:black;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:1000;
 }
-.emoji{font-size:31px;margin-bottom:14px}
-.name{font-size:18px;font-weight:950;margin-bottom:8px}
-.meta{font-size:12px;color:#999;padding-right:30px}
-.playTag{position:absolute;right:14px;bottom:14px;color:#ff9d00;font-size:12px;font-weight:1000}
+.emoji{font-size:28px;margin-bottom:12px}
+.name{font-size:16px;font-weight:950;margin-bottom:7px}
+.meta{font-size:11px;color:#999;padding-right:30px}
+.playTag{position:absolute;right:14px;bottom:13px;color:#ff9d00;font-size:11px;font-weight:1000}
 
 .now{
-  position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
-  width:min(780px,calc(100% - 28px));
+  position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+  width:min(720px,calc(100% - 28px));
   display:flex;justify-content:space-between;align-items:center;gap:10px;
   background:rgba(10,10,10,.94);
   border:1px solid rgba(255,140,0,.38);
-  border-radius:18px;padding:12px 16px;
+  border-radius:18px;padding:11px 15px;
   box-shadow:0 0 30px rgba(255,120,0,.18);z-index:20;
 }
 .equalizer{display:flex;gap:4px;height:22px;align-items:end}
@@ -155,7 +159,7 @@ input[type=range]{accent-color:var(--orange)}
 .equalizer span:nth-child(3){animation-delay:.24s}
 .equalizer span:nth-child(4){animation-delay:.36s}
 @keyframes eq{0%,100%{height:5px}50%{height:22px}}
-.footer{text-align:center;color:#777;font-size:11px;margin:34px 0 76px}
+.footer{text-align:center;color:#777;font-size:11px;margin:32px 0 76px}
 
 .modal{
   position:fixed;inset:0;display:none;align-items:center;justify-content:center;
@@ -198,16 +202,22 @@ input[type=range]{accent-color:var(--orange)}
 .tiny{font-size:11px;color:#777;margin-top:10px}
 .thanks{text-align:center}
 .thanks .big{font-size:44px;margin-bottom:10px}
+.countdown{
+  font-size:31px;
+  color:#ffd36a;
+  font-weight:1000;
+  letter-spacing:2px;
+  margin-top:10px;
+}
 
 @media(max-width:650px){
   body{padding:14px}
-  .header{align-items:stretch}
-  .bgMini{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:6px}
-  .bgMiniTitle{grid-column:1/-1}
-  .bgMiniBtn{margin-bottom:0}
   h1{font-size:22px}
+  .logo{width:58px;height:58px}
+  .bgBar{align-items:stretch}
+  .bgBtn{min-width:calc(50% - 4px)}
   .grid{grid-template-columns:1fr 1fr;gap:10px}
-  .card{min-height:135px;padding:14px}
+  .card{min-height:126px;padding:14px}
   .name{font-size:14px}
   .emoji{font-size:27px}
 }
@@ -224,15 +234,15 @@ input[type=range]{accent-color:var(--orange)}
       <div class="subtitle">Araxos Premium Audio Control Panel · Tactical Meme Edition</div>
     </div>
   </div>
-
-  <div class="bgMini">
-    <div class="bgMiniTitle">BACKGROUND</div>
-    <button class="bgMiniBtn" onclick="toggleBackground(0, this)"><span>Back 1</span><span>OFF</span></button>
-    <button class="bgMiniBtn" onclick="toggleBackground(1, this)"><span>Back 2</span><span>OFF</span></button>
-    <button class="bgMiniBtn" onclick="toggleBackground(2, this)"><span>Back 3</span><span>OFF</span></button>
-    <button class="bgMiniBtn" onclick="toggleBackground(3, this)"><span>Back 4</span><span>OFF</span></button>
-  </div>
 </header>
+
+<div class="bgBar">
+  <div class="bgTitle">BACKGROUND</div>
+  <button class="bgBtn" onclick="toggleBackground(0, this)"><span>Back 1</span><span>OFF</span><div class="miniBars"><i></i><i></i><i></i></div></button>
+  <button class="bgBtn" onclick="toggleBackground(1, this)"><span>Back 2</span><span>OFF</span><div class="miniBars"><i></i><i></i><i></i></div></button>
+  <button class="bgBtn" onclick="toggleBackground(2, this)"><span>Back 3</span><span>OFF</span><div class="miniBars"><i></i><i></i><i></i></div></button>
+  <button class="bgBtn" onclick="toggleBackground(3, this)"><span>Back 4</span><span>OFF</span><div class="miniBars"><i></i><i></i><i></i></div></button>
+</div>
 
 <div class="panel controls">
   <button class="btn" onclick="stopEffect()">STOP SOUND</button>
@@ -248,7 +258,7 @@ input[type=range]{accent-color:var(--orange)}
 <div class="sectionHint">First sample is free. After that: tactical subscription required.</div>
 <div class="grid" id="premiumGrid"></div>
 
-<div class="footer">Made by Jo Chen · V1.2</div>
+<div class="footer">Made by Jo Chen · V1.3</div>
 
 <div class="now">
   <div id="nowText">Ready for deployment...</div>
@@ -270,17 +280,17 @@ input[type=range]{accent-color:var(--orange)}
     <div class="price">
       <div class="old">Normal price: €11.99 / month</div>
       <div class="new">Today only: 1 hemdvest + 1x 31 badge</div>
-      <p style="margin-top:10px">Special offer: <b>1 beer = 1 sound</b><br>6 beers = unlimited chaos until sunrise.</p>
+      <p style="margin-top:10px">Special offer: <b>1 beer = 5 sounds</b>
     </div>
 
     <div class="formFake">
-      <input placeholder="Name on 31 badge" disabled>
+      <input placeholder="31 badge" disabled>
       <input placeholder="Hemdvest size: S / M / L / Gunny" disabled>
-      <input placeholder="Payment method: Beer / Patch / Emotional Damage" disabled>
+      <input placeholder="Payment method: Beer / Patch " disabled>
     </div>
 
     <button class="payBtn" onclick="fakePay()">Subscribe with Beer</button>
-    <div class="tiny">No real payment. This is a very serious fake military-grade subscription system.</div>
+    <div class="tiny">No real payment. This is a very serious fake subscription system.</div>
   </div>
 </div>
 
@@ -288,17 +298,18 @@ input[type=range]{accent-color:var(--orange)}
   <div class="paywall thanks">
     <div class="big">🍺</div>
     <h2>Thank you for subscribing</h2>
-    <p>Your Tiger Premium™ request has been received.</p>
+    <p>Your Tiger Premium™ subscription is now active.</p>
     <div class="price">
-      <div class="new">Payment status: Beer pending</div>
-      <p style="margin-top:10px">Please report to the nearest bar for final verification.</p>
+      <div class="new">Subscription active until thirsty</div>
+      <p style="margin-top:10px">Premium access expires tonight at 21:00 HR.</p>
+      <div class="countdown" id="countdown">--:--:--</div>
     </div>
     <button class="payBtn" onclick="closeThanks()">Return to Soundboard</button>
   </div>
 </div>
 
 <script>
-const soundPath = "sounds/";
+const soundPath = "./sounds/";
 
 const backgrounds = [
   {name:"Back 1", file:"Back 1.mp3"},
@@ -340,15 +351,17 @@ const bgVol = document.getElementById("bgVol");
 const payModal = document.getElementById("payModal");
 const thanksModal = document.getElementById("thanksModal");
 const lockedText = document.getElementById("lockedText");
+const countdown = document.getElementById("countdown");
 
 let currentEffect = null;
 let currentBackground = null;
 let activeBgButton = null;
 let activeBgIndex = null;
+let countdownInterval = null;
 let premiumUsed = JSON.parse(localStorage.getItem("tigerPremiumUsed") || "{}");
 
 function fileUrl(file){
-  return soundPath + file.split("/").map(encodeURIComponent).join("/");
+  return soundPath + file;
 }
 
 function makeCard(item){
@@ -389,7 +402,10 @@ function playEffect(sound, card){
 
   currentEffect = new Audio(fileUrl(sound.file));
   currentEffect.volume = effectVol.value;
-  currentEffect.play().catch(() => alert("Kan sound niet afspelen: " + sound.file));
+  currentEffect.play().catch((err) => {
+    console.log(err);
+    alert("Kan sound niet afspelen: " + fileUrl(sound.file));
+  });
 
   nowText.textContent = "▶ " + sound.name;
   eq.style.display = "flex";
@@ -413,20 +429,20 @@ function toggleBackground(index, button){
 
   if(activeBgButton){
     activeBgButton.classList.remove("active");
-    activeBgButton.querySelector("span:last-child").textContent = "OFF";
+    activeBgButton.querySelector("span:nth-child(2)").textContent = "OFF";
   }
 
   const bg = backgrounds[index];
   currentBackground = new Audio(fileUrl(bg.file));
   currentBackground.loop = true;
   currentBackground.volume = bgVol.value;
-  currentBackground.play().catch(() => alert("Kan background niet afspelen: " + bg.file));
+  currentBackground.play().catch(() => alert("Kan background niet afspelen: " + fileUrl(bg.file)));
 
   activeBgButton = button;
   activeBgIndex = index;
 
   button.classList.add("active");
-  button.querySelector("span:last-child").textContent = "ON";
+  button.querySelector("span:nth-child(2)").textContent = "ON";
 
   nowText.textContent = "♫ Background playing: " + bg.name;
   eq.style.display = "flex";
@@ -451,7 +467,7 @@ function stopBackground(){
 
   if(activeBgButton){
     activeBgButton.classList.remove("active");
-    activeBgButton.querySelector("span:last-child").textContent = "OFF";
+    activeBgButton.querySelector("span:nth-child(2)").textContent = "OFF";
   }
 
   activeBgButton = null;
@@ -473,10 +489,35 @@ function closePaywall(){
 function fakePay(){
   payModal.classList.remove("show");
   thanksModal.classList.add("show");
+  startCountdown();
 }
 
 function closeThanks(){
   thanksModal.classList.remove("show");
+}
+
+function startCountdown(){
+  if(countdownInterval) clearInterval(countdownInterval);
+
+  function update(){
+    const now = new Date();
+    let target = new Date();
+    target.setHours(21,0,0,0);
+
+    if(now > target){
+      target.setDate(target.getDate() + 1);
+    }
+
+    const diff = target - now;
+    const h = String(Math.floor(diff / 1000 / 60 / 60)).padStart(2,"0");
+    const m = String(Math.floor(diff / 1000 / 60) % 60).padStart(2,"0");
+    const s = String(Math.floor(diff / 1000) % 60).padStart(2,"0");
+
+    countdown.textContent = `${h}:${m}:${s}`;
+  }
+
+  update();
+  countdownInterval = setInterval(update, 1000);
 }
 
 effectVol.addEventListener("input", () => {
