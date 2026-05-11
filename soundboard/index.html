@@ -125,8 +125,23 @@ input[type=range]{accent-color:var(--orange)}
 .tiny{font-size:11px;color:#777;margin-top:10px}.thanks{text-align:center}.thanks .big{font-size:44px;margin-bottom:10px}
 .countdown{font-size:31px;color:#ffd36a;font-weight:1000;letter-spacing:2px;margin-top:10px}
 .termsBox{
-  height:330px;overflow-y:auto;padding:14px;border-radius:18px;background:#080808;
-  border:1px solid rgba(255,211,106,.22);color:#bbb;font-size:13px;line-height:1.55;margin-top:14px
+  height:330px;
+  overflow-y:auto;
+  padding:14px;
+  border-radius:18px;
+  background:#080808;
+  border:1px solid rgba(255,211,106,.22);
+  color:#bbb;
+  font-size:13px;
+  line-height:1.55;
+  margin-top:14px;
+
+  scrollbar-width:none;        /* Firefox */
+  -ms-overflow-style:none;     /* old Edge */
+}
+
+.termsBox::-webkit-scrollbar{
+  display:none;                /* Chrome / Edge / Safari */
 }
 .termsBox h3{color:#ffd36a;margin:12px 0 6px}
 .termsNotice{font-size:12px;color:#ffb347;margin-top:10px}
@@ -262,7 +277,9 @@ administratively resilient and spiritually premium.
 <div style="height:2500px"></div>ng the bottom, you have demonstrated patience, discipline, and poor decision-making. You may now accept the terms and continue to Tiger Premium™.</p>
     </div>
 
-    <div class="termsNotice" id="termsNotice">Scroll to the bottom to unlock the accept button.</div>
+    <div class="termsNotice" id="termsNotice">
+  Scroll manually. Dragging the scrollbar is disabled by CIS policy.
+</div>
     <button class="payBtn" id="acceptTermsBtn" onclick="acceptTerms()" disabled>I accept the totally official terms</button>
   </div>
 </div>
