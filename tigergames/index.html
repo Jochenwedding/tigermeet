@@ -516,8 +516,17 @@
     ctx.restore();
   }
 
-  function drawName(p){
-    const label = `${p.bot ? "🤖 " : ""}${flagOf(p.nation)} ${p.name}`;
+function drawName(p){
+  if(p.bot) return;
+
+  const label = `${flagOf(p.nation)} ${p.name}`;
+  ctx.font='bold 13px Arial,"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji"';
+  ctx.textAlign="center";
+  ctx.fillStyle="rgba(0,0,0,.8)";
+  ctx.fillText(label,p.x,p.y-p.radius-18);
+  ctx.fillStyle="#fff";
+  ctx.fillText(label,p.x,p.y-p.radius-19);
+}
     ctx.font='bold 13px Arial,"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji"';
     ctx.textAlign="center";
     ctx.fillStyle="rgba(0,0,0,.8)";
@@ -528,7 +537,7 @@
 
   function updateHud(){
     if(!state) return;
-    const players=[...renderPlayers.values()].filter(p=>p.alive).sort((a,b)=>b.score-a.score);
+    const players=[...renderPlayers.values()].filter(p=>p.alive && !p.bot).sort((a,b)=>b.score-a.score);
     const me=renderPlayers.get(myId);
 
     if(me){
