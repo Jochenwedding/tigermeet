@@ -133,18 +133,9 @@ input[type=range]{accent-color:var(--orange)}
 .tiny{font-size:11px;color:#777;margin-top:10px}.thanks{text-align:center}.thanks .big{font-size:44px;margin-bottom:10px}
 .countdown{font-size:31px;color:#ffd36a;font-weight:1000;letter-spacing:2px;margin-top:10px}
 .termsBox{
-  height:330px;
-  overflow-y:auto;
-  padding:14px;
-  border-radius:18px;
-  background:#080808;
-  border:1px solid rgba(255,211,106,.22);
-  color:#bbb;
-  font-size:13px;
-  line-height:1.55;
-  margin-top:14px;
-  scrollbar-width:none;
-  -ms-overflow-style:none;
+  height:330px;overflow-y:auto;padding:14px;border-radius:18px;background:#080808;
+  border:1px solid rgba(255,211,106,.22);color:#bbb;font-size:13px;line-height:1.55;margin-top:14px;
+  scrollbar-width:none;-ms-overflow-style:none;
 }
 .termsBox::-webkit-scrollbar{display:none}
 .termsBox h3{color:#ffd36a;margin:12px 0 6px}
@@ -195,7 +186,7 @@ input[type=range]{accent-color:var(--orange)}
 <div class="sectionHint">First sample is free. After that: tactical subscription required. Resets every midnight.</div>
 <div class="grid" id="premiumGrid"></div>
 
-<div class="footer">Made by Jo Chen · V1.5</div>
+<div class="footer">Made by Jo Chen · V1.6</div>
 
 <div class="now">
   <div id="nowText">Ready for deployment...</div>
@@ -230,70 +221,29 @@ input[type=range]{accent-color:var(--orange)}
 
     <div class="termsBox" id="termsBox" onscroll="checkTermsScroll()">
       <div style="height:900px"></div>
-
       <h3>CLASSIFIED BELGIAN CIS HISTORICAL ARCHIVE</h3>
-      <p>
-        The following document contains extremely sensitive operational information regarding
-        the mythical origins of Belgian CIS operations, tactical coffee deployment strategies,
-        and the ancient Layer 8 doctrines passed down from shift to shift since approximately
-        the invention of complaining about printers.
-      </p>
-
+      <p>The following document contains extremely sensitive operational information regarding tactical coffee deployment strategies and ancient Layer 8 doctrines.</p>
       <div style="height:1200px"></div>
-
       <h3>PREMIUM TACTICAL LIABILITY SECTION</h3>
-      <p>
-        By continuing to scroll, the user acknowledges that this agreement was intentionally
-        made far too long so nobody would actually read it. Nevertheless, the user is now
-        emotionally invested and cannot stop scrolling because the accept button is still greyed out.
-      </p>
-
+      <p>By continuing to scroll, the user acknowledges this agreement was intentionally made far too long.</p>
       <div style="height:1400px"></div>
-
       <h3>THE GREAT CIS ADMINISTRATIVE EXPANSION</h3>
-      <p>
-        Around the year nobody-remembers, a legendary CIS technician reportedly attempted to document
-        every network cable ever connected on base. The project was abandoned after discovering
-        that half the cables were labelled “TEMP_FINAL_v2_REAL”.
-      </p>
-
+      <p>A legendary CIS technician once attempted to document every cable on base. The project was abandoned after discovering half were labelled TEMP_FINAL_v2_REAL.</p>
       <div style="height:1600px"></div>
-
       <h3>EMERGENCY BEER PROTOCOLS</h3>
-      <p>
-        In case of catastrophic morale degradation, background music may be activated together
-        with emergency premium sounds. Users are advised to remain calm, tactical, and vaguely
-        professional while pretending this paywall is legally enforceable.
-      </p>
-
+      <p>In case of catastrophic morale degradation, background music may be activated together with emergency premium sounds.</p>
       <div style="height:1800px"></div>
-
       <h3>THE INFINITE SCROLL INITIATIVE</h3>
-      <p>
-        This section exists purely to make the scrollbar look terrifyingly small.
-        At this point the user has already scrolled further than most people scroll through real terms and services.
-      </p>
-
+      <p>This section exists purely to make the scrollbar look terrifyingly small.</p>
       <div style="height:2200px"></div>
-
       <h3>FINAL PRE-ALMOST-END CLAUSE</h3>
-      <p>
-        If you are still scrolling, congratulations. You are now officially considered
-        administratively resilient and spiritually premium.
-      </p>
-
+      <p>If you are still scrolling, congratulations. You are administratively resilient and spiritually premium.</p>
       <div style="height:2500px"></div>
-
       <h3>FINAL CLAUSE</h3>
-      <p>
-        By reaching the bottom, you have demonstrated patience, discipline, and poor decision-making.
-        You may now accept the terms and continue to Tiger Premium™.
-      </p>
+      <p>By reaching the bottom, you have demonstrated patience, discipline, and poor decision-making. You may now accept the terms.</p>
     </div>
 
-    <div class="termsNotice" id="termsNotice">
-      Scroll manually. Dragging the scrollbar is disabled by CIS policy.
-    </div>
+    <div class="termsNotice" id="termsNotice">Scroll manually. Dragging the scrollbar is disabled by CIS policy.</div>
     <button class="payBtn" id="acceptTermsBtn" onclick="acceptTerms()" disabled>I accept the totally official terms</button>
   </div>
 </div>
@@ -323,13 +273,13 @@ const backgrounds = [
 ];
 
 const mainSounds = [
-  {name:"31 Tigers", file:"ThreeoneTigers.mp3", emoji:"🐯"},
-  {name:"31best", file:"Threeone.mp3", emoji:"🔥"},
+  {name:"31 Tigers", file:"31 Tigers.mp3", emoji:"🐯"},
+  {name:"31best", file:"31best.mp3", emoji:"🔥"},
   {name:"Afuckraxos", file:"Afuckraxos.mp3", emoji:"💀"},
   {name:"Araxos Baby", file:"Araxos Baby.mp3", emoji:"✈️"},
   {name:"Beer is cold", file:"Beer is cold.mp3", emoji:"🍺"},
   {name:"Belgium Power", file:"Belgium Power.mp3", emoji:"🇧🇪"},
-  {name:"Go31", file:"GoThreeOne.mp3", emoji:"🎖️"},
+  {name:"Go31", file:"Go31.mp3", emoji:"🎖️"},
   {name:"Gunny Gunny", file:"Gunny Gunny.mp3", emoji:"📡"},
   {name:"Gunny", file:"Gunny.mp3", emoji:"🎤"},
   {name:"Hands up", file:"Hands up.mp3", emoji:"🙌"},
@@ -390,16 +340,12 @@ if(savedDay !== todayKey){
 }
 
 function fileUrl(file){
-  return soundPath + encodeURIComponent(file).replace(/%20/g, " ");
+  return soundPath + file;
 }
 
 function makeCard(item){
   const card = document.createElement("div");
-  card.className =
-    "card" +
-    (item.premium ? " premiumCard" : "") +
-    (item.bonus ? " missingCard" : "");
-
+  card.className = "card" + (item.premium ? " premiumCard" : "") + (item.bonus ? " missingCard" : "");
   card.innerHTML = `
     <div class="emoji">${item.emoji}</div>
     <div class="name">${item.name}</div>
@@ -437,7 +383,10 @@ function playEffect(sound, card){
 
   currentEffect = new Audio(fileUrl(sound.file));
   currentEffect.volume = effectVol.value;
-  currentEffect.play().catch(() => alert("Kan sound niet afspelen: " + fileUrl(sound.file)));
+
+  currentEffect.play().catch(() => {
+    alert("Kan sound niet afspelen: " + fileUrl(sound.file));
+  });
 
   nowText.textContent = "▶ " + sound.name;
   eq.style.display = "flex";
@@ -468,7 +417,10 @@ function toggleBackground(index, button){
   currentBackground = new Audio(fileUrl(bg.file));
   currentBackground.loop = true;
   currentBackground.volume = bgVol.value;
-  currentBackground.play().catch(() => alert("Kan background niet afspelen: " + fileUrl(bg.file)));
+
+  currentBackground.play().catch(() => {
+    alert("Kan background niet afspelen: " + fileUrl(bg.file));
+  });
 
   activeBgButton = button;
   activeBgIndex = index;
