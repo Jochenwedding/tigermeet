@@ -131,18 +131,51 @@ body{
 .controls button.active{background:#fff;box-shadow:0 0 15px orange}
 
 .tigerGamesBtn{
-  position:relative;
-  background:linear-gradient(90deg,#ff7700,#ffcc00,#fff200,#ff7700)!important;
+  background:rgba(255,136,0,.94)!important;
   color:#000!important;
-  animation:tigerGlow 1s ease-in-out infinite alternate, tigerWiggle 2.4s ease-in-out infinite;
-  box-shadow:0 0 18px orange,0 0 38px #ff4d00,0 0 70px rgba(255,170,0,.6)!important;
+  box-shadow:0 0 15px rgba(0,0,0,.4)!important;
 }
-.tigerGamesBtn::after{
-  content:"PLAY";position:absolute;top:-11px;right:-9px;background:#fff;color:#000;
-  font-size:9px;font-weight:1000;padding:2px 5px;border-radius:99px;box-shadow:0 0 12px #fff;
+
+.soundboardBtn{
+  position:relative;
+  background:linear-gradient(90deg,#00ffd5,#ff7700,#ffcc00,#fff200,#00ffd5)!important;
+  color:#000!important;
+  animation:soundboardGlow .8s ease-in-out infinite alternate, soundboardWiggle 2.2s ease-in-out infinite;
+  box-shadow:0 0 18px #00ffd5,0 0 38px #ff8a00,0 0 70px rgba(255,170,0,.7)!important;
 }
-@keyframes tigerGlow{from{filter:brightness(1);transform:scale(1)}to{filter:brightness(1.35);transform:scale(1.08)}}
-@keyframes tigerWiggle{0%,100%{rotate:0deg}45%{rotate:0deg}50%{rotate:2deg}55%{rotate:-2deg}60%{rotate:0deg}}
+
+.soundboardBtn::after{
+  content:"NEW";
+  position:absolute;
+  top:-12px;
+  right:-10px;
+  background:#ff003d;
+  color:white;
+  font-size:9px;
+  font-weight:1000;
+  padding:3px 6px;
+  border-radius:99px;
+  box-shadow:0 0 14px #ff003d;
+  animation:newBlink .45s infinite alternate;
+}
+
+@keyframes soundboardGlow{
+  from{filter:brightness(1);transform:scale(1)}
+  to{filter:brightness(1.35);transform:scale(1.08)}
+}
+
+@keyframes soundboardWiggle{
+  0%,100%{rotate:0deg}
+  45%{rotate:0deg}
+  50%{rotate:2deg}
+  55%{rotate:-2deg}
+  60%{rotate:0deg}
+}
+
+@keyframes newBlink{
+  from{opacity:.35;transform:scale(.9)}
+  to{opacity:1;transform:scale(1.18)}
+}
 
 #countdown{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
@@ -283,8 +316,9 @@ body{
       <div class="creator">Jochen M - Starring Félipé</div>
     </div>
     <div class="controls">
-      <a class="tigerGamesBtn" href="/tigergames/">TIGERGAMES</a>
-      <button onclick="playSong()">PLAY</button>
+     <a class="tigerGamesBtn" href="/tigergames/">TIGERGAMES</a>
+<a class="soundboardBtn" href="https://cissupport.jochenkaty.de/soundboard">SOUNDBOARD</a>
+<button onclick="playSong()">PLAY</button>
       <button onclick="pauseSong()">PAUSE</button>
       <button onclick="stopSong()">STOP</button>
       <button onclick="nextBgVideo()">NEXT VIDEO</button>
