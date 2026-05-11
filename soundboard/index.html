@@ -77,6 +77,14 @@ input[type=range]{accent-color:var(--orange)}
 .card:active{transform:scale(.95)}
 .card.flash{animation:flash .45s ease}
 @keyframes flash{40%{box-shadow:0 0 55px rgba(255,140,0,.85);border-color:#ffdd7a}}
+.missingCard{
+  border:1px solid rgba(0,200,255,.55);
+  background:radial-gradient(circle at top,rgba(0,200,255,.16),transparent 35%),linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.025))
+}
+.missingCard:after{
+  content:"BONUS";position:absolute;top:12px;right:12px;background:linear-gradient(145deg,#9beeff,#00bfff);
+  color:black;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:1000
+}
 .premiumCard{
   border:1px solid rgba(255,211,106,.8);
   background:radial-gradient(circle at top,rgba(255,211,106,.18),transparent 34%),linear-gradient(180deg,rgba(255,190,70,.16),rgba(255,255,255,.025))
@@ -135,14 +143,10 @@ input[type=range]{accent-color:var(--orange)}
   font-size:13px;
   line-height:1.55;
   margin-top:14px;
-
-  scrollbar-width:none;        /* Firefox */
-  -ms-overflow-style:none;     /* old Edge */
+  scrollbar-width:none;
+  -ms-overflow-style:none;
 }
-
-.termsBox::-webkit-scrollbar{
-  display:none;                /* Chrome / Edge / Safari */
-}
+.termsBox::-webkit-scrollbar{display:none}
 .termsBox h3{color:#ffd36a;margin:12px 0 6px}
 .termsNotice{font-size:12px;color:#ffb347;margin-top:10px}
 @media(max-width:650px){
@@ -183,11 +187,15 @@ input[type=range]{accent-color:var(--orange)}
 <div class="sectionTitle">Main Soundboard</div>
 <div class="grid" id="soundGrid"></div>
 
+<div class="sectionTitle">Missing From The Song</div>
+<div class="sectionHint">They did not make the cut, so now they get their own tactical button.</div>
+<div class="grid" id="bonusGrid"></div>
+
 <div class="sectionTitle">Tiger Premium Locked Sounds</div>
 <div class="sectionHint">First sample is free. After that: tactical subscription required. Resets every midnight.</div>
 <div class="grid" id="premiumGrid"></div>
 
-<div class="footer">Made by Jo Chen · V1.4</div>
+<div class="footer">Made by Jo Chen · V1.5</div>
 
 <div class="now">
   <div id="nowText">Ready for deployment...</div>
@@ -223,63 +231,69 @@ input[type=range]{accent-color:var(--orange)}
     <div class="termsBox" id="termsBox" onscroll="checkTermsScroll()">
       <div style="height:900px"></div>
 
-<h3>CLASSIFIED BELGIAN CIS HISTORICAL ARCHIVE</h3>
-<p>
-The following document contains extremely sensitive operational information regarding
-the mythical origins of Belgian CIS operations, tactical coffee deployment strategies,
-and the ancient Layer 8 doctrines passed down from shift to shift since approximately
-the invention of complaining about printers.
-</p>
+      <h3>CLASSIFIED BELGIAN CIS HISTORICAL ARCHIVE</h3>
+      <p>
+        The following document contains extremely sensitive operational information regarding
+        the mythical origins of Belgian CIS operations, tactical coffee deployment strategies,
+        and the ancient Layer 8 doctrines passed down from shift to shift since approximately
+        the invention of complaining about printers.
+      </p>
 
-<div style="height:1200px"></div>
+      <div style="height:1200px"></div>
 
-<h3>PREMIUM TACTICAL LIABILITY SECTION</h3>
-<p>
-By continuing to scroll, the user acknowledges that this agreement was intentionally
-made far too long so nobody would actually read it. Nevertheless, the user is now
-emotionally invested and cannot stop scrolling because the accept button is still greyed out.
-</p>
+      <h3>PREMIUM TACTICAL LIABILITY SECTION</h3>
+      <p>
+        By continuing to scroll, the user acknowledges that this agreement was intentionally
+        made far too long so nobody would actually read it. Nevertheless, the user is now
+        emotionally invested and cannot stop scrolling because the accept button is still greyed out.
+      </p>
 
-<div style="height:1400px"></div>
+      <div style="height:1400px"></div>
 
-<h3>THE GREAT CIS ADMINISTRATIVE EXPANSION</h3>
-<p>
-Around the year nobody-remembers, a legendary CIS technician reportedly attempted to document
-every network cable ever connected on base. The project was abandoned after discovering
-that half the cables were labelled “TEMP_FINAL_v2_REAL”.
-</p>
+      <h3>THE GREAT CIS ADMINISTRATIVE EXPANSION</h3>
+      <p>
+        Around the year nobody-remembers, a legendary CIS technician reportedly attempted to document
+        every network cable ever connected on base. The project was abandoned after discovering
+        that half the cables were labelled “TEMP_FINAL_v2_REAL”.
+      </p>
 
-<div style="height:1600px"></div>
+      <div style="height:1600px"></div>
 
-<h3>EMERGENCY BEER PROTOCOLS</h3>
-<p>
-In case of catastrophic morale degradation, background music may be activated together
-with emergency premium sounds. Users are advised to remain calm, tactical, and vaguely
-professional while pretending this paywall is legally enforceable.
-</p>
+      <h3>EMERGENCY BEER PROTOCOLS</h3>
+      <p>
+        In case of catastrophic morale degradation, background music may be activated together
+        with emergency premium sounds. Users are advised to remain calm, tactical, and vaguely
+        professional while pretending this paywall is legally enforceable.
+      </p>
 
-<div style="height:1800px"></div>
+      <div style="height:1800px"></div>
 
-<h3>THE INFINITE SCROLL INITIATIVE</h3>
-<p>
-This section exists purely to make the scrollbar look terrifyingly small.
-At this point the user has already scrolled further than most people scroll through real terms and services.
-</p>
+      <h3>THE INFINITE SCROLL INITIATIVE</h3>
+      <p>
+        This section exists purely to make the scrollbar look terrifyingly small.
+        At this point the user has already scrolled further than most people scroll through real terms and services.
+      </p>
 
-<div style="height:2200px"></div>
+      <div style="height:2200px"></div>
 
-<h3>FINAL PRE-ALMOST-END CLAUSE</h3>
-<p>
-If you are still scrolling, congratulations. You are now officially considered
-administratively resilient and spiritually premium.
-</p>
+      <h3>FINAL PRE-ALMOST-END CLAUSE</h3>
+      <p>
+        If you are still scrolling, congratulations. You are now officially considered
+        administratively resilient and spiritually premium.
+      </p>
 
-<div style="height:2500px"></div>ng the bottom, you have demonstrated patience, discipline, and poor decision-making. You may now accept the terms and continue to Tiger Premium™.</p>
+      <div style="height:2500px"></div>
+
+      <h3>FINAL CLAUSE</h3>
+      <p>
+        By reaching the bottom, you have demonstrated patience, discipline, and poor decision-making.
+        You may now accept the terms and continue to Tiger Premium™.
+      </p>
     </div>
 
     <div class="termsNotice" id="termsNotice">
-  Scroll manually. Dragging the scrollbar is disabled by CIS policy.
-</div>
+      Scroll manually. Dragging the scrollbar is disabled by CIS policy.
+    </div>
     <button class="payBtn" id="acceptTermsBtn" onclick="acceptTerms()" disabled>I accept the totally official terms</button>
   </div>
 </div>
@@ -299,7 +313,7 @@ administratively resilient and spiritually premium.
 </div>
 
 <script>
-const soundPath = "./sounds/";
+const soundPath = "/tigermeet/soundboard/sounds/";
 
 const backgrounds = [
   {name:"Back 1", file:"Back 1.mp3"},
@@ -324,6 +338,14 @@ const mainSounds = [
   {name:"Roaring Tiger", file:"Roaring Tiger.mp3", emoji:"🐅"}
 ];
 
+const bonusSounds = [
+  {name:"Tibo", file:"Tibo.mp3", emoji:"🎧", bonus:true},
+  {name:"Slab", file:"Slab.mp3", emoji:"🥩", bonus:true},
+  {name:"Sprinkler", file:"Sprinkler.mp3", emoji:"💦", bonus:true},
+  {name:"Wowe", file:"Wowe.mp3", emoji:"😮", bonus:true},
+  {name:"Soda", file:"Soda.mp3", emoji:"🥤", bonus:true}
+];
+
 const premiumSounds = [
   {name:"Harderfastergunny", file:"Harderfastergunny.mp3", emoji:"⚡", premium:true},
   {name:"oohgunny", file:"oohgunny.mp3", emoji:"😩", premium:true},
@@ -333,6 +355,7 @@ const premiumSounds = [
 ];
 
 const soundGrid = document.getElementById("soundGrid");
+const bonusGrid = document.getElementById("bonusGrid");
 const premiumGrid = document.getElementById("premiumGrid");
 const nowText = document.getElementById("nowText");
 const eq = document.getElementById("eq");
@@ -366,15 +389,21 @@ if(savedDay !== todayKey){
   premiumActive = false;
 }
 
-function fileUrl(file){ return soundPath + file; }
+function fileUrl(file){
+  return soundPath + encodeURIComponent(file).replace(/%20/g, " ");
+}
 
 function makeCard(item){
   const card = document.createElement("div");
-  card.className = "card" + (item.premium ? " premiumCard" : "");
+  card.className =
+    "card" +
+    (item.premium ? " premiumCard" : "") +
+    (item.bonus ? " missingCard" : "");
+
   card.innerHTML = `
     <div class="emoji">${item.emoji}</div>
     <div class="name">${item.name}</div>
-    <div class="meta">${item.premium ? "Premium tactical sound" : "One-shot premium sound"}</div>
+    <div class="meta">${item.premium ? "Premium tactical sound" : item.bonus ? "Did not make the song, now has a button" : "One-shot tactical sound"}</div>
     <div class="playTag">PLAY</div>
   `;
   card.onclick = () => playEffect(item, card);
@@ -382,6 +411,7 @@ function makeCard(item){
 }
 
 mainSounds.forEach(s => soundGrid.appendChild(makeCard(s)));
+bonusSounds.forEach(s => bonusGrid.appendChild(makeCard(s)));
 premiumSounds.forEach(s => premiumGrid.appendChild(makeCard(s)));
 updatePremiumCards();
 
@@ -419,7 +449,10 @@ function playEffect(sound, card){
 }
 
 function toggleBackground(index, button){
-  if(activeBgIndex === index && currentBackground){ stopBackground(); return; }
+  if(activeBgIndex === index && currentBackground){
+    stopBackground();
+    return;
+  }
 
   if(currentBackground){
     currentBackground.pause();
@@ -453,6 +486,7 @@ function stopEffect(){
     currentEffect.currentTime = 0;
     currentEffect = null;
   }
+
   nowText.textContent = currentBackground ? "♫ Background still playing" : "Sound stopped.";
   if(!currentBackground) eq.style.display = "none";
 }
@@ -480,7 +514,9 @@ function showPaywall(name){
   payModal.classList.add("show");
 }
 
-function closePaywall(){ payModal.classList.remove("show"); }
+function closePaywall(){
+  payModal.classList.remove("show");
+}
 
 function openTerms(){
   payModal.classList.remove("show");
@@ -490,7 +526,9 @@ function openTerms(){
   termsNotice.textContent = "Scroll to the bottom to unlock the accept button.";
 }
 
-function closeTerms(){ termsModal.classList.remove("show"); }
+function closeTerms(){
+  termsModal.classList.remove("show");
+}
 
 function checkTermsScroll(){
   const atBottom = termsBox.scrollTop + termsBox.clientHeight >= termsBox.scrollHeight - 8;
@@ -511,7 +549,9 @@ function acceptTerms(){
   startCountdown();
 }
 
-function closeThanks(){ thanksModal.classList.remove("show"); }
+function closeThanks(){
+  thanksModal.classList.remove("show");
+}
 
 function updatePremiumCards(){
   document.querySelectorAll(".premiumCard").forEach(card => {
