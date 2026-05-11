@@ -577,7 +577,15 @@ premiumSounds.forEach(s => premiumGrid.appendChild(makeCard(s)));
 updatePremiumCards();
 
 function playEffect(sound, card){
-  logSoundClick(sound.name);
+
+  try{
+    if(typeof logSoundClick === "function"){
+      logSoundClick(sound.name);
+    }
+  }catch(e){
+    console.log("Click logging failed:", e);
+  }
+
   if(sound.premium && !premiumActive && premiumUsed[sound.name]){
     showPaywall(sound.name);
     return;
