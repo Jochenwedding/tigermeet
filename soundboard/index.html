@@ -779,6 +779,14 @@ bgVol.addEventListener("input", () => {
 </script>
 <script>
 (function(){
+<script>
+(function(){
+
+  let visitorId = localStorage.getItem("soundboard_visitor_id");
+  if(!visitorId){
+    visitorId = crypto.randomUUID();
+    localStorage.setItem("soundboard_visitor_id", visitorId);
+  }
 
   let visitorName =
     localStorage.getItem("tigergames_name") ||
@@ -789,18 +797,30 @@ bgVol.addEventListener("input", () => {
     localStorage.setItem("soundboard_name", visitorName);
   }
 
+  window.soundboardVisitorId = visitorId;
+
   fetch("/api/soundboard-log", {
     method:"POST",
-    headers:{
-      "Content-Type":"application/json"
-    },
+    headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
+      visitorId: visitorId,
       name: visitorName,
       page: location.pathname
     })
   }).catch(()=>{});
 
+  setInterval(() => {
+    fetch("/api/soundboard-heartbeat", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        visitorId: visitorId
+      })
+    }).catch(()=>{});
+  }, 10000);
+
 })();
+
 function getVisitorName(){
   return localStorage.getItem("tigergames_name") ||
          localStorage.getItem("soundboard_name") ||
@@ -812,11 +832,12 @@ function logSoundClick(soundName){
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
-      name:getVisitorName(),
-      sound:soundName
+      visitorId: window.soundboardVisitorId || localStorage.getItem("soundboard_visitor_id") || "unknown",
+      name: getVisitorName(),
+      sound: soundName
     })
   }).catch(()=>{});
-}  
+}
 </script>
 </body>
 </html>
