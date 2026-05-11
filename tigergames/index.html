@@ -25,37 +25,6 @@
     .logo{font-size:56px}
     h1{margin:6px 0;color:#ff8a00;font-size:30px}
     .versionBadge{display:inline-block;background:#ff8a00;color:#111;font-weight:900;border-radius:999px;padding:6px 12px;margin:6px 0 12px}
-
-    .soundboardBtn{
-      width:100%;
-      margin:8px 0 12px;
-      padding:15px;
-      border-radius:16px;
-      background:linear-gradient(135deg,#00ffd5,#ff8a00,#ffd36a);
-      color:#050505;
-      font-size:17px;
-      font-weight:1000;
-      box-shadow:0 0 28px rgba(255,136,0,.65);
-      animation:newFlash .85s infinite alternate;
-      position:relative;
-    }
-    .soundboardBtn:before{
-      content:"NEW";
-      position:absolute;
-      top:-9px;
-      right:12px;
-      background:#ff003d;
-      color:white;
-      font-size:11px;
-      padding:4px 8px;
-      border-radius:999px;
-      box-shadow:0 0 16px rgba(255,0,61,.9);
-    }
-    @keyframes newFlash{
-      from{transform:scale(1);filter:brightness(1)}
-      to{transform:scale(1.035);filter:brightness(1.35)}
-    }
-
     .tag{color:#ddd;font-size:14px;line-height:1.35}
     input,.nationSelect{
       width:100%;padding:14px;margin:8px 0;border-radius:14px;border:1px solid #444;background:#050505;color:white;
@@ -124,12 +93,7 @@
   <div class="card">
     <div class="logo">🐯</div>
     <h1>Tigergames Online</h1>
-    <div class="versionBadge">Bot Build · Jo Chen</div>
-
-    <button class="soundboardBtn" onclick="location.href='https://cissupport.jochenkaty.de/soundboard'">
-      🐯 TIGER SOUNDBOARD
-    </button>
-
+    <div class="versionBadge">Premium Bot Build · Jo Chen</div>
     <p class="tag">Feed yourself on other countries. Make your legacy, become the biggest tiger of them all and ROAR your way to the top.</p>
     <input id="playerName" maxlength="16" placeholder="Naam / callsign" autocomplete="off" />
     <select id="playerNation" class="nationSelect">
