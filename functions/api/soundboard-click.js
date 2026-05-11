@@ -1,6 +1,5 @@
 export async function onRequestPost(context) {
   const { request, env } = context;
-
   const body = await request.json().catch(() => ({}));
 
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
@@ -8,16 +7,17 @@ export async function onRequestPost(context) {
 
   const click = {
     time: new Date().toISOString(),
+    visitorId: body.visitorId || "unknown",
     name: body.name || "Unknown",
     sound: body.sound || "Unknown sound",
     ip,
     country
   };
 
-  const oldClicks = JSON.parse(await env.LOGS.get("soundboard_clicks") || "[]");
-  oldClicks.unshift(click);
+  const clicks = JSON.parse(await env.LOGS.get("soundboard_clicks") || "[]");
+  clicks.unshift(click);
 
-  await env.LOGS.put("soundboard_clicks", JSON.stringify(oldClicks.slice(0, 500)));
+  await env.LOGS.put("soundboard_clicks", JSON.stringify(clicks.slice(0, 1500)));
 
-  return Response.json({ success: true });
+  return Response.json({ success:true });
 }
