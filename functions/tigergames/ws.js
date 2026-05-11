@@ -1,6 +1,41 @@
 const WORLD = 4200;
-const FOOD_TARGET = 650;
-const COLORS = ['#ff8a00','#2f80ff','#27d17f','#b45cff','#ff3b30','#00d5ff','#ffe14a','#ff62c8','#9cff57','#ff6a3d'];
+const FOOD_TARGET = 450;
+
+const BOT_TARGET = 7;
+const BOT_THINK_MS = 350;
+const BOT_CHASE_DISTANCE = 1250;
+const BOT_FOOD_DISTANCE = 900;
+
+const SPAWN_PROTECTION_MS = 2500;
+const HEAD_HITBOX_FACTOR = 0.55;
+const BODY_HITBOX = 7;
+const BODY_SKIP_START = 14;
+const BODY_CHECK_STEP = 4;
+
+const COLORS = [
+  '#ff8a00',
+  '#2f80ff',
+  '#27d17f',
+  '#b45cff',
+  '#ff3b30',
+  '#00d5ff',
+  '#ffe14a',
+  '#ff62c8',
+  '#9cff57',
+  '#ff6a3d'
+];
+
+const BOT_NAMES = [
+  'TigerBot',
+  'AraxosBot',
+  'CISBot',
+  'BeerBot',
+  'RadarBot',
+  'F16Bot',
+  'SlapBot',
+  'WowieBot',
+  'SprinklerBot'
+];
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -17,8 +52,11 @@ export class TigerRoom {
   constructor(state, env) {
     this.state = state;
     this.env = env;
+
     this.players = new Map();
+    this.bots = new Map();
     this.inputs = new Map();
+
     this.food = [];
     this.lastTick = Date.now();
     this.tickHandle = null;
@@ -51,6 +89,7 @@ export class TigerRoom {
 
   onMessage(ws, raw) {
     let msg;
+
     try {
       msg = JSON.parse(raw);
     } catch {
@@ -59,9 +98,10 @@ export class TigerRoom {
 
     if (msg.type === 'join') {
       const name = safeName(msg.name || 'Tiger');
-      const p = this.createPlayer(ws.id, name);
+      const p = this.createPlayer(ws.id, name, false);
 
       this.players.set(ws, p);
+
       this.inputs.set(ws.id, {
         angle: Math.random() * Math.PI * 2,
         boost: false
@@ -91,14 +131,19 @@ export class TigerRoom {
       const old = this.players.get(ws);
       if (!old) return;
 
-      this.players.set(ws, this.createPlayer(old.id, old.name));
+      this.players.set(ws, this.createPlayer(old.id, old.name, false));
+
+      this.inputs.set(old.id, {
+        angle: Math.random() * Math.PI * 2,
+        boost: false
+      });
     }
   }
 
   onClose(ws) {
     const p = this.players.get(ws);
 
-    if (p) {
+    if (p && !p.bot) {
       this.saveTop(p.name, Math.round(p.score));
     }
 
@@ -106,7 +151,7 @@ export class TigerRoom {
     this.inputs.delete(ws.id);
   }
 
-  createPlayer(id, name) {
+  createPlayer(id, name, bot = false) {
     const a = Math.random() * Math.PI * 2;
     const x = rand(300, WORLD - 300);
     const y = rand(300, WORLD - 300);
@@ -114,14 +159,19 @@ export class TigerRoom {
     const p = {
       id,
       name,
+      bot,
       x,
       y,
       angle: a,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      color: bot ? '#777777' : COLORS[Math.floor(Math.random() * COLORS.length)],
       score: 0,
       alive: true,
       body: [],
-      radius: 13
+      radius: 13,
+      spawnedAt: Date.now(),
+      lastKillerId: null,
+      nextThinkAt: 0,
+      targetAngle: a
     };
 
     for (let i = 0; i < 22; i++) {
@@ -134,10 +184,37 @@ export class TigerRoom {
     return p;
   }
 
+  createBot() {
+    const id = 'bot-' + crypto.randomUUID();
+    const name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+    const bot = this.createPlayer(id, name, true);
+
+    this.bots.set(id, bot);
+
+    this.inputs.set(id, {
+      angle: bot.angle,
+      boost: false
+    });
+  }
+
+  ensureBots() {
+    while (this.bots.size < BOT_TARGET) {
+      this.createBot();
+    }
+  }
+
+  getAllPlayers() {
+    return [
+      ...this.players.values(),
+      ...this.bots.values()
+    ];
+  }
+
   ensureLoop() {
     if (this.tickHandle) return;
 
     this.seedFood();
+    this.ensureBots();
     this.lastTick = Date.now();
 
     this.tickHandle = setInterval(() => this.tick(), 50);
@@ -145,6 +222,7 @@ export class TigerRoom {
 
   tick() {
     if (this.players.size === 0) {
+      this.bots.clear();
       clearInterval(this.tickHandle);
       this.tickHandle = null;
       return;
@@ -155,14 +233,91 @@ export class TigerRoom {
     this.lastTick = now;
 
     this.seedFood();
+    this.ensureBots();
+    this.updateBots(now);
 
-    for (const p of this.players.values()) {
+    for (const p of this.getAllPlayers()) {
       if (p.alive) this.updatePlayer(p, dt);
     }
 
     this.handleEating();
     this.handleCrashes();
+    this.cleanupBots();
     this.broadcastState();
+  }
+
+  updateBots(now) {
+    const humans = [...this.players.values()].filter(p => p.alive);
+    const bots = [...this.bots.values()].filter(p => p.alive);
+
+    for (const bot of bots) {
+      if (now < bot.nextThinkAt) continue;
+
+      bot.nextThinkAt = now + BOT_THINK_MS + rand(-80, 120);
+
+      let target = null;
+      let bestDist = Infinity;
+
+      for (const h of humans) {
+        const d = dist2(bot.x, bot.y, h.x, h.y);
+
+        if (d < bestDist && d < BOT_CHASE_DISTANCE * BOT_CHASE_DISTANCE) {
+          bestDist = d;
+          target = h;
+        }
+      }
+
+      if (target) {
+        const predictedX = target.x + Math.cos(target.angle) * 180;
+        const predictedY = target.y + Math.sin(target.angle) * 180;
+
+        bot.targetAngle = Math.atan2(predictedY - bot.y, predictedX - bot.x);
+
+        this.inputs.set(bot.id, {
+          angle: bot.targetAngle,
+          boost: bot.body.length > 30 && bestDist > 160 * 160 && bestDist < 850 * 850
+        });
+
+        continue;
+      }
+
+      let foodTarget = null;
+      let foodDist = Infinity;
+
+      for (const f of this.food) {
+        const d = dist2(bot.x, bot.y, f.x, f.y);
+
+        if (d < foodDist && d < BOT_FOOD_DISTANCE * BOT_FOOD_DISTANCE) {
+          foodDist = d;
+          foodTarget = f;
+        }
+      }
+
+      if (foodTarget) {
+        bot.targetAngle = Math.atan2(foodTarget.y - bot.y, foodTarget.x - bot.x);
+      } else {
+        bot.targetAngle += rand(-0.8, 0.8);
+      }
+
+      if (bot.x < 250) bot.targetAngle = 0;
+      if (bot.x > WORLD - 250) bot.targetAngle = Math.PI;
+      if (bot.y < 250) bot.targetAngle = Math.PI / 2;
+      if (bot.y > WORLD - 250) bot.targetAngle = -Math.PI / 2;
+
+      this.inputs.set(bot.id, {
+        angle: bot.targetAngle,
+        boost: false
+      });
+    }
+  }
+
+  cleanupBots() {
+    for (const [id, bot] of this.bots.entries()) {
+      if (!bot.alive) {
+        this.bots.delete(id);
+        this.inputs.delete(id);
+      }
+    }
   }
 
   updatePlayer(p, dt) {
@@ -209,7 +364,7 @@ export class TigerRoom {
   }
 
   handleEating() {
-    for (const p of this.players.values()) {
+    for (const p of this.getAllPlayers()) {
       if (!p.alive) continue;
 
       for (let i = this.food.length - 1; i >= 0; i--) {
@@ -224,16 +379,28 @@ export class TigerRoom {
   }
 
   handleCrashes() {
-    const all = [...this.players.values()].filter(p => p.alive);
+    const all = this.getAllPlayers().filter(p => p.alive);
+    const now = Date.now();
 
     for (const p of all) {
+      if (now - p.spawnedAt < SPAWN_PROTECTION_MS) continue;
+
+      const headHitbox = Math.max(8, p.radius * HEAD_HITBOX_FACTOR);
+
       for (const other of all) {
         if (p === other) continue;
+        if (now - other.spawnedAt < 600) continue;
 
-        for (let i = 9; i < other.body.length; i += 3) {
-          const seg = other.body[i];
+        for (let i = BODY_SKIP_START; i < other.body.length - BODY_CHECK_STEP; i += BODY_CHECK_STEP) {
+          const a = other.body[i];
+          const b = other.body[i + BODY_CHECK_STEP];
 
-          if (dist2(p.x, p.y, seg.x, seg.y) < (p.radius + 9) ** 2) {
+          if (!a || !b) continue;
+
+          const d = pointToSegmentDist2(p.x, p.y, a.x, a.y, b.x, b.y);
+          const hit = headHitbox + BODY_HITBOX;
+
+          if (d < hit * hit) {
             this.kill(p, other);
             break;
           }
@@ -245,10 +412,16 @@ export class TigerRoom {
   }
 
   kill(dead, killer) {
-    dead.alive = false;
-    killer.score += 10;
+    if (!dead.alive) return;
 
-    this.saveTop(dead.name, Math.round(dead.score));
+    dead.alive = false;
+    dead.lastKillerId = killer.id;
+
+    killer.score += dead.bot ? 2 : 10;
+
+    if (!dead.bot) {
+      this.saveTop(dead.name, Math.round(dead.score));
+    }
 
     for (let i = 0; i < dead.body.length; i += 2) {
       const b = dead.body[i];
@@ -261,9 +434,12 @@ export class TigerRoom {
       });
     }
 
+    const killerName = killer.bot ? 'A bot' : killer.name;
+    const deadName = dead.bot ? 'a bot' : dead.name;
+
     this.broadcast({
       type: 'event',
-      text: `${killer.name} at ${dead.name} op 🐯`
+      text: `${killerName} at ${deadName} op 🐯`
     });
   }
 
@@ -279,23 +455,24 @@ export class TigerRoom {
   }
 
   broadcastState() {
-    const players = [...this.players.values()].map(p => ({
+    const players = this.getAllPlayers().map(p => ({
       id: p.id,
-      name: p.name,
+      name: p.bot ? '' : p.name,
       x: p.x,
       y: p.y,
       color: p.color,
-      score: p.score,
+      score: p.bot ? 0 : p.score,
       alive: p.alive,
       radius: p.radius,
       len: p.body.length,
+      bot: !!p.bot,
       body: p.body.filter((_, i) => i % 2 === 0)
     }));
 
     const msg = JSON.stringify({
       type: 'state',
       players,
-      food: this.food.slice(0, 700),
+      food: this.food.slice(0, 450),
       top5: this.top5
     });
 
@@ -347,7 +524,30 @@ function clamp(v, a, b) {
 function dist2(x1, y1, x2, y2) {
   const dx = x1 - x2;
   const dy = y1 - y2;
+
   return dx * dx + dy * dy;
+}
+
+function pointToSegmentDist2(px, py, ax, ay, bx, by) {
+  const vx = bx - ax;
+  const vy = by - ay;
+
+  const wx = px - ax;
+  const wy = py - ay;
+
+  const len2 = vx * vx + vy * vy;
+
+  if (len2 === 0) {
+    return dist2(px, py, ax, ay);
+  }
+
+  let t = (wx * vx + wy * vy) / len2;
+  t = clamp(t, 0, 1);
+
+  const cx = ax + t * vx;
+  const cy = ay + t * vy;
+
+  return dist2(px, py, cx, cy);
 }
 
 function angleDiff(a, b) {
