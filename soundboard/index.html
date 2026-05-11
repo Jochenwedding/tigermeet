@@ -3,306 +3,463 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-<title>Tiger Soundboard</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
+<title>Tiger Soundboard Premium</title>
 
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --orange:#ff8a00;
+  --gold:#ffd36a;
+  --dark:#050505;
+  --card:#111;
 }
-
 body{
   min-height:100vh;
+  color:white;
+  font-family:Arial,Helvetica,sans-serif;
   background:
-    radial-gradient(circle at top, rgba(255,140,0,.18), transparent 30%),
-    linear-gradient(180deg,#050505,#0f0f0f,#050505);
-  color:white;
-  font-family:'Orbitron',sans-serif;
-  padding:24px;
+    radial-gradient(circle at 20% 0%,rgba(255,136,0,.35),transparent 28%),
+    radial-gradient(circle at 80% 10%,rgba(255,210,90,.12),transparent 30%),
+    linear-gradient(160deg,#020202,#101010 48%,#050505);
+  padding:22px;
 }
-
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:30px;
-  gap:20px;
-  flex-wrap:wrap;
+body:before{
+  content:"";
+  position:fixed;inset:0;
+  pointer-events:none;
+  background:
+    repeating-linear-gradient(135deg,rgba(255,140,0,.03) 0 2px,transparent 2px 12px);
 }
-
-.logoWrap{
-  display:flex;
-  align-items:center;
-  gap:14px;
+.header{
+  display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px;
 }
-
+.brand{display:flex;align-items:center;gap:15px}
 .logo{
-  width:62px;
-  height:62px;
-  border-radius:18px;
-  background:linear-gradient(145deg,#ff9900,#ff6600);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:32px;
-  box-shadow:
-    0 0 20px rgba(255,140,0,.35),
-    inset 0 0 20px rgba(255,255,255,.12);
+  width:72px;height:72px;border-radius:24px;
+  display:grid;place-items:center;font-size:39px;
+  background:linear-gradient(145deg,#ffb300,#ff6200);
+  box-shadow:0 0 45px rgba(255,130,0,.38), inset 0 0 20px rgba(255,255,255,.22);
 }
-
-.titleBox h1{
-  font-size:28px;
-  letter-spacing:2px;
+h1{font-size:30px;letter-spacing:2px}
+.subtitle{font-size:13px;color:#aaa;margin-top:5px}
+.panel{
+  background:rgba(12,12,12,.78);
+  border:1px solid rgba(255,140,0,.25);
+  border-radius:24px;
+  padding:15px;
+  backdrop-filter:blur(15px);
+  box-shadow:0 0 38px rgba(0,0,0,.42);
 }
-
-.titleBox p{
-  color:#999;
-  margin-top:4px;
-  font-size:13px;
-}
-
 .controls{
-  display:flex;
-  gap:12px;
-  align-items:center;
+  display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:24px;
 }
-
-.controlBtn{
-  background:#151515;
-  border:1px solid rgba(255,140,0,.3);
+.btn{
+  border:1px solid rgba(255,140,0,.42);
+  background:linear-gradient(145deg,#1a1a1a,#0b0b0b);
   color:white;
-  padding:12px 18px;
-  border-radius:14px;
+  padding:12px 16px;
+  border-radius:15px;
   cursor:pointer;
-  transition:.2s;
-  font-family:'Orbitron',sans-serif;
+  font-weight:900;
+  transition:.18s;
 }
-
-.controlBtn:hover{
-  background:#ff8800;
-  color:black;
-  transform:translateY(-2px);
+.btn:hover{background:var(--orange);color:black;transform:translateY(-2px)}
+.sliderBox{display:flex;align-items:center;gap:8px;color:#bbb;font-size:12px}
+input[type=range]{accent-color:var(--orange)}
+.sectionTitle{
+  margin:20px 0 12px;
+  color:#ffb347;
+  font-size:14px;
+  letter-spacing:1.6px;
+  text-transform:uppercase;
 }
-
-.volume{
-  accent-color:#ff8800;
-}
-
+.sectionHint{color:#888;font-size:12px;margin-top:-6px;margin-bottom:12px}
 .grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
-  gap:18px;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:15px;
 }
-
-.soundCard{
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+.card{
+  position:relative;overflow:hidden;
+  min-height:148px;
+  border-radius:24px;
+  padding:18px;
+  cursor:pointer;
+  background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.025));
   border:1px solid rgba(255,140,0,.18);
-  border-radius:22px;
-  padding:20px;
-  position:relative;
-  overflow:hidden;
-  cursor:pointer;
-  transition:.22s;
-  backdrop-filter:blur(10px);
+  box-shadow:0 12px 28px rgba(0,0,0,.32);
+  transition:.18s;
 }
-
-.soundCard::before{
+.card:before{
   content:"";
-  position:absolute;
-  inset:0;
-  background:linear-gradient(120deg,transparent,rgba(255,140,0,.08),transparent);
-  transform:translateX(-100%);
-  transition:.5s;
+  position:absolute;inset:-40%;
+  background:linear-gradient(120deg,transparent,rgba(255,255,255,.09),transparent);
+  transform:translateX(-70%) rotate(12deg);
+  transition:.45s;
 }
-
-.soundCard:hover::before{
-  transform:translateX(100%);
+.card:hover:before{transform:translateX(70%) rotate(12deg)}
+.card:hover{
+  transform:translateY(-4px) scale(1.015);
+  border-color:rgba(255,140,0,.85);
+  box-shadow:0 0 34px rgba(255,120,0,.23);
 }
-
-.soundCard:hover{
-  transform:translateY(-4px) scale(1.02);
-  border-color:#ff8800;
-  box-shadow:
-    0 0 24px rgba(255,140,0,.18),
-    inset 0 0 20px rgba(255,140,0,.05);
+.card:active{transform:scale(.95)}
+.card.flash{animation:flash .45s ease}
+@keyframes flash{
+  40%{box-shadow:0 0 48px rgba(255,140,0,.8);border-color:#ffb000}
 }
-
-.soundEmoji{
-  font-size:28px;
-  margin-bottom:16px;
+.premiumCard{
+  border:1px solid rgba(255,211,106,.75);
+  background:linear-gradient(180deg,rgba(255,190,70,.16),rgba(255,255,255,.025));
 }
-
-.soundTitle{
-  font-size:18px;
-  margin-bottom:8px;
-  line-height:1.2;
-}
-
-.soundSub{
-  color:#8b8b8b;
-  font-size:12px;
-  margin-bottom:20px;
-}
-
-.playBtn{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:14px;
-  background:linear-gradient(145deg,#ff9900,#ff6a00);
+.premiumCard:after{
+  content:"PREMIUM";
+  position:absolute;top:13px;right:13px;
+  background:linear-gradient(145deg,#ffe08a,#ff9d00);
   color:black;
-  font-weight:700;
-  cursor:pointer;
-  font-family:'Orbitron',sans-serif;
-  transition:.2s;
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:1000;
 }
-
-.playBtn:hover{
-  transform:scale(1.02);
+.bgCard.active{
+  border-color:#ffb000;
+  background:linear-gradient(180deg,rgba(255,150,0,.24),rgba(255,255,255,.04));
+  box-shadow:0 0 35px rgba(255,140,0,.35);
 }
-
-.nowPlaying{
-  position:fixed;
-  bottom:18px;
-  left:50%;
-  transform:translateX(-50%);
-  background:#111;
-  border:1px solid rgba(255,140,0,.4);
-  padding:14px 20px;
-  border-radius:16px;
-  font-size:14px;
-  color:#ffb347;
-  box-shadow:0 0 20px rgba(255,140,0,.15);
-  z-index:999;
+.bgCard.active .playTag{color:#00ff9d}
+.emoji{font-size:31px;margin-bottom:14px}
+.name{font-size:18px;font-weight:950;margin-bottom:8px}
+.meta{font-size:12px;color:#999;padding-right:30px}
+.playTag{
+  position:absolute;right:14px;bottom:14px;
+  color:#ff9d00;font-size:12px;font-weight:1000;
 }
-
-@media(max-width:700px){
-
-  body{
-    padding:16px;
-  }
-
-  .titleBox h1{
-    font-size:22px;
-  }
-
-  .grid{
-    grid-template-columns:1fr;
-  }
-
+.now{
+  position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+  width:min(780px,calc(100% - 28px));
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  background:rgba(10,10,10,.94);
+  border:1px solid rgba(255,140,0,.38);
+  border-radius:18px;
+  padding:12px 16px;
+  box-shadow:0 0 30px rgba(255,120,0,.18);
+  z-index:20;
+}
+.equalizer{display:flex;gap:4px;height:22px;align-items:end}
+.equalizer span{
+  width:4px;background:#ff8800;border-radius:4px;
+  animation:eq .7s infinite ease-in-out;
+}
+.equalizer span:nth-child(2){animation-delay:.12s}
+.equalizer span:nth-child(3){animation-delay:.24s}
+.equalizer span:nth-child(4){animation-delay:.36s}
+@keyframes eq{0%,100%{height:5px}50%{height:22px}}
+.footer{text-align:center;color:#777;font-size:11px;margin:34px 0 76px}
+.modal{
+  position:fixed;inset:0;
+  display:none;align-items:center;justify-content:center;
+  padding:18px;
+  background:rgba(0,0,0,.78);
+  backdrop-filter:blur(10px);
+  z-index:100;
+}
+.modal.show{display:flex}
+.paywall{
+  width:min(520px,100%);
+  border-radius:30px;
+  padding:24px;
+  background:
+    radial-gradient(circle at top,rgba(255,210,90,.25),transparent 35%),
+    linear-gradient(180deg,#19120a,#090909);
+  border:1px solid rgba(255,211,106,.65);
+  box-shadow:0 0 65px rgba(255,155,0,.3);
+}
+.payTop{display:flex;justify-content:space-between;gap:12px;align-items:start}
+.payBadge{
+  display:inline-block;
+  background:linear-gradient(145deg,#ffe08a,#ff9500);
+  color:black;
+  padding:6px 11px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:1000;
+}
+.close{
+  background:#211;border:1px solid rgba(255,255,255,.18);color:white;
+  width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;
+}
+.paywall h2{font-size:25px;margin:16px 0 8px}
+.paywall p{color:#cfcfcf;line-height:1.45;font-size:14px}
+.price{
+  margin:18px 0;
+  padding:16px;
+  border-radius:20px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,211,106,.35);
+}
+.old{text-decoration:line-through;color:#888;font-size:17px}
+.new{font-size:25px;color:#ffd36a;font-weight:1000;margin-top:5px}
+.formFake{
+  display:grid;gap:10px;margin-top:14px;
+}
+.formFake input{
+  width:100%;padding:13px;border-radius:14px;
+  border:1px solid rgba(255,255,255,.12);
+  background:#0e0e0e;color:#aaa;
+}
+.payBtn{
+  width:100%;padding:14px;border-radius:15px;border:0;cursor:pointer;
+  font-weight:1000;
+  background:linear-gradient(145deg,#ffe08a,#ff8a00);
+  color:black;
+  margin-top:12px;
+}
+.tiny{font-size:11px;color:#777;margin-top:10px}
+@media(max-width:650px){
+  body{padding:14px}
+  h1{font-size:22px}
+  .grid{grid-template-columns:1fr 1fr;gap:10px}
+  .card{min-height:135px;padding:14px}
+  .name{font-size:14px}
+  .emoji{font-size:27px}
 }
 </style>
 </head>
+
 <body>
 
-<div class="topbar">
-
-  <div class="logoWrap">
+<header class="header">
+  <div class="brand">
     <div class="logo">🐯</div>
-
-    <div class="titleBox">
+    <div>
       <h1>TIGER SOUNDBOARD</h1>
-      <p>Araxos Premium Audio Control Panel</p>
+      <div class="subtitle">Araxos Premium Audio Control Panel · Tactical Meme Edition</div>
     </div>
   </div>
+</header>
 
-  <div class="controls">
-    <button class="controlBtn" onclick="stopAllSounds()">STOP ALL</button>
-    <input class="volume" type="range" min="0" max="1" step="0.01" value="1" id="volumeSlider">
-  </div>
-
+<div class="panel controls">
+  <button class="btn" onclick="stopEffect()">STOP SOUND</button>
+  <button class="btn" onclick="stopBackground()">STOP BACKGROUND</button>
+  <div class="sliderBox">SOUNDS <input id="effectVol" type="range" min="0" max="1" step=".01" value="1"></div>
+  <div class="sliderBox">BACKGROUND <input id="bgVol" type="range" min="0" max="1" step=".01" value=".42"></div>
 </div>
 
+<div class="sectionTitle">Background Tracks</div>
+<div class="sectionHint">These keep playing while you smash the soundboard.</div>
+<div class="grid" id="backgroundGrid"></div>
+
+<div class="sectionTitle">Main Soundboard</div>
 <div class="grid" id="soundGrid"></div>
 
-<div class="nowPlaying" id="nowPlaying">
-  Ready for deployment...
+<div class="sectionTitle">Tiger Premium Locked Sounds</div>
+<div class="sectionHint">First sample is free. After that: tactical subscription required.</div>
+<div class="grid" id="premiumGrid"></div>
+
+<div class="footer">Made by Jo Chen · V1.1</div>
+
+<div class="now">
+  <div id="nowText">Ready for deployment...</div>
+  <div class="equalizer" id="eq" style="display:none">
+    <span></span><span></span><span></span><span></span>
+  </div>
+</div>
+
+<div class="modal" id="payModal">
+  <div class="paywall">
+    <div class="payTop">
+      <span class="payBadge">TIGER PREMIUM™</span>
+      <button class="close" onclick="closePaywall()">×</button>
+    </div>
+
+    <h2>Premium sound locked</h2>
+    <p id="lockedText">You already used your free tactical sample.</p>
+
+    <div class="price">
+      <div class="old">Normal price: €11.99 / month</div>
+      <div class="new">Today only: 1 hemdvest + 1x 31 badge</div>
+      <p style="margin-top:10px">Special offer: <b>1 beer = 1 sound</b><br>6 beers = unlimited chaos until sunrise.</p>
+    </div>
+
+    <div class="formFake">
+      <input placeholder="Name on 31 badge" disabled>
+      <input placeholder="Hemdvest size: S / M / L / Gunny" disabled>
+      <input placeholder="Payment method: Beer / Patch / Emotional Damage" disabled>
+    </div>
+
+    <button class="payBtn" onclick="fakePay()">Subscribe with Beer</button>
+    <div class="tiny">No real payment. This is a very serious fake military-grade subscription system.</div>
+  </div>
 </div>
 
 <script>
+const soundPath = "sounds/";
 
-const sounds = [
-
-  {name:"31 Tigers", file:"sounds/31 Tigers.mp3", emoji:"🐯"},
-  {name:"31best", file:"sounds/31best.mp3", emoji:"🔥"},
-  {name:"Afuckraxos", file:"sounds/Afuckraxos.mp3", emoji:"💀"},
-  {name:"Araxos Baby", file:"sounds/Araxos Baby.mp3", emoji:"✈️"},
-  {name:"Beer is cold", file:"sounds/Beer is cold.mp3", emoji:"🍺"},
-  {name:"Belgium Power", file:"sounds/Belgium Power.mp3", emoji:"🇧🇪"},
-  {name:"CarefulGunny", file:"sounds/CarefulGunny.mp3", emoji:"⚠️"},
-  {name:"Fucking Go Gunny", file:"sounds/Fucking Go Gunny.mp3", emoji:"🚀"},
-  {name:"Go31", file:"sounds/Go31.mp3", emoji:"🎖️"},
-  {name:"Gunny flying high", file:"sounds/Gunny flying high.mp3", emoji:"🛩️"},
-  {name:"Gunny Gunny", file:"sounds/Gunny Gunny.mp3", emoji:"📡"},
-  {name:"Gunny", file:"sounds/Gunny.mp3", emoji:"🎤"},
-  {name:"Hands up", file:"sounds/Hands up.mp3", emoji:"🙌"},
-  {name:"Harderfastergunny", file:"sounds/Harderfastergunny.mp3", emoji:"⚡"},
-  {name:"MaleAraxos", file:"sounds/MaleAraxos.mp3", emoji:"🗿"},
-  {name:"Number one", file:"sounds/Number one.mp3", emoji:"🏆"},
-  {name:"oohgunny", file:"sounds/oohgunny.mp3", emoji:"😩"},
-  {name:"Roaring Tiger", file:"sounds/Roaring Tiger.mp3", emoji:"🐅"}
-
+const backgrounds = [
+  {name:"Background 1", file:"Back 1.mp3", emoji:"🎼"},
+  {name:"Background 2", file:"Back 2.mp3", emoji:"🎧"},
+  {name:"Background 3", file:"Back 3.mp3", emoji:"🌌"},
+  {name:"Background 4", file:"Back 4.mp3", emoji:"🔥"}
 ];
 
-const grid = document.getElementById("soundGrid");
-const volumeSlider = document.getElementById("volumeSlider");
-const nowPlaying = document.getElementById("nowPlaying");
+const mainSounds = [
+  {name:"31 Tigers", file:"31 Tigers.mp3", emoji:"🐯"},
+  {name:"31best", file:"31best.mp3", emoji:"🔥"},
+  {name:"Afuckraxos", file:"Afuckraxos.mp3", emoji:"💀"},
+  {name:"Araxos Baby", file:"Araxos Baby.mp3", emoji:"✈️"},
+  {name:"Beer is cold", file:"Beer is cold.mp3", emoji:"🍺"},
+  {name:"Belgium Power", file:"Belgium Power.mp3", emoji:"🇧🇪"},
+  {name:"Go31", file:"Go31.mp3", emoji:"🎖️"},
+  {name:"Gunny Gunny", file:"Gunny Gunny.mp3", emoji:"📡"},
+  {name:"Gunny", file:"Gunny.mp3", emoji:"🎤"},
+  {name:"Hands up", file:"Hands up.mp3", emoji:"🙌"},
+  {name:"MaleAraxos", file:"MaleAraxos.mp3", emoji:"🗿"},
+  {name:"Number one", file:"Number one.mp3", emoji:"🏆"},
+  {name:"Roaring Tiger", file:"Roaring Tiger.mp3", emoji:"🐅"}
+];
 
-let currentAudio = null;
+const premiumSounds = [
+  {name:"Harderfastergunny", file:"Harderfastergunny.mp3", emoji:"⚡", premium:true},
+  {name:"oohgunny", file:"oohgunny.mp3", emoji:"😩", premium:true},
+  {name:"Fucking Go Gunny", file:"Fucking Go Gunny.mp3", emoji:"🚀", premium:true},
+  {name:"CarefulGunny", file:"CarefulGunny.mp3", emoji:"⚠️", premium:true},
+  {name:"Gunny flying high", file:"Gunny flying high.mp3", emoji:"🛩️", premium:true}
+];
 
-sounds.forEach(sound => {
+const soundGrid = document.getElementById("soundGrid");
+const premiumGrid = document.getElementById("premiumGrid");
+const backgroundGrid = document.getElementById("backgroundGrid");
+const nowText = document.getElementById("nowText");
+const eq = document.getElementById("eq");
+const effectVol = document.getElementById("effectVol");
+const bgVol = document.getElementById("bgVol");
+const payModal = document.getElementById("payModal");
+const lockedText = document.getElementById("lockedText");
 
+let currentEffect = null;
+let currentBackground = null;
+let activeBgCard = null;
+let premiumUsed = JSON.parse(localStorage.getItem("tigerPremiumUsed") || "{}");
+
+function fileUrl(file){
+  return soundPath + file.split("/").map(encodeURIComponent).join("/");
+}
+
+function makeCard(item, type){
   const card = document.createElement("div");
-  card.className = "soundCard";
-
+  card.className = "card" + (type === "bg" ? " bgCard" : "") + (item.premium ? " premiumCard" : "");
   card.innerHTML = `
-    <div class="soundEmoji">${sound.emoji}</div>
-    <div class="soundTitle">${sound.name}</div>
-    <div class="soundSub">Tigermeet Premium Audio</div>
-    <button class="playBtn">PLAY SOUND</button>
+    <div class="emoji">${item.emoji}</div>
+    <div class="name">${item.name}</div>
+    <div class="meta">${type === "bg" ? "Looping background track" : item.premium ? "Premium tactical sound" : "One-shot premium sound"}</div>
+    <div class="playTag">${type === "bg" ? "LOOP" : "PLAY"}</div>
   `;
+  card.onclick = () => type === "bg" ? playBackground(item, card) : playEffect(item, card);
+  return card;
+}
 
-  card.onclick = () => playSound(sound);
+backgrounds.forEach(b => backgroundGrid.appendChild(makeCard(b, "bg")));
+mainSounds.forEach(s => soundGrid.appendChild(makeCard(s, "main")));
+premiumSounds.forEach(s => premiumGrid.appendChild(makeCard(s, "premium")));
 
-  grid.appendChild(card);
+function playEffect(sound, card){
+  if(sound.premium && premiumUsed[sound.name]){
+    showPaywall(sound.name);
+    return;
+  }
 
+  if(sound.premium){
+    premiumUsed[sound.name] = true;
+    localStorage.setItem("tigerPremiumUsed", JSON.stringify(premiumUsed));
+  }
+
+  card.classList.remove("flash");
+  void card.offsetWidth;
+  card.classList.add("flash");
+
+  if(currentEffect){
+    currentEffect.pause();
+    currentEffect.currentTime = 0;
+  }
+
+  currentEffect = new Audio(fileUrl(sound.file));
+  currentEffect.volume = effectVol.value;
+  currentEffect.play().catch(() => alert("Kan sound niet afspelen: " + sound.file));
+
+  nowText.textContent = "▶ " + sound.name;
+  eq.style.display = "flex";
+
+  currentEffect.onended = () => {
+    currentEffect = null;
+    if(!currentBackground) eq.style.display = "none";
+  };
+}
+
+function playBackground(bg, card){
+  if(currentBackground){
+    currentBackground.pause();
+    currentBackground.currentTime = 0;
+  }
+
+  if(activeBgCard) activeBgCard.classList.remove("active");
+
+  currentBackground = new Audio(fileUrl(bg.file));
+  currentBackground.loop = true;
+  currentBackground.volume = bgVol.value;
+  currentBackground.play().catch(() => alert("Kan background niet afspelen: " + bg.file));
+
+  card.classList.add("active");
+  activeBgCard = card;
+
+  nowText.textContent = "♫ Background playing: " + bg.name;
+  eq.style.display = "flex";
+}
+
+function stopEffect(){
+  if(currentEffect){
+    currentEffect.pause();
+    currentEffect.currentTime = 0;
+    currentEffect = null;
+  }
+  nowText.textContent = currentBackground ? "♫ Background still playing" : "Sound stopped.";
+  if(!currentBackground) eq.style.display = "none";
+}
+
+function stopBackground(){
+  if(currentBackground){
+    currentBackground.pause();
+    currentBackground.currentTime = 0;
+    currentBackground = null;
+  }
+  if(activeBgCard){
+    activeBgCard.classList.remove("active");
+    activeBgCard = null;
+  }
+  nowText.textContent = "Background stopped.";
+  if(!currentEffect) eq.style.display = "none";
+}
+
+function showPaywall(name){
+  lockedText.textContent = `"${name}" is now locked behind Tiger Premium. Your free tactical sample has been deployed.`;
+  payModal.classList.add("show");
+}
+
+function closePaywall(){
+  payModal.classList.remove("show");
+}
+
+function fakePay(){
+  alert("Payment failed: insufficient beer detected. Please report to the nearest bar.");
+}
+
+effectVol.addEventListener("input", () => {
+  if(currentEffect) currentEffect.volume = effectVol.value;
 });
 
-function playSound(sound){
-
-  if(currentAudio){
-    currentAudio.pause();
-    currentAudio.currentTime = 0;
-  }
-
-  const audio = new Audio(sound.file);
-
-  audio.volume = volumeSlider.value;
-
-  audio.play();
-
-  currentAudio = audio;
-
-  nowPlaying.innerHTML = `▶ NOW PLAYING: ${sound.name}`;
-
-}
-
-function stopAllSounds(){
-
-  if(currentAudio){
-    currentAudio.pause();
-    currentAudio.currentTime = 0;
-  }
-
-  nowPlaying.innerHTML = "Audio stopped.";
-
-}
-
+bgVol.addEventListener("input", () => {
+  if(currentBackground) currentBackground.volume = bgVol.value;
+});
 </script>
 
 </body>
