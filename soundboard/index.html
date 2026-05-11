@@ -776,6 +776,30 @@ bgVol.addEventListener("input", () => {
   if(currentBackground) currentBackground.volume = bgVol.value;
 });
 </script>
+<script>
+(function(){
 
+  let visitorName =
+    localStorage.getItem("tigergames_name") ||
+    localStorage.getItem("soundboard_name");
+
+  if(!visitorName){
+    visitorName = prompt("Enter callsign") || "Unknown";
+    localStorage.setItem("soundboard_name", visitorName);
+  }
+
+  fetch("/api/soundboard-log", {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      name: visitorName,
+      page: location.pathname
+    })
+  }).catch(()=>{});
+
+})();
+</script>
 </body>
 </html>
