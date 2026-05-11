@@ -577,6 +577,7 @@ premiumSounds.forEach(s => premiumGrid.appendChild(makeCard(s)));
 updatePremiumCards();
 
 function playEffect(sound, card){
+  logSoundClick(sound.name);
   if(sound.premium && !premiumActive && premiumUsed[sound.name]){
     showPaywall(sound.name);
     return;
@@ -800,6 +801,22 @@ bgVol.addEventListener("input", () => {
   }).catch(()=>{});
 
 })();
+function getVisitorName(){
+  return localStorage.getItem("tigergames_name") ||
+         localStorage.getItem("soundboard_name") ||
+         "Unknown";
+}
+
+function logSoundClick(soundName){
+  fetch("/api/soundboard-click", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      name:getVisitorName(),
+      sound:soundName
+    })
+  }).catch(()=>{});
+}  
 </script>
 </body>
 </html>
