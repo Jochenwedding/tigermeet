@@ -7,16 +7,9 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --orange:#ff8a00;
-  --gold:#ffd36a;
-  --dark:#050505;
-  --card:#111;
-}
+:root{--orange:#ff8a00;--gold:#ffd36a}
 body{
-  min-height:100vh;
-  color:white;
-  font-family:Arial,Helvetica,sans-serif;
+  min-height:100vh;color:white;font-family:Arial,Helvetica,sans-serif;
   background:
     radial-gradient(circle at 20% 0%,rgba(255,136,0,.35),transparent 28%),
     radial-gradient(circle at 80% 10%,rgba(255,210,90,.12),transparent 30%),
@@ -24,24 +17,52 @@ body{
   padding:22px;
 }
 body:before{
-  content:"";
-  position:fixed;inset:0;
-  pointer-events:none;
-  background:
-    repeating-linear-gradient(135deg,rgba(255,140,0,.03) 0 2px,transparent 2px 12px);
+  content:"";position:fixed;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(135deg,rgba(255,140,0,.03) 0 2px,transparent 2px 12px);
 }
 .header{
-  display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px;
+  display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:18px;
 }
 .brand{display:flex;align-items:center;gap:15px}
 .logo{
-  width:72px;height:72px;border-radius:24px;
-  display:grid;place-items:center;font-size:39px;
+  width:72px;height:72px;border-radius:24px;display:grid;place-items:center;font-size:39px;
   background:linear-gradient(145deg,#ffb300,#ff6200);
   box-shadow:0 0 45px rgba(255,130,0,.38), inset 0 0 20px rgba(255,255,255,.22);
 }
 h1{font-size:30px;letter-spacing:2px}
 .subtitle{font-size:13px;color:#aaa;margin-top:5px}
+
+.bgMini{
+  width:220px;
+  background:rgba(10,10,10,.75);
+  border:1px solid rgba(255,140,0,.28);
+  border-radius:18px;
+  padding:10px;
+  backdrop-filter:blur(14px);
+}
+.bgMiniTitle{font-size:11px;color:#ffb347;margin-bottom:8px;font-weight:900;letter-spacing:1px}
+.bgMiniBtn{
+  width:100%;
+  margin-bottom:6px;
+  padding:8px 10px;
+  border-radius:12px;
+  border:1px solid rgba(255,140,0,.22);
+  background:linear-gradient(145deg,#181818,#080808);
+  color:#ddd;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:800;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.bgMiniBtn.active{
+  color:black;
+  background:linear-gradient(145deg,#ffe08a,#ff8a00);
+  box-shadow:0 0 18px rgba(255,140,0,.45);
+}
+.bgMiniBtn span:last-child{font-size:10px;opacity:.8}
+
 .panel{
   background:rgba(12,12,12,.78);
   border:1px solid rgba(255,140,0,.25);
@@ -50,140 +71,108 @@ h1{font-size:30px;letter-spacing:2px}
   backdrop-filter:blur(15px);
   box-shadow:0 0 38px rgba(0,0,0,.42);
 }
-.controls{
-  display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:24px;
-}
+.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:24px}
 .btn{
-  border:1px solid rgba(255,140,0,.42);
-  background:linear-gradient(145deg,#1a1a1a,#0b0b0b);
+  border:1px solid rgba(255,211,106,.45);
+  background:
+    linear-gradient(145deg,rgba(255,170,0,.16),rgba(20,20,20,.96)),
+    linear-gradient(180deg,#1f1f1f,#090909);
   color:white;
-  padding:12px 16px;
-  border-radius:15px;
+  padding:13px 18px;
+  border-radius:16px;
   cursor:pointer;
-  font-weight:900;
+  font-weight:950;
   transition:.18s;
+  box-shadow:inset 0 0 14px rgba(255,255,255,.04),0 10px 22px rgba(0,0,0,.32);
 }
-.btn:hover{background:var(--orange);color:black;transform:translateY(-2px)}
+.btn:hover{
+  background:linear-gradient(145deg,#ffe08a,#ff8a00);
+  color:black;
+  transform:translateY(-2px) scale(1.02);
+  box-shadow:0 0 28px rgba(255,140,0,.35);
+}
 .sliderBox{display:flex;align-items:center;gap:8px;color:#bbb;font-size:12px}
 input[type=range]{accent-color:var(--orange)}
+
 .sectionTitle{
-  margin:20px 0 12px;
-  color:#ffb347;
-  font-size:14px;
-  letter-spacing:1.6px;
-  text-transform:uppercase;
+  margin:20px 0 12px;color:#ffb347;font-size:14px;letter-spacing:1.6px;text-transform:uppercase;
 }
 .sectionHint{color:#888;font-size:12px;margin-top:-6px;margin-bottom:12px}
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
-  gap:15px;
-}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:15px}
 .card{
-  position:relative;overflow:hidden;
-  min-height:148px;
-  border-radius:24px;
-  padding:18px;
-  cursor:pointer;
-  background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.025));
-  border:1px solid rgba(255,140,0,.18);
-  box-shadow:0 12px 28px rgba(0,0,0,.32);
+  position:relative;overflow:hidden;min-height:148px;border-radius:24px;padding:18px;cursor:pointer;
+  background:
+    radial-gradient(circle at 20% 0%,rgba(255,190,80,.12),transparent 28%),
+    linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.025));
+  border:1px solid rgba(255,140,0,.22);
+  box-shadow:0 12px 28px rgba(0,0,0,.34), inset 0 0 18px rgba(255,255,255,.025);
   transition:.18s;
 }
 .card:before{
-  content:"";
-  position:absolute;inset:-40%;
-  background:linear-gradient(120deg,transparent,rgba(255,255,255,.09),transparent);
-  transform:translateX(-70%) rotate(12deg);
-  transition:.45s;
+  content:"";position:absolute;inset:-40%;
+  background:linear-gradient(120deg,transparent,rgba(255,255,255,.11),transparent);
+  transform:translateX(-70%) rotate(12deg);transition:.45s;
 }
 .card:hover:before{transform:translateX(70%) rotate(12deg)}
 .card:hover{
-  transform:translateY(-4px) scale(1.015);
-  border-color:rgba(255,140,0,.85);
-  box-shadow:0 0 34px rgba(255,120,0,.23);
+  transform:translateY(-5px) scale(1.018);
+  border-color:rgba(255,211,106,.9);
+  box-shadow:0 0 38px rgba(255,120,0,.28), inset 0 0 20px rgba(255,160,0,.08);
 }
 .card:active{transform:scale(.95)}
 .card.flash{animation:flash .45s ease}
-@keyframes flash{
-  40%{box-shadow:0 0 48px rgba(255,140,0,.8);border-color:#ffb000}
-}
+@keyframes flash{40%{box-shadow:0 0 55px rgba(255,140,0,.85);border-color:#ffdd7a}}
+
 .premiumCard{
-  border:1px solid rgba(255,211,106,.75);
-  background:linear-gradient(180deg,rgba(255,190,70,.16),rgba(255,255,255,.025));
+  border:1px solid rgba(255,211,106,.8);
+  background:
+    radial-gradient(circle at top,rgba(255,211,106,.18),transparent 34%),
+    linear-gradient(180deg,rgba(255,190,70,.16),rgba(255,255,255,.025));
 }
 .premiumCard:after{
   content:"PREMIUM";
   position:absolute;top:13px;right:13px;
   background:linear-gradient(145deg,#ffe08a,#ff9d00);
-  color:black;
-  padding:5px 9px;
-  border-radius:999px;
-  font-size:10px;
-  font-weight:1000;
+  color:black;padding:5px 9px;border-radius:999px;font-size:10px;font-weight:1000;
 }
-.bgCard.active{
-  border-color:#ffb000;
-  background:linear-gradient(180deg,rgba(255,150,0,.24),rgba(255,255,255,.04));
-  box-shadow:0 0 35px rgba(255,140,0,.35);
-}
-.bgCard.active .playTag{color:#00ff9d}
 .emoji{font-size:31px;margin-bottom:14px}
 .name{font-size:18px;font-weight:950;margin-bottom:8px}
 .meta{font-size:12px;color:#999;padding-right:30px}
-.playTag{
-  position:absolute;right:14px;bottom:14px;
-  color:#ff9d00;font-size:12px;font-weight:1000;
-}
+.playTag{position:absolute;right:14px;bottom:14px;color:#ff9d00;font-size:12px;font-weight:1000}
+
 .now{
   position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
   width:min(780px,calc(100% - 28px));
   display:flex;justify-content:space-between;align-items:center;gap:10px;
   background:rgba(10,10,10,.94);
   border:1px solid rgba(255,140,0,.38);
-  border-radius:18px;
-  padding:12px 16px;
-  box-shadow:0 0 30px rgba(255,120,0,.18);
-  z-index:20;
+  border-radius:18px;padding:12px 16px;
+  box-shadow:0 0 30px rgba(255,120,0,.18);z-index:20;
 }
 .equalizer{display:flex;gap:4px;height:22px;align-items:end}
-.equalizer span{
-  width:4px;background:#ff8800;border-radius:4px;
-  animation:eq .7s infinite ease-in-out;
-}
+.equalizer span{width:4px;background:#ff8800;border-radius:4px;animation:eq .7s infinite ease-in-out}
 .equalizer span:nth-child(2){animation-delay:.12s}
 .equalizer span:nth-child(3){animation-delay:.24s}
 .equalizer span:nth-child(4){animation-delay:.36s}
 @keyframes eq{0%,100%{height:5px}50%{height:22px}}
 .footer{text-align:center;color:#777;font-size:11px;margin:34px 0 76px}
+
 .modal{
-  position:fixed;inset:0;
-  display:none;align-items:center;justify-content:center;
-  padding:18px;
-  background:rgba(0,0,0,.78);
-  backdrop-filter:blur(10px);
-  z-index:100;
+  position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+  padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(10px);z-index:100;
 }
 .modal.show{display:flex}
 .paywall{
-  width:min(520px,100%);
-  border-radius:30px;
-  padding:24px;
-  background:
-    radial-gradient(circle at top,rgba(255,210,90,.25),transparent 35%),
-    linear-gradient(180deg,#19120a,#090909);
+  width:min(540px,100%);
+  border-radius:30px;padding:24px;
+  background:radial-gradient(circle at top,rgba(255,210,90,.25),transparent 35%),linear-gradient(180deg,#19120a,#090909);
   border:1px solid rgba(255,211,106,.65);
   box-shadow:0 0 65px rgba(255,155,0,.3);
 }
 .payTop{display:flex;justify-content:space-between;gap:12px;align-items:start}
 .payBadge{
-  display:inline-block;
-  background:linear-gradient(145deg,#ffe08a,#ff9500);
-  color:black;
-  padding:6px 11px;
-  border-radius:999px;
-  font-size:11px;
-  font-weight:1000;
+  display:inline-block;background:linear-gradient(145deg,#ffe08a,#ff9500);color:black;
+  padding:6px 11px;border-radius:999px;font-size:11px;font-weight:1000;
 }
 .close{
   background:#211;border:1px solid rgba(255,255,255,.18);color:white;
@@ -192,32 +181,30 @@ input[type=range]{accent-color:var(--orange)}
 .paywall h2{font-size:25px;margin:16px 0 8px}
 .paywall p{color:#cfcfcf;line-height:1.45;font-size:14px}
 .price{
-  margin:18px 0;
-  padding:16px;
-  border-radius:20px;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,211,106,.35);
+  margin:18px 0;padding:16px;border-radius:20px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,211,106,.35);
 }
 .old{text-decoration:line-through;color:#888;font-size:17px}
 .new{font-size:25px;color:#ffd36a;font-weight:1000;margin-top:5px}
-.formFake{
-  display:grid;gap:10px;margin-top:14px;
-}
+.formFake{display:grid;gap:10px;margin-top:14px}
 .formFake input{
   width:100%;padding:13px;border-radius:14px;
-  border:1px solid rgba(255,255,255,.12);
-  background:#0e0e0e;color:#aaa;
+  border:1px solid rgba(255,255,255,.12);background:#0e0e0e;color:#aaa;
 }
 .payBtn{
   width:100%;padding:14px;border-radius:15px;border:0;cursor:pointer;
-  font-weight:1000;
-  background:linear-gradient(145deg,#ffe08a,#ff8a00);
-  color:black;
-  margin-top:12px;
+  font-weight:1000;background:linear-gradient(145deg,#ffe08a,#ff8a00);color:black;margin-top:12px;
 }
 .tiny{font-size:11px;color:#777;margin-top:10px}
+.thanks{text-align:center}
+.thanks .big{font-size:44px;margin-bottom:10px}
+
 @media(max-width:650px){
   body{padding:14px}
+  .header{align-items:stretch}
+  .bgMini{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .bgMiniTitle{grid-column:1/-1}
+  .bgMiniBtn{margin-bottom:0}
   h1{font-size:22px}
   .grid{grid-template-columns:1fr 1fr;gap:10px}
   .card{min-height:135px;padding:14px}
@@ -237,6 +224,14 @@ input[type=range]{accent-color:var(--orange)}
       <div class="subtitle">Araxos Premium Audio Control Panel · Tactical Meme Edition</div>
     </div>
   </div>
+
+  <div class="bgMini">
+    <div class="bgMiniTitle">BACKGROUND</div>
+    <button class="bgMiniBtn" onclick="toggleBackground(0, this)"><span>Back 1</span><span>OFF</span></button>
+    <button class="bgMiniBtn" onclick="toggleBackground(1, this)"><span>Back 2</span><span>OFF</span></button>
+    <button class="bgMiniBtn" onclick="toggleBackground(2, this)"><span>Back 3</span><span>OFF</span></button>
+    <button class="bgMiniBtn" onclick="toggleBackground(3, this)"><span>Back 4</span><span>OFF</span></button>
+  </div>
 </header>
 
 <div class="panel controls">
@@ -246,10 +241,6 @@ input[type=range]{accent-color:var(--orange)}
   <div class="sliderBox">BACKGROUND <input id="bgVol" type="range" min="0" max="1" step=".01" value=".42"></div>
 </div>
 
-<div class="sectionTitle">Background Tracks</div>
-<div class="sectionHint">These keep playing while you smash the soundboard.</div>
-<div class="grid" id="backgroundGrid"></div>
-
 <div class="sectionTitle">Main Soundboard</div>
 <div class="grid" id="soundGrid"></div>
 
@@ -257,7 +248,7 @@ input[type=range]{accent-color:var(--orange)}
 <div class="sectionHint">First sample is free. After that: tactical subscription required.</div>
 <div class="grid" id="premiumGrid"></div>
 
-<div class="footer">Made by Jo Chen · V1.1</div>
+<div class="footer">Made by Jo Chen · V1.2</div>
 
 <div class="now">
   <div id="nowText">Ready for deployment...</div>
@@ -293,14 +284,27 @@ input[type=range]{accent-color:var(--orange)}
   </div>
 </div>
 
+<div class="modal" id="thanksModal">
+  <div class="paywall thanks">
+    <div class="big">🍺</div>
+    <h2>Thank you for subscribing</h2>
+    <p>Your Tiger Premium™ request has been received.</p>
+    <div class="price">
+      <div class="new">Payment status: Beer pending</div>
+      <p style="margin-top:10px">Please report to the nearest bar for final verification.</p>
+    </div>
+    <button class="payBtn" onclick="closeThanks()">Return to Soundboard</button>
+  </div>
+</div>
+
 <script>
 const soundPath = "sounds/";
 
 const backgrounds = [
-  {name:"Background 1", file:"Back 1.mp3", emoji:"🎼"},
-  {name:"Background 2", file:"Back 2.mp3", emoji:"🎧"},
-  {name:"Background 3", file:"Back 3.mp3", emoji:"🌌"},
-  {name:"Background 4", file:"Back 4.mp3", emoji:"🔥"}
+  {name:"Back 1", file:"Back 1.mp3"},
+  {name:"Back 2", file:"Back 2.mp3"},
+  {name:"Back 3", file:"Back 3.mp3"},
+  {name:"Back 4", file:"Back 4.mp3"}
 ];
 
 const mainSounds = [
@@ -329,39 +333,39 @@ const premiumSounds = [
 
 const soundGrid = document.getElementById("soundGrid");
 const premiumGrid = document.getElementById("premiumGrid");
-const backgroundGrid = document.getElementById("backgroundGrid");
 const nowText = document.getElementById("nowText");
 const eq = document.getElementById("eq");
 const effectVol = document.getElementById("effectVol");
 const bgVol = document.getElementById("bgVol");
 const payModal = document.getElementById("payModal");
+const thanksModal = document.getElementById("thanksModal");
 const lockedText = document.getElementById("lockedText");
 
 let currentEffect = null;
 let currentBackground = null;
-let activeBgCard = null;
+let activeBgButton = null;
+let activeBgIndex = null;
 let premiumUsed = JSON.parse(localStorage.getItem("tigerPremiumUsed") || "{}");
 
 function fileUrl(file){
   return soundPath + file.split("/").map(encodeURIComponent).join("/");
 }
 
-function makeCard(item, type){
+function makeCard(item){
   const card = document.createElement("div");
-  card.className = "card" + (type === "bg" ? " bgCard" : "") + (item.premium ? " premiumCard" : "");
+  card.className = "card" + (item.premium ? " premiumCard" : "");
   card.innerHTML = `
     <div class="emoji">${item.emoji}</div>
     <div class="name">${item.name}</div>
-    <div class="meta">${type === "bg" ? "Looping background track" : item.premium ? "Premium tactical sound" : "One-shot premium sound"}</div>
-    <div class="playTag">${type === "bg" ? "LOOP" : "PLAY"}</div>
+    <div class="meta">${item.premium ? "Premium tactical sound" : "One-shot premium sound"}</div>
+    <div class="playTag">PLAY</div>
   `;
-  card.onclick = () => type === "bg" ? playBackground(item, card) : playEffect(item, card);
+  card.onclick = () => playEffect(item, card);
   return card;
 }
 
-backgrounds.forEach(b => backgroundGrid.appendChild(makeCard(b, "bg")));
-mainSounds.forEach(s => soundGrid.appendChild(makeCard(s, "main")));
-premiumSounds.forEach(s => premiumGrid.appendChild(makeCard(s, "premium")));
+mainSounds.forEach(s => soundGrid.appendChild(makeCard(s)));
+premiumSounds.forEach(s => premiumGrid.appendChild(makeCard(s)));
 
 function playEffect(sound, card){
   if(sound.premium && premiumUsed[sound.name]){
@@ -396,21 +400,33 @@ function playEffect(sound, card){
   };
 }
 
-function playBackground(bg, card){
+function toggleBackground(index, button){
+  if(activeBgIndex === index && currentBackground){
+    stopBackground();
+    return;
+  }
+
   if(currentBackground){
     currentBackground.pause();
     currentBackground.currentTime = 0;
   }
 
-  if(activeBgCard) activeBgCard.classList.remove("active");
+  if(activeBgButton){
+    activeBgButton.classList.remove("active");
+    activeBgButton.querySelector("span:last-child").textContent = "OFF";
+  }
 
+  const bg = backgrounds[index];
   currentBackground = new Audio(fileUrl(bg.file));
   currentBackground.loop = true;
   currentBackground.volume = bgVol.value;
   currentBackground.play().catch(() => alert("Kan background niet afspelen: " + bg.file));
 
-  card.classList.add("active");
-  activeBgCard = card;
+  activeBgButton = button;
+  activeBgIndex = index;
+
+  button.classList.add("active");
+  button.querySelector("span:last-child").textContent = "ON";
 
   nowText.textContent = "♫ Background playing: " + bg.name;
   eq.style.display = "flex";
@@ -432,11 +448,16 @@ function stopBackground(){
     currentBackground.currentTime = 0;
     currentBackground = null;
   }
-  if(activeBgCard){
-    activeBgCard.classList.remove("active");
-    activeBgCard = null;
+
+  if(activeBgButton){
+    activeBgButton.classList.remove("active");
+    activeBgButton.querySelector("span:last-child").textContent = "OFF";
   }
-  nowText.textContent = "Background stopped.";
+
+  activeBgButton = null;
+  activeBgIndex = null;
+
+  nowText.textContent = currentEffect ? "▶ Sound still playing" : "Background stopped.";
   if(!currentEffect) eq.style.display = "none";
 }
 
@@ -450,7 +471,12 @@ function closePaywall(){
 }
 
 function fakePay(){
-  alert("Payment failed: insufficient beer detected. Please report to the nearest bar.");
+  payModal.classList.remove("show");
+  thanksModal.classList.add("show");
+}
+
+function closeThanks(){
+  thanksModal.classList.remove("show");
 }
 
 effectVol.addEventListener("input", () => {
