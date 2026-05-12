@@ -388,16 +388,25 @@ function connect(name,nation){
 }
 
 function detectArnoldSpawnSound(msg){
-  const next=new Set();
+  const current=new Set();
+
   for(const f of msg.food||[]){
     const img=String(f.img||"");
     const isArnold=f.type==="arnold"||img.includes("pic1.webp");
     if(!isArnold)continue;
-    const key=`${Math.round(f.x)}:${Math.round(f.y)}:${img}`;
-    next.add(key);
-    if(!lastArnoldKeys.has(key))playPicCycle();
+
+    const key=`${Math.round(f.x/10)}:${Math.round(f.y/10)}`;
+    current.add(key);
   }
-  lastArnoldKeys=next;
+
+  for(const key of current){
+    if(!lastArnoldKeys.has(key)){
+      playPicCycle();
+      break;
+    }
+  }
+
+  lastArnoldKeys=current;
 }
 
 function ingestState(msg){
