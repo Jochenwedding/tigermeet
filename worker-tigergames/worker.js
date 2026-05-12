@@ -20,12 +20,12 @@ const WORLD = 4200;
 
 const FLAG_FOOD_TARGET = 125;
 const PIC_SNACK_TARGET = 18;
-const ARNOLD_TARGET = 1;
+const ARNOLD_TARGET = 4;
 const ARNOLD_SPAWN_MS = 60000;
 
-const TICK_MS = 33;
-const BROADCAST_MS = 115;
-const MAX_FOOD_SEND = 145;
+const TICK_MS = 16;
+const BROADCAST_MS = 50;
+const MAX_FOOD_SEND = 170;
 
 const BOT_TARGET = 5;
 const BOT_RESPAWN_MS = 5000;
@@ -37,6 +37,7 @@ const BOOST_TOTAL_COOLDOWN_MS = 18000;
 const TOP_KEY = "top10_v2";
 const PLAYERS_KEY = "known_players_v1";
 const ATTEMPTS_KEY = "login_attempts_v1";
+const COUNTRY_KEY = "country_top_v1";
 
 const COLORS = ["#ff8a00", "#ffb000", "#ff6a00", "#d96b00", "#ff3b30", "#ffe14a"];
 
@@ -74,6 +75,7 @@ export class TigerRoom {
     this.top10 = [];
     this.knownPlayers = [];
     this.loginAttempts = [];
+    this.countryScores = [];
 
     this.lastBotThink = 0;
     this.lastBotRespawn = 0;
@@ -83,6 +85,7 @@ export class TigerRoom {
       this.top10 = normalizeTop10((await this.state.storage.get(TOP_KEY)) || []);
       this.knownPlayers = (await this.state.storage.get(PLAYERS_KEY)) || [];
       this.loginAttempts = (await this.state.storage.get(ATTEMPTS_KEY)) || [];
+      this.countryScores = normalizeCountryScores((await this.state.storage.get(COUNTRY_KEY)) || []);
     });
   }
 
@@ -147,6 +150,7 @@ export class TigerRoom {
       online,
       top10: this.top10,
       countryTop3: this.countryTop3(),
+      countryScores: this.countryScores,
       knownPlayers: this.knownPlayers.slice(0, 200),
       loginAttempts: this.loginAttempts.slice(0, 200)
     });
@@ -207,7 +211,10 @@ export class TigerRoom {
 
   onClose(ws) {
     const p = this.players.get(ws);
-    if (p) this.saveTop(p.name, Math.round(p.score)).catch(() => {});
+    if (p) {
+      this.saveTop(p.name, Math.round(p.score)).catch(() => {});
+      this.saveCountryScore(p.nation, Math.round(p.score)).catch(() => {});
+    }
     this.players.delete(ws);
     this.inputs.delete(ws.id);
   }
@@ -294,7 +301,7 @@ export class TigerRoom {
     }
 
     const now = Date.now();
-    const dt = Math.min((now - this.lastTick) / 1000, 0.06);
+    const dt = Math.min((now - this.lastTick) / 1000, 0.04);
     this.lastTick = now;
 
     this.seedFood();
@@ -396,27 +403,16 @@ export class TigerRoom {
     };
 
     const turnRate = Math.max(2.2, 6.5 - Math.min(4, p.body.length * 0.018));
-
     p.angle += angleDiff(p.angle, input.angle) * Math.min(1, dt * turnRate);
 
-    if (!input.boost && p.boosting) {
-      p.boosting = false;
-      p.boostCooldownUntil = now + BOOST_TOTAL_COOLDOWN_MS;
+    if (input.boost && !p.boosting && p.body.length > 30 && now >= Number(p.boostCooldownUntil || 0)) {
+      p.boosting = true;
+      p.boostActiveUntil = now + BOOST_ACTIVE_MS;
     }
 
     if (p.boosting && now >= p.boostActiveUntil) {
       p.boosting = false;
       p.boostCooldownUntil = now + BOOST_TOTAL_COOLDOWN_MS;
-    }
-
-    if (
-      input.boost &&
-      !p.boosting &&
-      p.body.length > 30 &&
-      now >= Number(p.boostCooldownUntil || 0)
-    ) {
-      p.boosting = true;
-      p.boostActiveUntil = now + BOOST_ACTIVE_MS;
     }
 
     const len = p.body.length;
@@ -465,7 +461,6 @@ export class TigerRoom {
 
       for (let i = this.food.length - 1; i >= 0; i--) {
         const f = this.food[i];
-
         const eatRadius = p.radius + f.r + (f.type === "arnold" ? 16 : 8);
 
         if (dist2(p.x, p.y, f.x, f.y) < eatRadius ** 2) {
@@ -474,7 +469,7 @@ export class TigerRoom {
           if (f.type === "arnold") {
             this.broadcast({
               type: "event",
-              text: `${p.name} ate Arnold pic1.webp. Nomnomnom extra protein is on the menu boys.`
+              text: `${p.name} ate Arnold Pikaar Schwarzenegger. Nomnomnom extra protein is on the menu boys.`
             });
           }
 
@@ -554,11 +549,8 @@ export class TigerRoom {
       return;
     }
 
-    if (aPower > bPower) {
-      this.kill(b, a, "headon");
-    } else {
-      this.kill(a, b, "headon");
-    }
+    if (aPower > bPower) this.kill(b, a, "headon");
+    else this.kill(a, b, "headon");
   }
 
   kill(dead, killer, reason) {
@@ -573,6 +565,7 @@ export class TigerRoom {
 
     if (!dead.bot) {
       this.saveTop(dead.name, Math.round(dead.score)).catch(() => {});
+      this.saveCountryScore(dead.nation, Math.round(dead.score)).catch(() => {});
     }
 
     for (let i = 0; i < dead.body.length; i += 4) {
@@ -619,41 +612,41 @@ export class TigerRoom {
     const picSnackCount = this.food.filter(f => f.type === "picSnack").length;
     const flagCount = this.food.filter(f => f.type === "flag").length;
 
-    if (arnoldCount < ARNOLD_TARGET && now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS) {
-      this.lastArnoldSpawn = now;
+   if (arnoldCount < ARNOLD_TARGET && now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS) {
+  this.lastArnoldSpawn = now;
 
-      this.food.push(makeFood(
-        rand(170, WORLD - 170),
-        rand(170, WORLD - 170),
-        38,
-        100,
-        "arnold"
-      ));
+  for (let i = arnoldCount; i < ARNOLD_TARGET; i++) {
+    const pos = this.findFoodSpot(420);
+
+    this.food.push(makeFood(
+      pos.x,
+      pos.y,
+      95,
+      100,
+      "arnold"
+    ));
+  }
+
+  this.broadcast({
+    type: "event",
+    text: "Arnold Pikaar Schwarzenegger has spawned."
+  });
+}
 
       this.broadcast({
         type: "event",
-        text: "Arnold pic1.webp has spawned!!!"
+        text: "Arnold Pikaar Schwarzenegger has spawned."
       });
     }
 
     for (let i = picSnackCount; i < PIC_SNACK_TARGET; i++) {
-      this.food.push(makeFood(
-        rand(60, WORLD - 60),
-        rand(60, WORLD - 60),
-        rand(7, 10),
-        5,
-        "picSnack"
-      ));
+      const pos = this.findFoodSpot(95);
+      this.food.push(makeFood(pos.x, pos.y, rand(7, 10), 5, "picSnack"));
     }
 
     for (let i = flagCount; i < FLAG_FOOD_TARGET; i++) {
-      this.food.push(makeFood(
-        rand(50, WORLD - 50),
-        rand(50, WORLD - 50),
-        rand(5, 8),
-        rand(0.8, 2.2),
-        "flag"
-      ));
+      const pos = this.findFoodSpot(75);
+      this.food.push(makeFood(pos.x, pos.y, rand(5, 8), rand(0.8, 2.2), "flag"));
     }
 
     const maxFood = FLAG_FOOD_TARGET + PIC_SNACK_TARGET + ARNOLD_TARGET + 80;
@@ -663,12 +656,34 @@ export class TigerRoom {
     }
   }
 
+  findFoodSpot(minDistance = 70) {
+    for (let tries = 0; tries < 18; tries++) {
+      const x = rand(50, WORLD - 50);
+      const y = rand(50, WORLD - 50);
+
+      let ok = true;
+      for (const f of this.food) {
+        if (dist2(x, y, f.x, f.y) < minDistance * minDistance) {
+          ok = false;
+          break;
+        }
+      }
+
+      if (ok) return { x, y };
+    }
+
+    return {
+      x: rand(50, WORLD - 50),
+      y: rand(50, WORLD - 50)
+    };
+  }
+
   broadcastState(force = false) {
     const now = Date.now();
     const all = this.allPlayers();
 
     const players = all.map(p => {
-      const stride = p.body.length > 900 ? 9 : p.body.length > 450 ? 7 : p.body.length > 160 ? 6 : 4;
+      const stride = p.body.length > 900 ? 7 : p.body.length > 450 ? 6 : p.body.length > 160 ? 4 : 3;
 
       const boostActiveMs = p.boosting
         ? Math.max(0, Number(p.boostActiveUntil || 0) - now)
@@ -704,15 +719,17 @@ export class TigerRoom {
       };
     });
 
-    const food = this.food.slice(0, MAX_FOOD_SEND).map(f => ({
-      x: Math.round(f.x),
-      y: Math.round(f.y),
-      r: Math.round(f.r),
-      v: Math.round(f.v * 10) / 10,
-      flag: f.flag,
-      type: f.type || "flag",
-      img: f.img || null
-    }));
+    const food = shuffled(this.food)
+      .slice(0, MAX_FOOD_SEND)
+      .map(f => ({
+        x: Math.round(f.x),
+        y: Math.round(f.y),
+        r: Math.round(f.r),
+        v: Math.round(f.v * 10) / 10,
+        flag: f.flag,
+        type: f.type || "flag",
+        img: f.img || null
+      }));
 
     this.broadcastRaw(JSON.stringify({
       type: "state",
@@ -729,6 +746,16 @@ export class TigerRoom {
   countryTop3() {
     const map = new Map();
 
+    for (const c of this.countryScores) {
+      const nation = safeNation(c.nation || "OTHER");
+      map.set(nation, {
+        nation,
+        name: nation,
+        flag: NATION_FLAGS[nation] || "🏳️",
+        score: Number(c.score || 0)
+      });
+    }
+
     for (const p of this.realPlayers()) {
       if (!p.alive) continue;
 
@@ -740,11 +767,12 @@ export class TigerRoom {
         score: 0
       };
 
-      old.score += Number(p.score || 0);
+      old.score = Math.max(old.score, Number(p.score || 0));
       map.set(nation, old);
     }
 
     return [...map.values()]
+      .filter(x => x.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, 3);
   }
@@ -790,6 +818,31 @@ export class TigerRoom {
 
     this.top10 = normalizeTop10(this.top10);
     await this.state.storage.put(TOP_KEY, this.top10);
+  }
+
+  async saveCountryScore(nation, score) {
+    nation = safeNation(nation);
+    score = Math.round(Number(score || 0));
+
+    if (!score || score < 1) return;
+
+    const existing = this.countryScores.find(x => safeNation(x.nation) === nation);
+
+    if (existing) {
+      if (score > Number(existing.score || 0)) {
+        existing.score = score;
+        existing.at = Date.now();
+      }
+    } else {
+      this.countryScores.push({
+        nation,
+        score,
+        at: Date.now()
+      });
+    }
+
+    this.countryScores = normalizeCountryScores(this.countryScores);
+    await this.state.storage.put(COUNTRY_KEY, this.countryScores);
   }
 
   async rememberPlayer(name, nation = "OTHER") {
@@ -938,6 +991,32 @@ function normalizeTop10(list) {
     .slice(0, 10);
 }
 
+function normalizeCountryScores(list) {
+  const clean = Array.isArray(list) ? list : [];
+  const byNation = new Map();
+
+  for (const item of clean) {
+    const nation = safeNation(item.nation || "OTHER");
+    const score = Math.round(Number(item.score || 0));
+
+    if (!score) continue;
+
+    const old = byNation.get(nation);
+
+    if (!old || score > old.score) {
+      byNation.set(nation, {
+        nation,
+        score,
+        at: Number(item.at || Date.now())
+      });
+    }
+  }
+
+  return [...byNation.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 20);
+}
+
 function safeName(v) {
   return String(v).replace(/[<>"&]/g, "").trim().slice(0, 16) || "Tiger";
 }
@@ -947,6 +1026,17 @@ function safeNation(v) {
   if (key === "GB") return "UK";
   if (key === "USA") return "US";
   return NATION_FLAGS[key] ? key : "OTHER";
+}
+
+function shuffled(arr) {
+  const copy = arr.slice();
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = copy[i];
+    copy[i] = copy[j];
+    copy[j] = t;
+  }
+  return copy;
 }
 
 function rand(a, b) {
