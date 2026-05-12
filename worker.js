@@ -106,7 +106,6 @@ export class TigerRoom {
       top10: this.top10
     }));
 
-    this.ensureLoop();
 
     return new Response(null, { status: 101, webSocket: client });
   }
@@ -264,11 +263,17 @@ export class TigerRoom {
   }
 
   tick() {
-    if (this.players.size === 0 && this.bots.size === 0) {
-      clearInterval(this.tickHandle);
-      this.tickHandle = null;
-      return;
-    }
+   if (this.players.size === 0) {
+  this.bots.clear();
+
+  for (const id of [...this.inputs.keys()]) {
+    if (String(id).startsWith("bot-")) this.inputs.delete(id);
+  }
+
+  clearInterval(this.tickHandle);
+  this.tickHandle = null;
+  return;
+}
 
     const now = Date.now();
     const dt = Math.min((now - this.lastTick) / 1000, 0.06);
@@ -501,8 +506,9 @@ export class TigerRoom {
 
     dead.alive = false;
 
-    if (killer && killer !== dead && killer.alive) {
-      killer.score += reason === "headon" ? 18 : 10;
+if (killer && killer !== dead && killer.alive) {
+  killer.score += dead.bot ? 50 : 200;
+}
     }
 
     if (!dead.bot) {
