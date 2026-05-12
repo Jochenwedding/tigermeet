@@ -374,7 +374,11 @@ function connect(name,nation){
     try{
       const msg=JSON.parse(e.data);
       if(msg.type==="welcome"){myId=msg.id;if(msg.top10)drawLoginTop5(msg.top10);if(msg.countryTop3)drawCountryTop3(msg.countryTop3);else drawCountryTop3(null)}
-      if(msg.type==="state"){state=msg;ingestState(msg);detectArnoldSpawnSound(msg);if(msg.countryTop3)drawCountryTop3(msg.countryTop3)}
+     if(msg.type==="state"){
+  state=msg;
+  ingestState(msg);
+  if(msg.countryTop3)drawCountryTop3(msg.countryTop3);
+}
       if(msg.type==="event"){
         const txt=String(msg.text||"").replace(/pic1\.webp/ig,"Arnold Pikaar Schwarzenegger");
         showToast(txt);
