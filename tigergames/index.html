@@ -363,11 +363,13 @@ ctx.strokeStyle="rgba(255,136,0,.78)";ctx.lineWidth=9;ctx.strokeRect(0,0,WORLD,W
 
 function drawFood(f){
 ctx.save();
+
 if(f.img){
 const img=getFoodImage(f.img);
 const isArnold=f.type==="arnold";
 const size=isArnold?ARNOLD_ICON_SIZE:PIC_ICON_SIZE;
 ctx.shadowColor=isArnold?"#ffd000":"#ff8a00";ctx.shadowBlur=isArnold?42:24;
+
 if(img&&img.complete&&img.naturalWidth>0){
 if(isArnold){
 ctx.translate(f.x,f.y);
@@ -382,18 +384,41 @@ ctx.beginPath();ctx.fillStyle="rgba(0,0,0,.55)";ctx.arc(0,0,size*.43,0,Math.PI*2
 ctx.drawImage(img,-size/2,-size/2,size,size);
 }
 }else{
-ctx.fillStyle=isArnold?"#ffd000":"#ff8a00";ctx.beginPath();ctx.arc(f.x,f.y,size/2,0,Math.PI*2);ctx.fill();
-}
-ctx.restore();return;
+ctx.fillStyle=isArnold?"#ffd000":"#ff8a00";
+ctx.beginPath();
+ctx.arc(f.x,f.y,size/2,0,Math.PI*2);
+ctx.fill();
 }
 
+ctx.restore();
+return;
+}
+
+// Desktop toont emoji-vlaggen soms als BE/GR/ES.
+// Daarom tekenen we zelf duidelijke country badges.
 const flagSize=innerWidth>720?FLAG_ICON_SIZE_DESKTOP:FLAG_ICON_SIZE_MOBILE;
-ctx.font=`${flagSize}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",Arial`;
-ctx.textAlign="center";ctx.textBaseline="middle";
-ctx.shadowColor="#000";ctx.shadowBlur=7;ctx.lineWidth=5;ctx.strokeStyle="rgba(0,0,0,.75)";
-ctx.strokeText(f.flag||"🏳️",f.x,f.y);
-ctx.shadowColor="#ff8a00";ctx.shadowBlur=12;
-ctx.fillText(f.flag||"🏳️",f.x,f.y);
+const flagMap={
+"🇧🇪":"BE","🇨🇿":"CZ","🇭🇺":"HU","🇨🇭":"CH","🇮🇹":"IT","🇪🇸":"ES",
+"🇩🇪":"DE","🇬🇷":"GR","🇵🇱":"PL","🇬🇧":"UK","🇺🇸":"US","🇫🇷":"FR"
+};
+const txt=flagMap[f.flag] || String(f.flag||"??").replace(/[^\p{L}]/gu,"").slice(0,2).toUpperCase() || "??";
+
+ctx.beginPath();
+ctx.fillStyle="rgba(255,136,0,.95)";
+ctx.strokeStyle="rgba(0,0,0,.9)";
+ctx.lineWidth=5;
+ctx.arc(f.x,f.y,flagSize*.48,0,Math.PI*2);
+ctx.fill();
+ctx.stroke();
+
+ctx.font=`900 ${Math.floor(flagSize*.42)}px Arial,sans-serif`;
+ctx.textAlign="center";
+ctx.textBaseline="middle";
+ctx.fillStyle="#111";
+ctx.shadowColor="rgba(255,255,255,.75)";
+ctx.shadowBlur=5;
+ctx.fillText(txt,f.x,f.y+1);
+
 ctx.restore();
 }
 
