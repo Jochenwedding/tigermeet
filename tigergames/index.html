@@ -367,32 +367,74 @@ function updateLocalBoostUi(){
 }
 
 function connect(name,nation){
-  running=true;setNet("ONLINE");showToast("Connecting websocket...");
-  try{ws=new WebSocket(wsUrl())}catch{setNet("WS ERROR");showToast("WS create error");return}
-  ws.onopen=()=>{setNet("ONLINE ✅");showToast("ONLINE ✅");ws.send(JSON.stringify({type:"join",name,nation}))};
+  running=true;
+  soundQueue=[];
+  soundPlaying=false;
+
+  setNet("ONLINE");
+  showToast("Connecting websocket...");
+
+  try{
+    ws=new WebSocket(wsUrl());
+  }catch{
+    setNet("WS ERROR");
+    showToast("WS create error");
+    return;
+  }
+
+  ws.onopen=()=>{
+    setNet("ONLINE ✅");
+    showToast("ONLINE ✅");
+    ws.send(JSON.stringify({type:"join",name,nation}));
+  };
+
   ws.onmessage=e=>{
     try{
       const msg=JSON.parse(e.data);
-      if(msg.type==="welcome"){myId=msg.id;if(msg.top10)drawLoginTop5(msg.top10);if(msg.countryTop3)drawCountryTop3(msg.countryTop3);else drawCountryTop3(null)}
-     if(msg.type==="state"){
-  state=msg;
-  ingestState(msg);
-  if(msg.countryTop3)drawCountryTop3(msg.countryTop3);
-}
+
+      if(msg.type==="welcome"){
+        myId=msg.id;
+        if(msg.top10)drawLoginTop5(msg.top10);
+        if(msg.countryTop3)drawCountryTop3(msg.countryTop3);
+        else drawCountryTop3(null);
+      }
+
+      if(msg.type==="state"){
+        state=msg;
+        ingestState(msg);
+        if(msg.countryTop3)drawCountryTop3(msg.countryTop3);
+      }
+
       if(msg.type==="event"){
         const txt=String(msg.text||"").replace(/pic1\.webp/ig,"Arnold Pikaar Schwarzenegger");
         showToast(txt);
-       if(txt === "Arnold Pikaar Schwarzenegger has spawned."){
-  playPicCycle();
-}
-    }catch{setNet("MSG parse error")}
+
+        if(txt === "Arnold Pikaar Schwarzenegger has spawned."){
+          playPicCycle();
+        }
+      }
+
+    }catch{
+      setNet("MSG parse error");
+    }
   };
-  ws.onerror=()=>{setNet("WS ERROR");showToast("WebSocket error")};
-  ws.onclose=e=>{setNet("OFFLINE "+e.code);if(running){setTimeout(()=>{if(running&&(!ws||ws.readyState>1))connect(name,nation)},2500)}};
+
+  ws.onerror=()=>{
+    setNet("WS ERROR");
+    showToast("WebSocket error");
+  };
+
+  ws.onclose=e=>{
+    setNet("OFFLINE "+e.code);
+    if(running){
+      setTimeout(()=>{
+        if(running&&(!ws||ws.readyState>1))connect(name,nation);
+      },2500);
+    }
+  };
+
   requestAnimationFrame(loop);
 }
-
-
 
 
 function ingestState(msg){
