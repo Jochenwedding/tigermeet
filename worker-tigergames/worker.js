@@ -1,5 +1,16 @@
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
+
+    if (url.pathname === "/admin" || url.pathname === "/admin/") {
+      const id = env.TIGER_ROOM.idFromName("main-arena");
+      return env.TIGER_ROOM.get(id).fetch(request);
+    }
+
+    if (request.headers.get("Upgrade") !== "websocket") {
+      return new Response("Expected websocket", { status: 426 });
+    }
+
     const id = env.TIGER_ROOM.idFromName("main-arena");
     return env.TIGER_ROOM.get(id).fetch(request);
   }
@@ -7,57 +18,33 @@ export default {
 
 const WORLD = 4200;
 
-const FOOD_TARGET = 280;
-const MAX_FOOD = 1000;
-const TICK_MS = 33;
-const BROADCAST_MS = 50;
-const MAX_FOOD_SEND = 260;
+const FLAG_FOOD_TARGET = 135;
+const PIC_SNACK_TARGET = 22;
+const ARNOLD_TARGET = 1;
+const ARNOLD_SPAWN_MS = 60000;
 
-const BOOST_DURATION_MS = 3000;
-const BOOST_COOLDOWN_MS = 15000;
+const TICK_MS = 33;
+const BROADCAST_MS = 95;
+const MAX_FOOD_SEND = 170;
+
+const BOT_TARGET = 10;
+const BOT_RESPAWN_MS = 3500;
+const BOT_THINK_MS = 180;
 
 const TOP_KEY = "top10_v2";
-const BESTS_KEY = "player_bests_v1";
 const PLAYERS_KEY = "known_players_v1";
 const ATTEMPTS_KEY = "login_attempts_v1";
 
-const LEMMEGO_NAME = "lemmego";
-const BOT_REWARD = 500;
+const COLORS = ["#ff8a00", "#ffb000", "#ff6a00", "#d96b00", "#ff3b30", "#ffe14a"];
+const FLAGS = ["🇨🇿","🇵🇱","🇩🇪","🇭🇺","🇨🇭","🇮🇹","🇬🇧","🇫🇷","🇪🇸","🇬🇷"];
 
-const HUMAN_COLORS = [
-  "#ff8a00",
-  "#ffb000",
-  "#ff3b30",
-  "#2f80ff",
-  "#34c759",
-  "#ffcc00",
-  "#af52de",
-  "#ff5e99",
-  "#00c2a8",
-  "#f2994a"
+const TOPGUN_NAMES = [
+  "Maverick", "Iceman", "Goose", "Viper", "Jester",
+  "Slider", "Hollywood", "Wolfman", "Merlin", "Cougar",
+  "Rooster", "Hangman", "Phoenix", "Bob", "Payback", "Fanboy"
 ];
 
-const BOT_COLORS = [
-  "#00e5ff",
-  "#b14cff",
-  "#00ff88",
-  "#ff4fd8",
-  "#4dff4d",
-  "#fffb00"
-];
-
-const FLAGS = [
-  "🇧🇪", "🇨🇿", "🇵🇱", "🇩🇪", "🇭🇺", "🇨🇭",
-  "🇮🇹", "🇬🇧", "🇫🇷", "🇪🇸", "🇬🇷", "🇺🇸"
-];
-
-const DEFAULT_BOTS = [
-  { name: "Maverick", color: "#00e5ff" },
-  { name: "Goose", color: "#b14cff" },
-  { name: "Iceman", color: "#00ff88" },
-  { name: "Rooster", color: "#ff4fd8" },
-  { name: "Hangman", color: "#fffb00" }
-];
+const PIC_SNACKS = ["/pic2.webp", "/pic3.webp", "/pic4.webp"];
 
 export class TigerRoom {
   constructor(state, env) {
@@ -74,26 +61,18 @@ export class TigerRoom {
     this.tickHandle = null;
 
     this.top10 = [];
-    this.playerBests = [];
     this.knownPlayers = [];
     this.loginAttempts = [];
 
+    this.lastBotThink = 0;
+    this.lastBotRespawn = 0;
+    this.lastArnoldSpawn = Date.now() - ARNOLD_SPAWN_MS + 5000;
+
     this.state.blockConcurrencyWhile(async () => {
-      const storedTop = (await this.state.storage.get(TOP_KEY)) || [];
-      const storedBests = (await this.state.storage.get(BESTS_KEY)) || [];
-      const storedPlayers = (await this.state.storage.get(PLAYERS_KEY)) || [];
-      const storedAttempts = (await this.state.storage.get(ATTEMPTS_KEY)) || [];
-
-      this.top10 = normalizeTop10(storedTop);
-      this.playerBests = normalizePlayerBests(storedBests.length ? storedBests : this.top10);
-      this.top10 = normalizeTop10(this.playerBests);
-      this.knownPlayers = Array.isArray(storedPlayers) ? storedPlayers : [];
-      this.loginAttempts = Array.isArray(storedAttempts) ? storedAttempts : [];
+      this.top10 = normalizeTop10((await this.state.storage.get(TOP_KEY)) || []);
+      this.knownPlayers = (await this.state.storage.get(PLAYERS_KEY)) || [];
+      this.loginAttempts = (await this.state.storage.get(ATTEMPTS_KEY)) || [];
     });
-  }
-
-  allPlayers() {
-    return [...this.players.values(), ...this.bots.values()];
   }
 
   async fetch(request) {
@@ -105,10 +84,6 @@ export class TigerRoom {
 
     if (url.pathname === "/admin" || url.pathname === "/admin/") {
       return this.adminResponse(request);
-    }
-
-    if (request.headers.get("Upgrade") !== "websocket") {
-      return new Response("Expected websocket", { status: 426 });
     }
 
     const pair = new WebSocketPair();
@@ -128,16 +103,11 @@ export class TigerRoom {
       id: server.id,
       game: "Tigergames Online",
       world: WORLD,
-      top10: this.top10,
-      countryTop3: this.countryTop3()
+      top10: this.top10
     }));
 
-    this.ensureLoop();
 
-    return new Response(null, {
-      status: 101,
-      webSocket: client
-    });
+    return new Response(null, { status: 101, webSocket: client });
   }
 
   adminResponse(request) {
@@ -148,28 +118,22 @@ export class TigerRoom {
       return json({ ok: false, error: "Unauthorized tiger move" }, 401);
     }
 
-    const now = Date.now();
+    const online = [...this.players.values()].map(p => ({
+      name: p.name,
+      score: Math.round(p.score || 0),
+      alive: !!p.alive,
+      len: p.body ? p.body.length : 0
+    })).sort((a, b) => b.score - a.score);
 
     return json({
       ok: true,
       game: "Tigergames Online",
-      now,
-      onlineCount: this.players.size,
+      now: Date.now(),
+      onlineCount: online.length,
       botCount: this.bots.size,
-      online: this.allPlayers().map(p => ({
-        name: p.name,
-        nation: p.nation,
-        flag: flagOf(p.nation),
-        score: Math.round(p.score || 0),
-        alive: !!p.alive,
-        bot: !!p.autoPilot,
-        npc: !!p.npc,
-        boosting: now < Number(p.boostActiveUntil || 0),
-        boostCooldownMs: Math.max(0, Number(p.boostCooldownUntil || 0) - now),
-        len: p.body ? p.body.length : 0
-      })).sort((a, b) => b.score - a.score),
+      arnoldOnMap: this.food.some(f => f.type === "arnold"),
+      online,
       top10: this.top10,
-      countryTop3: this.countryTop3(),
       knownPlayers: this.knownPlayers.slice(0, 200),
       loginAttempts: this.loginAttempts.slice(0, 200)
     });
@@ -177,42 +141,23 @@ export class TigerRoom {
 
   async onMessage(ws, raw) {
     let msg;
-
-    try {
-      msg = JSON.parse(raw);
-    } catch {
-      return;
-    }
+    try { msg = JSON.parse(raw); } catch { return; }
 
     if (msg.type === "join") {
       const name = safeName(msg.name || "Tiger");
-      const nation = safeNation(msg.nation || "OTHER");
-      const isLemmego = isLemmegoName(name);
 
-      await this.logLoginAttempt(name, nation, ws);
-      await this.rememberPlayer(name, nation);
+      this.logLoginAttempt(name, ws).catch(() => {});
+      this.rememberPlayer(name).catch(() => {});
 
-      const p = this.createPlayer(ws.id, name, nation, isLemmego, false);
-
-      if (isLemmego) {
-        p.color = "#ffffff";
-        p.skin = "lemmegoBot";
-        p.score = 20;
-      }
+      const p = this.createPlayer(ws.id, name, false);
 
       this.players.set(ws, p);
-
       this.inputs.set(ws.id, {
         angle: Math.random() * Math.PI * 2,
         boost: false
       });
 
-      this.broadcast({
-        type: "event",
-        text: isLemmego
-          ? `🤖 ${flagOf(nation)} ${name} entered AUTOPILOT. Kill = +500 for humans only 🐯`
-          : `${flagOf(nation)} ${name} joined Tigergames Online 🐯`
-      });
+      this.broadcast({ type: "event", text: `${name} joined Tigergames Online 🐯` });
 
       this.ensureLoop();
       this.broadcastState(true);
@@ -223,11 +168,9 @@ export class TigerRoom {
       const p = this.players.get(ws);
       if (!p || !p.alive) return;
 
-      if (p.autoPilot) return;
-
       this.inputs.set(p.id, {
-        angle: Number.isFinite(Number(msg.angle)) ? Number(msg.angle) : p.angle,
-        boost: msg.boost === true
+        angle: Number(msg.angle) || p.angle,
+        boost: !!msg.boost
       });
 
       return;
@@ -237,17 +180,7 @@ export class TigerRoom {
       const old = this.players.get(ws);
       if (!old) return;
 
-      const isLemmego = isLemmegoName(old.name);
-      const p = this.createPlayer(old.id, old.name, old.nation, isLemmego, false);
-
-      if (isLemmego) {
-        p.color = "#ffffff";
-        p.skin = "lemmegoBot";
-        p.score = 20;
-      }
-
-      this.players.set(ws, p);
-
+      this.players.set(ws, this.createPlayer(old.id, old.name, false));
       this.inputs.set(old.id, {
         angle: Math.random() * Math.PI * 2,
         boost: false
@@ -261,57 +194,36 @@ export class TigerRoom {
   onClose(ws) {
     const p = this.players.get(ws);
 
-    if (p && !p.autoPilot) {
-      this.saveTop(p.name, Math.round(p.score), p.nation);
-    }
+    if (p) this.saveTop(p.name, Math.round(p.score)).catch(() => {});
 
     this.players.delete(ws);
     this.inputs.delete(ws.id);
   }
 
-  ensureDefaultBots() {
-    for (let i = 0; i < DEFAULT_BOTS.length; i++) {
-      const cfg = DEFAULT_BOTS[i];
-      const id = `bot-${cfg.name.toLowerCase()}`;
-
-      if (!this.bots.has(id)) {
-        const bot = this.createPlayer(id, cfg.name, "US", true, true);
-        bot.color = cfg.color;
-        bot.skin = "rainbowBot";
-        bot.score = 45;
-        this.bots.set(id, bot);
-      }
-    }
-  }
-
-  createPlayer(id, name, nation = "OTHER", autoPilot = false, npc = false) {
+  createPlayer(id, name, bot = false) {
     const a = Math.random() * Math.PI * 2;
-    const x = rand(650, WORLD - 650);
-    const y = rand(650, WORLD - 650);
-    const cleanName = safeName(name);
+    const x = rand(300, WORLD - 300);
+    const y = rand(300, WORLD - 300);
 
     const p = {
       id,
-      name: cleanName,
-      nation: safeNation(nation),
+      name,
+      bot,
       x,
       y,
       angle: a,
-      color: autoPilot
-        ? BOT_COLORS[Math.abs(hashString(cleanName)) % BOT_COLORS.length]
-        : HUMAN_COLORS[Math.abs(hashString(cleanName)) % HUMAN_COLORS.length],
-      skin: autoPilot ? "rainbowBot" : "tigerDragon",
-      score: 0,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      skin: "tigerDragon",
+      score: bot ? rand(8, 38) : 0,
       alive: true,
       body: [],
       radius: 13,
-      autoPilot,
-      npc,
-      boostActiveUntil: 0,
-      boostCooldownUntil: 0
+      bornAt: Date.now()
     };
 
-    for (let i = 0; i < 20; i++) {
+    const startLen = bot ? Math.floor(rand(24, 58)) : 20;
+
+    for (let i = 0; i < startLen; i++) {
       p.body.push({
         x: x - Math.cos(a) * i * 12,
         y: y - Math.sin(a) * i * 12
@@ -321,11 +233,29 @@ export class TigerRoom {
     return p;
   }
 
+  createBot() {
+    const index = this.bots.size % TOPGUN_NAMES.length;
+    const name = TOPGUN_NAMES[index] + (this.bots.size >= TOPGUN_NAMES.length ? ` ${this.bots.size + 1}` : "");
+    const id = "bot-" + crypto.randomUUID();
+
+    const bot = this.createPlayer(id, name, true);
+    this.bots.set(id, bot);
+    this.inputs.set(id, {
+      angle: bot.angle,
+      boost: false
+    });
+  }
+
+  ensureBots() {
+    while (this.bots.size < BOT_TARGET) this.createBot();
+  }
+
   ensureLoop() {
     if (this.tickHandle) return;
 
     this.seedFood();
-    this.ensureDefaultBots();
+    this.ensureBots();
+
     this.lastTick = Date.now();
     this.lastBroadcast = 0;
 
@@ -333,7 +263,17 @@ export class TigerRoom {
   }
 
   tick() {
-    this.ensureDefaultBots();
+   if (this.players.size === 0) {
+  this.bots.clear();
+
+  for (const id of [...this.inputs.keys()]) {
+    if (String(id).startsWith("bot-")) this.inputs.delete(id);
+  }
+
+  clearInterval(this.tickHandle);
+  this.tickHandle = null;
+  return;
+}
 
     const now = Date.now();
     const dt = Math.min((now - this.lastTick) / 1000, 0.06);
@@ -341,14 +281,22 @@ export class TigerRoom {
 
     this.seedFood();
 
+    if (now - this.lastBotThink >= BOT_THINK_MS) {
+      this.lastBotThink = now;
+      this.updateBotBrains();
+    }
+
     for (const p of this.allPlayers()) {
-      if (p.alive) {
-        this.updatePlayer(p, dt, now);
-      }
+      if (p.alive) this.updatePlayer(p, dt);
     }
 
     this.handleEating();
     this.handleCrashes();
+
+    if (now - this.lastBotRespawn >= BOT_RESPAWN_MS) {
+      this.lastBotRespawn = now;
+      this.cleanupAndRespawnBots();
+    }
 
     if (now - this.lastBroadcast >= BROADCAST_MS) {
       this.lastBroadcast = now;
@@ -356,36 +304,79 @@ export class TigerRoom {
     }
   }
 
-  updatePlayer(p, dt, now) {
-    let input = this.inputs.get(p.id) || {
+  allPlayers() {
+    return [...this.players.values(), ...this.bots.values()];
+  }
+
+  realPlayers() {
+    return [...this.players.values()];
+  }
+
+  updateBotBrains() {
+    const humans = this.realPlayers().filter(p => p.alive);
+    const all = this.allPlayers().filter(p => p.alive);
+
+    for (const bot of this.bots.values()) {
+      if (!bot.alive) continue;
+
+      let targetAngle = bot.angle;
+      let boost = false;
+
+      const nearestHuman = nearest(bot, humans, 1150);
+      const nearestFood = nearest(bot, this.food, 900);
+      const danger = nearestDanger(bot, all);
+
+      if (danger && danger.d < bot.radius + danger.other.radius + 95) {
+        targetAngle = Math.atan2(bot.y - danger.y, bot.x - danger.x);
+        boost = bot.body.length > 35;
+      } else if (nearestHuman && bot.body.length > 26) {
+        const h = nearestHuman.item;
+        const attackBias = bot.body.length >= h.body.length * 0.78 || nearestHuman.d < 520;
+
+        if (attackBias) {
+          const lead = 0.42;
+          const hx = h.x + Math.cos(h.angle || 0) * nearestHuman.d * lead;
+          const hy = h.y + Math.sin(h.angle || 0) * nearestHuman.d * lead;
+
+          targetAngle = Math.atan2(hy - bot.y, hx - bot.x);
+          boost = nearestHuman.d < 650 && bot.body.length > 38;
+        } else if (nearestFood) {
+          targetAngle = Math.atan2(nearestFood.item.y - bot.y, nearestFood.item.x - bot.x);
+        }
+      } else if (nearestFood) {
+        targetAngle = Math.atan2(nearestFood.item.y - bot.y, nearestFood.item.x - bot.x);
+      } else {
+        targetAngle = bot.angle + rand(-0.7, 0.7);
+      }
+
+      if (bot.x < 240) targetAngle = 0;
+      if (bot.x > WORLD - 240) targetAngle = Math.PI;
+      if (bot.y < 240) targetAngle = Math.PI / 2;
+      if (bot.y > WORLD - 240) targetAngle = -Math.PI / 2;
+
+      this.inputs.set(bot.id, {
+        angle: targetAngle,
+        boost
+      });
+    }
+  }
+
+  updatePlayer(p, dt) {
+    const input = this.inputs.get(p.id) || {
       angle: p.angle,
       boost: false
     };
 
-    if (p.autoPilot) {
-      input = this.getBotInput(p);
-    }
+    p.angle += angleDiff(p.angle, input.angle) * Math.min(1, dt * 9.5);
 
-    const turnRate = p.autoPilot ? 3.45 : 3.8;
-    const maxTurn = turnRate * dt;
-    const diff = angleDiff(p.angle, input.angle);
-    p.angle += clamp(diff, -maxTurn, maxTurn);
+    const effectiveLen = Math.min(p.body.length, 2500);
+    const sizeSlowdown = Math.min(75, effectiveLen * 0.035);
+    const baseSpeed = 265 - sizeSlowdown;
+    const minSpeed = 188;
+    const canBoost = input.boost && p.body.length > 30;
+    const speed = Math.max(minSpeed, baseSpeed) + (canBoost ? 125 : 0);
 
-    const len = p.body.length || 20;
-    const sizeSlowdown = Math.min(95, Math.log(len / 20 + 1) * 58);
-
-    const baseSpeed = Math.max(115, 270 - sizeSlowdown);
-    const boostBonus = Math.max(65, 145 - sizeSlowdown * 0.45);
-
-    if (input.boost && len > 28 && now >= Number(p.boostCooldownUntil || 0)) {
-      p.boostActiveUntil = now + BOOST_DURATION_MS;
-      p.boostCooldownUntil = now + BOOST_DURATION_MS + BOOST_COOLDOWN_MS;
-    }
-
-    const boostActive = now < Number(p.boostActiveUntil || 0);
-    const speed = baseSpeed + (boostActive ? boostBonus : 0);
-
-    if (boostActive && Math.random() < 0.22) {
+    if (canBoost && Math.random() < 0.18) {
       const tail = p.body.pop();
 
       if (tail) {
@@ -393,11 +384,12 @@ export class TigerRoom {
           tail.x + rand(-8, 8),
           tail.y + rand(-8, 8),
           rand(5, 8),
-          1.1
+          1.1,
+          "flag"
         ));
       }
 
-      p.score = Math.max(0, p.score - 0.035);
+      p.score = Math.max(0, p.score - 0.025);
     }
 
     p.x = clamp(p.x + Math.cos(p.angle) * speed * dt, 20, WORLD - 20);
@@ -405,207 +397,13 @@ export class TigerRoom {
 
     p.body.unshift({ x: p.x, y: p.y });
 
-    const maxLen = Math.floor(20 + p.score * 1.25);
+    const growthScore = Math.min(p.score, 2200);
+    const maxLen = Math.floor(20 + growthScore * 1.2);
 
-    while (p.body.length > maxLen) {
-      p.body.pop();
-    }
+    while (p.body.length > maxLen) p.body.pop();
 
-    p.radius = clamp(11 + Math.sqrt(p.body.length) * 1.04, 13, 30);
-  }
-
-  getBotInput(p) {
-    const all = this.allPlayers();
-
-    if (p.x < 420 || p.x > WORLD - 420 || p.y < 420 || p.y > WORLD - 420) {
-      return {
-        angle: this.findSafeAngle(p, this.centerAngle(p)),
-        boost: false
-      };
-    }
-
-    let best = null;
-
-    const consider = (type, x, y, baseWeight, boostBias = 0) => {
-      const angle = Math.atan2(y - p.y, x - p.x);
-      const d = Math.sqrt(dist2(p.x, p.y, x, y));
-      const danger = this.dangerScore(p, angle);
-      const score = baseWeight - d * 0.28 - danger * 520;
-
-      if (!best || score > best.score) {
-        best = { type, angle, d, danger, score, boostBias };
-      }
-    };
-
-    for (const other of all) {
-      if (!other.alive || other.id === p.id) continue;
-
-      const d = Math.sqrt(dist2(p.x, p.y, other.x, other.y));
-      const isHuman = !other.autoPilot;
-
-      if (isHuman && d < 2400) {
-        consider("human", other.x, other.y, 5200 - d * 0.1, 1.6);
-      }
-    }
-
-    for (const f of this.food) {
-      consider("food", f.x, f.y, 2100 + f.v * 550, 0.8);
-    }
-
-    for (const other of all) {
-      if (!other.alive || other.id === p.id || !other.autoPilot) continue;
-
-      const d = Math.sqrt(dist2(p.x, p.y, other.x, other.y));
-
-      if (d < 1200) {
-        consider("bot", other.x, other.y, 1200 - d * 0.2, 0.2);
-      }
-    }
-
-    let desiredAngle = best ? best.angle : this.centerAngle(p);
-
-    let avoidX = 0;
-    let avoidY = 0;
-
-    const wallMargin = 760;
-    if (p.x < wallMargin) avoidX += ((wallMargin - p.x) / wallMargin) * 5.5;
-    if (p.x > WORLD - wallMargin) avoidX -= ((p.x - (WORLD - wallMargin)) / wallMargin) * 5.5;
-    if (p.y < wallMargin) avoidY += ((wallMargin - p.y) / wallMargin) * 5.5;
-    if (p.y > WORLD - wallMargin) avoidY -= ((p.y - (WORLD - wallMargin)) / wallMargin) * 5.5;
-
-    for (const other of all) {
-      if (!other.alive) continue;
-
-      const startIndex = other.id === p.id ? 34 : 8;
-
-      for (let i = startIndex; i < other.body.length; i += 5) {
-        const seg = other.body[i];
-        const dx = p.x - seg.x;
-        const dy = p.y - seg.y;
-        const d2 = dx * dx + dy * dy;
-
-        if (d2 > 1 && d2 < 300 * 300) {
-          const d = Math.sqrt(d2);
-          const force = (300 - d) / 300;
-
-          avoidX += (dx / d) * force * 5.4;
-          avoidY += (dy / d) * force * 5.4;
-        }
-      }
-    }
-
-    const tx = Math.cos(desiredAngle);
-    const ty = Math.sin(desiredAngle);
-
-    desiredAngle = Math.atan2(ty + avoidY, tx + avoidX);
-
-    if (this.dangerScore(p, desiredAngle) > 9) {
-      desiredAngle = this.findSafeAngle(p, desiredAngle);
-    }
-
-    const now = Date.now();
-    const boostReady = now >= Number(p.boostCooldownUntil || 0);
-    const safeBoost = this.dangerScore(p, desiredAngle) < 6;
-
-    return {
-      angle: desiredAngle,
-      boost:
-        boostReady &&
-        safeBoost &&
-        p.body.length > 32 &&
-        best &&
-        best.d > 260 &&
-        (best.type === "human" || best.type === "food")
-    };
-  }
-
-  wallEscapeAngle(p) {
-    const danger = 210;
-    const soft = 420;
-
-    if (p.x < danger) return 0;
-    if (p.x > WORLD - danger) return Math.PI;
-    if (p.y < danger) return Math.PI / 2;
-    if (p.y > WORLD - danger) return -Math.PI / 2;
-
-    const nearLeft = p.x < soft;
-    const nearRight = p.x > WORLD - soft;
-    const nearTop = p.y < soft;
-    const nearBottom = p.y > WORLD - soft;
-
-    if ((nearLeft || nearRight) && (nearTop || nearBottom)) {
-      return this.centerAngle(p);
-    }
-
-    return null;
-  }
-
-  centerAngle(p) {
-    return Math.atan2(WORLD / 2 - p.y, WORLD / 2 - p.x);
-  }
-
-  findSafeAngle(p, preferred) {
-    let bestAngle = preferred;
-    let bestScore = -Infinity;
-
-    const offsets = [
-      0,
-      0.35, -0.35,
-      0.7, -0.7,
-      1.05, -1.05,
-      1.4, -1.4,
-      1.9, -1.9,
-      2.4, -2.4
-    ];
-
-    for (const off of offsets) {
-      const a = preferred + off;
-      const danger = this.dangerScore(p, a);
-      const turnPenalty = Math.abs(angleDiff(p.angle, a)) * 2;
-      const centerBonus = Math.cos(angleDiff(a, this.centerAngle(p))) * 2;
-      const score = -danger * 10 - turnPenalty + centerBonus;
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestAngle = a;
-      }
-    }
-
-    return bestAngle;
-  }
-
-  dangerScore(p, angle) {
-    let danger = 0;
-    const checks = [120, 240, 380, 560];
-
-    for (const range of checks) {
-      const lookX = p.x + Math.cos(angle) * range;
-      const lookY = p.y + Math.sin(angle) * range;
-
-      if (lookX < 120 || lookX > WORLD - 120 || lookY < 120 || lookY > WORLD - 120) {
-        danger += 12;
-      }
-
-      if (lookX < 260 || lookX > WORLD - 260 || lookY < 260 || lookY > WORLD - 260) {
-        danger += 4;
-      }
-
-      for (const other of this.allPlayers()) {
-        if (!other.alive) continue;
-
-        const startIndex = other.id === p.id ? 30 : 5;
-
-        for (let i = startIndex; i < other.body.length; i += 6) {
-          const seg = other.body[i];
-
-          if (dist2(lookX, lookY, seg.x, seg.y) < 145 * 145) {
-            danger += 4;
-          }
-        }
-      }
-    }
-
-    return danger;
+    const radiusGrowthLen = Math.min(p.body.length, 1300);
+    p.radius = clamp(11 + Math.sqrt(radiusGrowthLen) * 1.04, 13, 38);
   }
 
   handleEating() {
@@ -617,6 +415,15 @@ export class TigerRoom {
 
         if (dist2(p.x, p.y, f.x, f.y) < (p.radius + f.r + 8) ** 2) {
           p.score += f.v;
+
+          if (f.type === "arnold") {
+            p.score += 40;
+            this.broadcast({
+              type: "event",
+              text: "Nomnomnomnom extra protein is on the menu boys."
+            });
+          }
+
           this.food.splice(i, 1);
         }
       }
@@ -627,15 +434,17 @@ export class TigerRoom {
     const all = this.allPlayers().filter(p => p.alive);
 
     for (const p of all) {
+      if (!p.alive) continue;
+
       if (p.x <= 22 || p.x >= WORLD - 22 || p.y <= 22 || p.y >= WORLD - 22) {
         this.kill(p, null, "border");
         continue;
       }
 
-      for (let i = 24; i < p.body.length; i += 4) {
+      for (let i = Math.max(22, Math.floor(p.radius)); i < p.body.length; i += 5) {
         const seg = p.body[i];
 
-        if (dist2(p.x, p.y, seg.x, seg.y) < (p.radius + 5) ** 2) {
+        if (dist2(p.x, p.y, seg.x, seg.y) < (p.radius + 4) ** 2) {
           this.kill(p, p, "self");
           break;
         }
@@ -646,30 +455,21 @@ export class TigerRoom {
       for (const other of all) {
         if (p === other || !other.alive) continue;
 
-        const headD = dist2(p.x, p.y, other.x, other.y);
+        const headDist = Math.sqrt(dist2(p.x, p.y, other.x, other.y));
+        const headHit = headDist < (p.radius + other.radius) * 0.82;
 
-        if (headD < (p.radius + other.radius + 2) ** 2) {
-          const pPower = p.body.length + p.score * 0.7;
-          const oPower = other.body.length + other.score * 0.7;
-
-          if (Math.abs(pPower - oPower) < 12) {
-            this.kill(p, other, "headon");
-            this.kill(other, p, "headon");
-          } else if (pPower < oPower) {
-            this.kill(p, other, "headon");
-          } else {
-            this.kill(other, p, "headon");
-          }
-
+        if (headHit) {
+          this.resolveHeadOn(p, other);
           break;
         }
 
-        if (!p.alive) break;
+        const startIndex = Math.max(7, Math.floor(other.radius * 0.55));
 
-        for (let i = 10; i < other.body.length; i += 4) {
+        for (let i = startIndex; i < other.body.length; i += 4) {
           const seg = other.body[i];
+          const hitRadius = p.radius * 0.68 + other.radius * 0.46 + 5;
 
-          if (dist2(p.x, p.y, seg.x, seg.y) < (p.radius + 7) ** 2) {
+          if (dist2(p.x, p.y, seg.x, seg.y) < hitRadius ** 2) {
             this.kill(p, other, "player");
             break;
           }
@@ -680,136 +480,165 @@ export class TigerRoom {
     }
   }
 
+  resolveHeadOn(a, b) {
+    if (!a.alive || !b.alive) return;
+
+    const aPower = a.body.length + a.score * 0.22;
+    const bPower = b.body.length + b.score * 0.22;
+    const diff = Math.abs(aPower - bPower);
+    const tieZone = Math.max(12, Math.min(a.radius, b.radius) * 0.8);
+
+    if (diff < tieZone) {
+      this.kill(a, b, "headon");
+      this.kill(b, a, "headon");
+      return;
+    }
+
+    if (aPower > bPower) {
+      this.kill(b, a, "headon");
+    } else {
+      this.kill(a, b, "headon");
+    }
+  }
+
   kill(dead, killer, reason) {
     if (!dead.alive) return;
 
     dead.alive = false;
 
-    if (killer && killer !== dead) {
-      const humanKilledBot = dead.autoPilot && !killer.autoPilot;
-
-      if (humanKilledBot) {
-        killer.score += BOT_REWARD;
-
-        const oldBody = killer.body.slice();
-        for (const b of oldBody) {
-          killer.body.push({ x: b.x, y: b.y });
-        }
-      } else {
-        killer.score += 10;
-      }
+if (killer && killer !== dead && killer.alive) {
+  killer.score += dead.bot ? 50 : 200;
+}
     }
 
-    if (!dead.autoPilot) {
-      this.saveTop(dead.name, Math.round(dead.score), dead.nation);
+    if (!dead.bot) {
+      this.saveTop(dead.name, Math.round(dead.score)).catch(() => {});
     }
 
-    for (let i = 0; i < dead.body.length; i += 5) {
+    for (let i = 0; i < dead.body.length; i += 4) {
       const b = dead.body[i];
 
       this.food.push(makeFood(
         b.x + rand(-18, 18),
         b.y + rand(-18, 18),
         rand(5, 9),
-        rand(1.2, 3.1)
+        rand(1.2, 3.1),
+        Math.random() < 0.10 ? "picSnack" : "flag"
       ));
     }
 
-    if (dead.npc) {
-      this.bots.delete(dead.id);
+    let text = `${dead.name} died 💀`;
 
-      setTimeout(() => {
-        const cfg = DEFAULT_BOTS.find(b => `bot-${b.name.toLowerCase()}` === dead.id);
-        if (!cfg) return;
+    if (reason === "self") text = `${dead.name} ate his own tiger tail 🐯`;
+    else if (reason === "border") text = `${dead.name} left the Tiger zone 💀`;
+    else if (reason === "headon" && killer && killer !== dead) text = `${killer.name} won the head-on against ${dead.name} 💥`;
+    else if (killer && killer !== dead) text = `${killer.name} destroyed ${dead.name} 🐯`;
 
-        const bot = this.createPlayer(dead.id, cfg.name, "US", true, true);
-        bot.color = cfg.color;
-        bot.skin = "rainbowBot";
-        bot.score = 45;
-
-        this.bots.set(dead.id, bot);
-
-        this.broadcast({
-          type: "event",
-          text: `🤖 ${cfg.name} respawned. Human kill = +500 🐯`
-        });
-
-        this.broadcastState(true);
-      }, 2500);
+    if (!dead.bot || !killer?.bot) {
+      this.broadcast({ type: "event", text });
     }
 
-    let text = `${flagOf(dead.nation)} ${dead.name} died 💀`;
-
-    if (reason === "self") {
-      text = `${flagOf(dead.nation)} ${dead.name} ate his own tiger tail 🐯`;
-    } else if (reason === "border") {
-      text = `${flagOf(dead.nation)} ${dead.name} smashed into the wall 💀`;
-    } else if (reason === "headon") {
-      text = killer
-        ? `${flagOf(killer.nation)} ${killer.name} won a head-on against ${flagOf(dead.nation)} ${dead.name} ⚔️`
-        : `${flagOf(dead.nation)} ${dead.name} lost a head-on ⚔️`;
-    } else if (killer && dead.autoPilot && !killer.autoPilot) {
-      text = `${flagOf(killer.nation)} ${killer.name} killed ${dead.name} BOT: +500 and DOUBLE SIZE 🐯🔥`;
-    } else if (killer && dead.autoPilot && killer.autoPilot) {
-      text = `${killer.name} bot destroyed ${dead.name} bot 🤖`;
-    } else if (killer) {
-      text = `${flagOf(killer.nation)} ${killer.name} destroyed ${flagOf(dead.nation)} ${dead.name} 🐯`;
-    }
-
-    this.broadcast({ type: "event", text });
     this.broadcastState(true);
   }
 
+  cleanupAndRespawnBots() {
+    for (const [id, bot] of this.bots.entries()) {
+      if (!bot.alive) {
+        this.bots.delete(id);
+        this.inputs.delete(id);
+      }
+    }
+
+    this.ensureBots();
+  }
+
   seedFood() {
-    while (this.food.length < FOOD_TARGET) {
+    const now = Date.now();
+
+    const arnoldCount = this.food.filter(f => f.type === "arnold").length;
+    const picSnackCount = this.food.filter(f => f.type === "picSnack").length;
+    const flagCount = this.food.filter(f => f.type === "flag").length;
+
+    if (arnoldCount < ARNOLD_TARGET && now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS) {
+      this.lastArnoldSpawn = now;
+
       this.food.push(makeFood(
-        rand(80, WORLD - 80),
-        rand(80, WORLD - 80),
-        rand(5, 8),
-        rand(0.8, 2.2)
+        rand(130, WORLD - 130),
+        rand(130, WORLD - 130),
+        38,
+        100,
+        "arnold"
+      ));
+
+      this.broadcast({
+        type: "event",
+        text: "Arnold pikhaar has spawned!!!"
+      });
+    }
+
+    for (let i = picSnackCount; i < PIC_SNACK_TARGET; i++) {
+      this.food.push(makeFood(
+        rand(60, WORLD - 60),
+        rand(60, WORLD - 60),
+        rand(7, 10),
+        5,
+        "picSnack"
       ));
     }
 
-    if (this.food.length > MAX_FOOD) {
-      this.food.splice(0, this.food.length - MAX_FOOD);
+    for (let i = flagCount; i < FLAG_FOOD_TARGET; i++) {
+      this.food.push(makeFood(
+        rand(50, WORLD - 50),
+        rand(50, WORLD - 50),
+        rand(5, 8),
+        rand(0.8, 2.2),
+        "flag"
+      ));
+    }
+
+    const maxFood = FLAG_FOOD_TARGET + PIC_SNACK_TARGET + ARNOLD_TARGET + 90;
+
+    if (this.food.length > maxFood) {
+      this.food.splice(0, this.food.length - maxFood);
     }
   }
 
   broadcastState(force = false) {
-    const now = Date.now();
+    const all = this.allPlayers();
 
-    const players = this.allPlayers().map(p => ({
-      id: p.id,
-      name: p.name,
-      nation: p.nation || "OTHER",
-      x: Math.round(p.x * 10) / 10,
-      y: Math.round(p.y * 10) / 10,
-      angle: Math.round(p.angle * 1000) / 1000,
-      color: p.color,
-      skin: p.skin,
-      score: Math.round(p.score * 10) / 10,
-      alive: p.alive,
-      radius: Math.round(p.radius * 10) / 10,
-      len: p.body.length,
-      bot: !!p.autoPilot,
-      npc: !!p.npc,
-      boosting: now < Number(p.boostActiveUntil || 0),
-      boostCooldownMs: Math.max(0, Number(p.boostCooldownUntil || 0) - now),
-      boostActiveMs: Math.max(0, Number(p.boostActiveUntil || 0) - now),
-      body: p.body
-        .filter((_, i) => i % 3 === 0)
-        .map(b => ({
-          x: Math.round(b.x * 10) / 10,
-          y: Math.round(b.y * 10) / 10
-        }))
-    }));
+    const players = all.map(p => {
+      const stride = p.body.length > 900 ? 8 : p.body.length > 450 ? 6 : p.body.length > 160 ? 5 : 4;
+
+      return {
+        id: p.id,
+        name: p.name,
+        bot: !!p.bot,
+        x: Math.round(p.x * 10) / 10,
+        y: Math.round(p.y * 10) / 10,
+        angle: Math.round(p.angle * 1000) / 1000,
+        color: p.color,
+        skin: p.skin,
+        score: Math.round(p.score * 10) / 10,
+        alive: p.alive,
+        radius: Math.round(p.radius * 10) / 10,
+        len: p.body.length,
+        body: p.body
+          .filter((_, i) => i % stride === 0)
+          .map(b => ({
+            x: Math.round(b.x * 10) / 10,
+            y: Math.round(b.y * 10) / 10
+          }))
+      };
+    });
 
     const food = this.food.slice(0, MAX_FOOD_SEND).map(f => ({
       x: Math.round(f.x),
       y: Math.round(f.y),
       r: Math.round(f.r),
       v: Math.round(f.v * 10) / 10,
-      flag: f.flag
+      flag: f.flag,
+      type: f.type || "flag",
+      img: f.img || null
     }));
 
     this.broadcastRaw(JSON.stringify({
@@ -819,7 +648,6 @@ export class TigerRoom {
       players,
       food,
       top10: this.top10,
-      countryTop3: this.countryTop3(),
       force
     }));
   }
@@ -838,24 +666,48 @@ export class TigerRoom {
     }
   }
 
-  async rememberPlayer(name, nation = "OTHER") {
+  async saveTop(name, score) {
     name = safeName(name);
-    nation = safeNation(nation);
+    score = Math.round(score);
 
-    const existing = this.knownPlayers.find(
+    if (!score || score < 1) return;
+
+    const existing = this.top10.find(
       x => safeName(x.name).toLowerCase() === name.toLowerCase()
     );
 
+    let changed = false;
+
     if (existing) {
-      existing.nation = nation;
-      existing.flag = flagOf(nation);
+      if (score > existing.score) {
+        existing.score = score;
+        existing.at = Date.now();
+        changed = true;
+      }
+    } else {
+      this.top10.push({ name, score, at: Date.now() });
+      changed = true;
+    }
+
+    if (!changed) return;
+
+    this.top10 = normalizeTop10(this.top10);
+    await this.state.storage.put(TOP_KEY, this.top10);
+  }
+
+  async rememberPlayer(name) {
+    name = safeName(name);
+
+    const existing = this.knownPlayers.find(
+      x => x.name.toLowerCase() === name.toLowerCase()
+    );
+
+    if (existing) {
       existing.lastSeen = Date.now();
       existing.times = Number(existing.times || 0) + 1;
     } else {
       this.knownPlayers.push({
         name,
-        nation,
-        flag: flagOf(nation),
         firstSeen: Date.now(),
         lastSeen: Date.now(),
         times: 1
@@ -868,13 +720,9 @@ export class TigerRoom {
     await this.state.storage.put(PLAYERS_KEY, this.knownPlayers);
   }
 
-  async logLoginAttempt(name, nation, ws) {
-    nation = safeNation(nation);
-
+  async logLoginAttempt(name, ws) {
     this.loginAttempts.unshift({
       name: safeName(name),
-      nation,
-      flag: flagOf(nation),
       at: Date.now(),
       ip: ws.ip || "unknown",
       ua: String(ws.ua || "unknown").slice(0, 160)
@@ -883,84 +731,91 @@ export class TigerRoom {
     this.loginAttempts = this.loginAttempts.slice(0, 200);
     await this.state.storage.put(ATTEMPTS_KEY, this.loginAttempts);
   }
-
-  async saveTop(name, score, nation = "OTHER") {
-    name = safeName(name);
-    nation = safeNation(nation);
-    score = Math.round(score);
-
-    if (!score || score < 1) return;
-
-    const existingBest = this.playerBests.find(
-      x => safeName(x.name).toLowerCase() === name.toLowerCase()
-    );
-
-    if (existingBest) {
-      if (score > Number(existingBest.score || 0)) {
-        existingBest.score = score;
-        existingBest.nation = nation;
-        existingBest.at = Date.now();
-      } else if (!existingBest.nation || existingBest.nation === "OTHER") {
-        existingBest.nation = nation;
-      }
-    } else {
-      this.playerBests.push({ name, nation, score, at: Date.now() });
-    }
-
-    this.playerBests = normalizePlayerBests(this.playerBests);
-    this.top10 = normalizeTop10(this.playerBests);
-
-    await this.state.storage.put(BESTS_KEY, this.playerBests);
-    await this.state.storage.put(TOP_KEY, this.top10);
-  }
-
-  countryTop3() {
-    const totals = new Map();
-
-    for (const p of this.playerBests || []) {
-      const nation = safeNation(p.nation || "OTHER");
-      const score = Math.round(Number(p.score || 0));
-
-      if (!score) continue;
-
-      totals.set(nation, (totals.get(nation) || 0) + score);
-    }
-
-    return [...totals.entries()]
-      .map(([nation, score]) => ({
-        nation,
-        flag: flagOf(nation),
-        name: countryName(nation),
-        score
-      }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3);
-  }
 }
 
-function makeFood(x, y, r, v) {
+function makeFood(x, y, r, v, type = "flag") {
+  if (type === "arnold") {
+    return {
+      x,
+      y,
+      r,
+      v: 100,
+      type: "arnold",
+      img: "/pic1.webp",
+      flag: null
+    };
+  }
+
+  if (type === "picSnack") {
+    return {
+      x,
+      y,
+      r,
+      v: 5,
+      type: "picSnack",
+      img: PIC_SNACKS[Math.floor(Math.random() * PIC_SNACKS.length)],
+      flag: null
+    };
+  }
+
   return {
     x,
     y,
     r,
     v,
+    type: "flag",
+    img: null,
     flag: FLAGS[Math.floor(Math.random() * FLAGS.length)]
   };
 }
 
-function normalizeTop10(list) {
-  return normalizePlayerBests(list)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 10);
+function nearest(from, items, maxDist) {
+  let best = null;
+  let bestD2 = maxDist * maxDist;
+
+  for (const item of items) {
+    if (!item || item === from || item.alive === false) continue;
+
+    const d2 = dist2(from.x, from.y, item.x, item.y);
+    if (d2 < bestD2) {
+      bestD2 = d2;
+      best = item;
+    }
+  }
+
+  return best ? { item: best, d: Math.sqrt(bestD2) } : null;
 }
 
-function normalizePlayerBests(list) {
+function nearestDanger(bot, all) {
+  let best = null;
+  let bestD2 = 999999999;
+
+  for (const other of all) {
+    if (!other || other === bot || !other.alive) continue;
+
+    const d2 = dist2(bot.x, bot.y, other.x, other.y);
+    if (d2 < bestD2) {
+      bestD2 = d2;
+      best = other;
+    }
+  }
+
+  if (!best) return null;
+
+  return {
+    other: best,
+    x: best.x,
+    y: best.y,
+    d: Math.sqrt(bestD2)
+  };
+}
+
+function normalizeTop10(list) {
   const clean = Array.isArray(list) ? list : [];
   const byName = new Map();
 
   for (const item of clean) {
     const name = safeName(item.name || "Tiger");
-    const nation = safeNation(item.nation || "OTHER");
     const score = Math.round(Number(item.score || 0));
 
     if (!score) continue;
@@ -971,81 +826,19 @@ function normalizePlayerBests(list) {
     if (!old || score > old.score) {
       byName.set(key, {
         name,
-        nation,
         score,
         at: Number(item.at || Date.now())
       });
-    } else if (old.nation === "OTHER" && nation !== "OTHER") {
-      old.nation = nation;
-      byName.set(key, old);
     }
   }
 
   return [...byName.values()]
     .sort((a, b) => b.score - a.score)
-    .slice(0, 500);
+    .slice(0, 10);
 }
 
 function safeName(v) {
-  return (
-    String(v)
-      .replace(/[<>"&]/g, "")
-      .trim()
-      .slice(0, 16) || "Tiger"
-  );
-}
-
-function isLemmegoName(v) {
-  return safeName(v).toLowerCase().replace(/\s+/g, "") === LEMMEGO_NAME;
-}
-
-function safeNation(v) {
-  const n = String(v || "OTHER").toUpperCase();
-
-  const allowed = [
-    "BE", "CZ", "HU", "CH", "IT", "ES",
-    "DE", "GR", "PL", "UK", "US", "OTHER"
-  ];
-
-  return allowed.includes(n) ? n : "OTHER";
-}
-
-function flagOf(nation) {
-  const flags = {
-    BE: "🇧🇪",
-    CZ: "🇨🇿",
-    HU: "🇭🇺",
-    CH: "🇨🇭",
-    IT: "🇮🇹",
-    ES: "🇪🇸",
-    DE: "🇩🇪",
-    GR: "🇬🇷",
-    PL: "🇵🇱",
-    UK: "🇬🇧",
-    US: "🇺🇸",
-    OTHER: "🏳️"
-  };
-
-  return flags[safeNation(nation)] || "🏳️";
-}
-
-function countryName(nation) {
-  const names = {
-    BE: "Belgium",
-    CZ: "Czech Republic",
-    HU: "Hungary",
-    CH: "Switzerland",
-    IT: "Italy",
-    ES: "Spain",
-    DE: "Germany",
-    GR: "Greece",
-    PL: "Poland",
-    UK: "UK",
-    US: "USA",
-    OTHER: "Other"
-  };
-
-  return names[safeNation(nation)] || "Other";
+  return String(v).replace(/[<>"&]/g, "").trim().slice(0, 16) || "Tiger";
 }
 
 function rand(a, b) {
@@ -1063,22 +856,7 @@ function dist2(x1, y1, x2, y2) {
 }
 
 function angleDiff(a, b) {
-  return Math.atan2(
-    Math.sin(b - a),
-    Math.cos(b - a)
-  );
-}
-
-function hashString(str) {
-  let h = 0;
-  const s = String(str || "");
-
-  for (let i = 0; i < s.length; i++) {
-    h = ((h << 5) - h) + s.charCodeAt(i);
-    h |= 0;
-  }
-
-  return h;
+  return Math.atan2(Math.sin(b - a), Math.cos(b - a));
 }
 
 function json(data, status = 200) {
