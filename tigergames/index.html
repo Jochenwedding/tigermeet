@@ -382,8 +382,9 @@ function connect(name,nation){
       if(msg.type==="event"){
         const txt=String(msg.text||"").replace(/pic1\.webp/ig,"Arnold Pikaar Schwarzenegger");
         showToast(txt);
-        if(/arnold|pikaar|pikhaar|schwarzenegger|spawned|eaten|opgegeten/i.test(txt))playPicCycle();
-      }
+       if(txt === "Arnold Pikaar Schwarzenegger has spawned."){
+  playPicCycle();
+}
     }catch{setNet("MSG parse error")}
   };
   ws.onerror=()=>{setNet("WS ERROR");showToast("WebSocket error")};
@@ -391,27 +392,8 @@ function connect(name,nation){
   requestAnimationFrame(loop);
 }
 
-function detectArnoldSpawnSound(msg){
-  const current=new Set();
 
-  for(const f of msg.food||[]){
-    const img=String(f.img||"");
-    const isArnold=f.type==="arnold"||img.includes("pic1.webp");
-    if(!isArnold)continue;
 
-    const key=`${Math.round(f.x/10)}:${Math.round(f.y/10)}`;
-    current.add(key);
-  }
-
-  for(const key of current){
-    if(!lastArnoldKeys.has(key)){
-      playPicCycle();
-      break;
-    }
-  }
-
-  lastArnoldKeys=current;
-}
 
 function ingestState(msg){
   const seen=new Set();
