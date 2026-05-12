@@ -160,6 +160,7 @@
   <div id="toast" class="toast">RAWR</div>
   <audio id="music" src="/Araxos%20Baby.mp3" preload="auto" loop></audio>
   <audio id="roar" src="/roar.mp3" preload="auto"></audio>
+  <audio id="arnoldSound" src="/pic.ogg" preload="auto"></audio>
 </section>
 
 <script>
@@ -199,6 +200,7 @@
   const gameScreen = document.getElementById("gameScreen");
   const music = document.getElementById("music");
   const roar = document.getElementById("roar");
+  const arnoldSound = document.getElementById("arnoldSound");
   const musicBtn = document.getElementById("musicBtn");
   const boostBtn = document.getElementById("boost");
   const boostFill = document.getElementById("boostFill");
@@ -211,8 +213,9 @@
 
   let ws = null, previewWs = null, myId = null, state = null;
   let renderPlayers = new Map();
-  let running = false, lastInput = 0, lastRoar = 0, angle = 0, boostPressed = false, musicEnabled = true;
+  let running = false, lastInput = 0, lastRoar = 0, lastArnoldSound = 0, angle = 0, boostPressed = false, musicEnabled = true;
   const camera = { x: WORLD / 2, y: WORLD / 2, zoom: 1 };
+  const foodImages = new Map();
 
   document.getElementById("playerName").value = localStorage.getItem("tigergames_name") || "";
   document.getElementById("playerNation").value = localStorage.getItem("tigergames_nation") || "BE";
@@ -228,6 +231,8 @@
   addEventListener("resize", resize);
   resize();
   initMaintenance();
+
+  preloadFoodImages();
 
   if(!MAINTENANCE_MODE || sessionStorage.getItem("tigergames_admin") === "true"){
     preloadLoginStats();
@@ -263,6 +268,33 @@
     musicBtn.textContent = musicEnabled ? "MUSIC ON" : "MUSIC OFF";
     if(musicEnabled) startAudio(); else music.pause();
   };
+
+  function preloadFoodImages(){
+    ["/pic1.webp","/pic2.webp","/pic3.webp","/pic4.webp"].forEach(src => getFoodImage(src));
+  }
+
+  function getFoodImage(src){
+    if(!src) return null;
+    if(foodImages.has(src)) return foodImages.get(src);
+
+    const img = new Image();
+    img.src = src;
+    foodImages.set(src, img);
+    return img;
+  }
+
+  function playArnoldSound(){
+    const now = performance.now();
+    if(now - lastArnoldSound < 2500) return;
+    lastArnoldSound = now;
+
+    try{
+      arnoldSound.pause();
+      arnoldSound.currentTime = 0;
+      arnoldSound.volume = 0.95;
+      arnoldSound.play().catch(()=>{});
+    }catch{}
+  }
 
   function preloadLoginStats(){
     try{
@@ -349,17 +381,26 @@
     ws.onmessage = e => {
       try{
         const msg = JSON.parse(e.data);
+
         if(msg.type === "welcome"){
           myId = msg.id;
           if(msg.top10) drawLoginTop5(msg.top10);
           if(msg.countryTop3) drawCountryTop3(msg.countryTop3);
         }
+
         if(msg.type === "state"){
           state = msg;
           ingestState(msg);
           if(msg.countryTop3) drawCountryTop3(msg.countryTop3);
         }
-        if(msg.type === "event") showToast(msg.text);
+
+        if(msg.type === "event"){
+          showToast(msg.text);
+
+          if(String(msg.text || "").includes("Arnold pikhaar has spawned")){
+            playArnoldSound();
+          }
+        }
       }catch{ setNet("MSG parse error"); }
     };
 
@@ -444,7 +485,7 @@
     ctx.translate(-camera.x,-camera.y);
     drawWorld();
 
-    const view = {x1:camera.x-w/camera.zoom/2-160,y1:camera.y-h/camera.zoom/2-160,x2:camera.x+w/camera.zoom/2+160,y2:camera.y+h/camera.zoom/2+160};
+    const view = {x1:camera.x-w/camera.zoom/2-180,y1:camera.y-h/camera.zoom/2-180,x2:camera.x+w/camera.zoom/2+180,y2:camera.y+h/camera.zoom/2+180};
 
     for(const f of state.food || []) if(inView(f.x,f.y,view)) drawFlagFood(f);
     [...renderPlayers.values()].sort((a,b)=>(a.len||0)-(b.len||0)).forEach(p=>drawTigerDragonSnake(p,view));
@@ -468,6 +509,44 @@
 
   function drawFlagFood(f){
     ctx.save();
+
+    if(f.img){
+      const img = getFoodImage(f.img);
+      const isArnold = f.type === "arnold";
+      const size = isArnold ? 96 : 34;
+
+      ctx.shadowColor = isArnold ? "#ffd000" : "#ff8a00";
+      ctx.shadowBlur = isArnold ? 26 : 10;
+
+      if(img && img.complete && img.naturalWidth > 0){
+        if(isArnold){
+          ctx.save();
+          ctx.translate(f.x, f.y);
+          const pulse = 1 + Math.sin(performance.now() / 180) * 0.07;
+          ctx.scale(pulse, pulse);
+
+          ctx.beginPath();
+          ctx.strokeStyle = "rgba(255,208,0,.85)";
+          ctx.lineWidth = 5;
+          ctx.arc(0, 0, size * .62, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.drawImage(img, -size / 2, -size / 2, size, size);
+          ctx.restore();
+        } else {
+          ctx.drawImage(img, f.x - size / 2, f.y - size / 2, size, size);
+        }
+      } else {
+        ctx.fillStyle = isArnold ? "#ffd000" : "#ff8a00";
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+      return;
+    }
+
     ctx.font = `${Math.max(18,f.r*3.2)}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji"`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -570,14 +649,12 @@
   }
 
   function drawName(p){
-    if(p.bot) return;
-
-    const label = `${flagOf(p.nation)} ${p.name}`;
+    const label = `${p.bot ? "🤖 " : flagOf(p.nation) + " "}${p.name}`;
     ctx.font='bold 13px Arial,"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji"';
     ctx.textAlign="center";
-    ctx.fillStyle="rgba(0,0,0,.8)";
+    ctx.fillStyle="rgba(0,0,0,.85)";
     ctx.fillText(label,p.x,p.y-p.radius-18);
-    ctx.fillStyle="#fff";
+    ctx.fillStyle=p.bot ? "#ffd36a" : "#fff";
     ctx.fillText(label,p.x,p.y-p.radius-19);
   }
 
@@ -595,7 +672,7 @@
     }
 
     document.getElementById("liveRows").innerHTML =
-      players.slice(0,5).map((p,i)=>row(i,`${p.bot ? "🤖 " : ""}${flagOf(p.nation)} ${p.name}`,p.score,playerColor(p))).join("");
+      players.slice(0,5).map((p,i)=>row(i,`${flagOf(p.nation)} ${p.name}`,p.score,playerColor(p))).join("");
   }
 
   function updateBoostUi(me){
@@ -662,7 +739,7 @@
   function drawText(t){ctx.fillStyle="#ff8a00";ctx.font="bold 28px Arial";ctx.textAlign="center";ctx.fillText(t,innerWidth/2,innerHeight/2);}
   function inView(x,y,v){ return x>=v.x1 && x<=v.x2 && y>=v.y1 && y<=v.y2; }
   function setNet(t){ document.getElementById("net").textContent=t; }
-  function showToast(t){const e=document.getElementById("toast");e.textContent=t;e.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>e.classList.remove("show"),1800);}
+  function showToast(t){const e=document.getElementById("toast");e.textContent=t;e.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>e.classList.remove("show"),2200);}
   function esc(s){return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
   function flagOf(nation){const flags={BE:"🇧🇪",CZ:"🇨🇿",HU:"🇭🇺",CH:"🇨🇭",IT:"🇮🇹",ES:"🇪🇸",DE:"🇩🇪",GR:"🇬🇷",PL:"🇵🇱",UK:"🇬🇧",US:"🇺🇸",OTHER:"🏳️"};return flags[String(nation || "OTHER").toUpperCase()] || "🏳️";}
   function lerp(a,b,t){ return a+(b-a)*t; }
