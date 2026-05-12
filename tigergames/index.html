@@ -89,7 +89,27 @@
 </head>
 
 <body>
-<section id="login" class="screen">
+
+<section id="maintenance" class="screen">
+  <div class="card">
+    <div class="logo">🐯</div>
+    <h1>Updates in Progress</h1>
+    <div class="versionBadge">Maintenance Mode</div>
+    <p class="tag">Tigergames is momenteel tijdelijk offline voor updates.</p>
+    <p class="small">Try again later.</p>
+
+    <button class="big" onclick="showAdminLogin()">ADMIN LOGIN</button>
+
+    <div id="adminBox" class="hidden">
+      <input id="adminUser" placeholder="Username" autocomplete="off" />
+      <input id="adminPass" placeholder="Password" type="password" autocomplete="off" />
+      <button class="big" onclick="adminLogin()">ENTER ADMIN MODE</button>
+      <p id="adminError" class="small" style="color:#ff5b5b"></p>
+    </div>
+  </div>
+</section>
+
+<section id="login" class="screen hidden">
   <div class="card">
     <div class="logo">🐯</div>
     <h1>Tigergames Online</h1>
@@ -144,6 +164,35 @@
 
 <script>
 (() => {
+  const MAINTENANCE_MODE = true;
+
+  window.showAdminLogin = function(){
+    document.getElementById("adminBox").classList.remove("hidden");
+  };
+
+  window.adminLogin = function(){
+    const user = document.getElementById("adminUser").value.trim();
+    const pass = document.getElementById("adminPass").value.trim();
+
+    if(user === "cis" && pass === "cis"){
+      sessionStorage.setItem("tigergames_admin", "true");
+      document.getElementById("maintenance").classList.add("hidden");
+      document.getElementById("login").classList.remove("hidden");
+    } else {
+      document.getElementById("adminError").textContent = "Wrong credentials, tiger.";
+    }
+  };
+
+  function initMaintenance(){
+    if(!MAINTENANCE_MODE || sessionStorage.getItem("tigergames_admin") === "true"){
+      document.getElementById("maintenance").classList.add("hidden");
+      document.getElementById("login").classList.remove("hidden");
+    } else {
+      document.getElementById("maintenance").classList.remove("hidden");
+      document.getElementById("login").classList.add("hidden");
+    }
+  }
+
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
   const login = document.getElementById("login");
@@ -178,7 +227,11 @@
 
   addEventListener("resize", resize);
   resize();
-  preloadLoginStats();
+  initMaintenance();
+
+  if(!MAINTENANCE_MODE || sessionStorage.getItem("tigergames_admin") === "true"){
+    preloadLoginStats();
+  }
 
   document.getElementById("playBtn").onclick = () => {
     const name = (document.getElementById("playerName").value.trim() || "Unknown Tiger").slice(0,16);
@@ -516,17 +569,17 @@
     ctx.restore();
   }
 
-function drawName(p){
-  if(p.bot) return;
+  function drawName(p){
+    if(p.bot) return;
 
-  const label = `${flagOf(p.nation)} ${p.name}`;
-  ctx.font='bold 13px Arial,"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji"';
-  ctx.textAlign="center";
-  ctx.fillStyle="rgba(0,0,0,.8)";
-  ctx.fillText(label,p.x,p.y-p.radius-18);
-  ctx.fillStyle="#fff";
-  ctx.fillText(label,p.x,p.y-p.radius-19);
-}
+    const label = `${flagOf(p.nation)} ${p.name}`;
+    ctx.font='bold 13px Arial,"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji"';
+    ctx.textAlign="center";
+    ctx.fillStyle="rgba(0,0,0,.8)";
+    ctx.fillText(label,p.x,p.y-p.radius-18);
+    ctx.fillStyle="#fff";
+    ctx.fillText(label,p.x,p.y-p.radius-19);
+  }
 
   function updateHud(){
     if(!state) return;
