@@ -689,7 +689,7 @@ export class TigerRoom {
     };
   }
 
-  broadcastState(force = false) {
+   broadcastState(force = false) {
     const now = Date.now();
     const all = this.allPlayers();
 
@@ -730,22 +730,14 @@ export class TigerRoom {
       };
     });
 
-  const food = this.food
-  .sort((a,b)=>{
-    if(a.type==="arnold" && b.type!=="arnold") return -1;
-    if(a.type!=="arnold" && b.type==="arnold") return 1;
-    return 0;
-  })
-  .slice(0, MAX_FOOD_SEND)
-  .map(f => ({
-        x: Math.round(f.x),
-        y: Math.round(f.y),
-        r: Math.round(f.r),
-        v: Math.round(f.v * 10) / 10,
-        flag: f.flag,
-        type: f.type || "flag",
-        img: f.img || null
-      }));
+    const food = [...this.food]
+      .sort((a, b) => {
+        if (a.type === "arnold" && b.type !== "arnold") return -1;
+        if (a.type !== "arnold" && b.type === "arnold") return 1;
+        return 0;
+      })
+      .slice(0, MAX_FOOD_SEND)
+      .map(f => ({
         x: Math.round(f.x),
         y: Math.round(f.y),
         r: Math.round(f.r),
