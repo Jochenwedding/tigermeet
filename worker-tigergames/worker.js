@@ -730,8 +730,22 @@ export class TigerRoom {
       };
     });
 
-    const food = sampleFood(this.food, MAX_FOOD_SEND)
+  const food = this.food
+  .sort((a,b)=>{
+    if(a.type==="arnold" && b.type!=="arnold") return -1;
+    if(a.type!=="arnold" && b.type==="arnold") return 1;
+    return 0;
+  })
+  .slice(0, MAX_FOOD_SEND)
   .map(f => ({
+        x: Math.round(f.x),
+        y: Math.round(f.y),
+        r: Math.round(f.r),
+        v: Math.round(f.v * 10) / 10,
+        flag: f.flag,
+        type: f.type || "flag",
+        img: f.img || null
+      }));
         x: Math.round(f.x),
         y: Math.round(f.y),
         r: Math.round(f.r),
@@ -1042,25 +1056,7 @@ function safeNation(v) {
   if (key === "USA") return "US";
   return NATION_FLAGS[key] ? key : "OTHER";
 }
-function sampleFood(arr, max) {
-  if (arr.length <= max) return arr;
 
-  const arnolds = arr.filter(f => f.type === "arnold");
-  const rest = arr.filter(f => f.type !== "arnold");
-
-  const picked = [...arnolds];
-  const used = new Set(arnolds);
-
-  while (picked.length < max && used.size < arr.length) {
-    const f = rest[Math.floor(Math.random() * rest.length)];
-    if (!used.has(f)) {
-      used.add(f);
-      picked.push(f);
-    }
-  }
-
-  return picked;
-}
 function rand(a, b) {
   return a + Math.random() * (b - a);
 }
