@@ -611,21 +611,16 @@ export class TigerRoom {
     const arnoldCount = this.food.filter(f => f.type === "arnold").length;
     const picSnackCount = this.food.filter(f => f.type === "picSnack").length;
     const flagCount = this.food.filter(f => f.type === "flag").length;
-
-   if (arnoldCount < ARNOLD_TARGET && now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS) {
+if (arnoldCount < ARNOLD_TARGET && now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS) {
   this.lastArnoldSpawn = now;
 
-  for (let i = arnoldCount; i < ARNOLD_TARGET; i++) {
-    const pos = this.findFoodSpot(420);
-
-    this.food.push(makeFood(
-      pos.x,
-      pos.y,
-      95,
-      100,
-      "arnold"
-    ));
-  }
+  this.food.push(makeFood(
+    rand(170, WORLD - 170),
+    rand(170, WORLD - 170),
+    38,
+    100,
+    "arnold"
+  ));
 
   this.broadcast({
     type: "event",
