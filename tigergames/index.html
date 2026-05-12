@@ -291,35 +291,40 @@ function playRoar(){
 }
 
 function playPicCycle(){
-  const sounds=[picSound1,picSound2,picSound3,picSound4,picSound5].filter(Boolean);
-  if(!sounds.length)return;
-  const snd=sounds[picSoundIndex%sounds.length];
+  const sources=["pic.ogg","pic2.ogg","pic3.ogg","pic4.ogg","pic5.ogg"];
+  const src=sources[picSoundIndex%sources.length];
   picSoundIndex++;
-  soundQueue.push(snd);
+
+  soundQueue.push(src);
   playNextQueuedSound();
 }
 
 function playNextQueuedSound(){
   if(soundPlaying)return;
-  const snd=soundQueue.shift();
-  if(!snd)return;
+
+  const src=soundQueue.shift();
+  if(!src)return;
+
   soundPlaying=true;
-  try{
-    snd.pause();
-    snd.currentTime=0;
-    snd.volume=.95;
-    snd.onended=()=>{
-      soundPlaying=false;
-      playNextQueuedSound();
-    };
-    snd.play().catch(()=>{
-      soundPlaying=false;
-      playNextQueuedSound();
-    });
-  }catch{
+
+  const snd=new Audio(src);
+  snd.volume=.95;
+  snd.preload="auto";
+
+  snd.onended=()=>{
     soundPlaying=false;
     playNextQueuedSound();
-  }
+  };
+
+  snd.onerror=()=>{
+    soundPlaying=false;
+    playNextQueuedSound();
+  };
+
+  snd.play().catch(()=>{
+    soundPlaying=false;
+    playNextQueuedSound();
+  });
 }
 
 function setBoostPressed(v){
@@ -335,6 +340,11 @@ function triggerBoostTap(){
   setBoostPressed(true);
   playRoar();
   if(musicEnabled&&music.paused)startAudio();
+  try{
+  const unlock=new Audio("pic.ogg");
+  unlock.volume=0;
+  unlock.play().then(()=>unlock.pause()).catch(()=>{});
+}catch{}
   sendInput(true);
   clearTimeout(triggerBoostTap.t);
   triggerBoostTap.t=setTimeout(()=>{setBoostPressed(false);sendInput(true)},140);
