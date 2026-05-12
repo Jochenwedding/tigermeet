@@ -18,18 +18,18 @@ export default {
 
 const WORLD = 4200;
 
-const FLAG_FOOD_TARGET = 135;
-const PIC_SNACK_TARGET = 22;
+const FLAG_FOOD_TARGET = 125;
+const PIC_SNACK_TARGET = 18;
 const ARNOLD_TARGET = 1;
 const ARNOLD_SPAWN_MS = 60000;
 
 const TICK_MS = 33;
-const BROADCAST_MS = 95;
-const MAX_FOOD_SEND = 170;
+const BROADCAST_MS = 115;
+const MAX_FOOD_SEND = 145;
 
-const BOT_TARGET = 10;
-const BOT_RESPAWN_MS = 3500;
-const BOT_THINK_MS = 180;
+const BOT_TARGET = 7;
+const BOT_RESPAWN_MS = 5000;
+const BOT_THINK_MS = 260;
 
 const TOP_KEY = "top10_v2";
 const PLAYERS_KEY = "known_players_v1";
@@ -44,7 +44,6 @@ const TOPGUN_NAMES = [
   "Rooster", "Hangman", "Phoenix", "Bob", "Payback", "Fanboy"
 ];
 
-// BELANGRIJK: geen / ervoor, want je game draait op /tigergames/
 const PIC_SNACKS = ["pic2.webp", "pic3.webp", "pic4.webp"];
 
 export class TigerRoom {
@@ -193,9 +192,7 @@ export class TigerRoom {
 
   onClose(ws) {
     const p = this.players.get(ws);
-
     if (p) this.saveTop(p.name, Math.round(p.score)).catch(() => {});
-
     this.players.delete(ws);
     this.inputs.delete(ws.id);
   }
@@ -214,14 +211,15 @@ export class TigerRoom {
       angle: a,
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
       skin: "tigerDragon",
-      score: bot ? rand(8, 38) : 0,
+      score: bot ? rand(5, 24) : 0,
       alive: true,
       body: [],
       radius: 13,
-      bornAt: Date.now()
+      bornAt: Date.now(),
+      nextBoostAt: Date.now() + rand(5000, 12000)
     };
 
-    const startLen = bot ? Math.floor(rand(24, 58)) : 20;
+    const startLen = bot ? Math.floor(rand(20, 38)) : 20;
 
     for (let i = 0; i < startLen; i++) {
       p.body.push({
@@ -313,46 +311,54 @@ export class TigerRoom {
   }
 
   updateBotBrains() {
+    const now = Date.now();
     const humans = this.realPlayers().filter(p => p.alive);
     const all = this.allPlayers().filter(p => p.alive);
 
     for (const bot of this.bots.values()) {
       if (!bot.alive) continue;
 
-      let targetAngle = bot.angle;
+      let targetAngle = bot.angle + rand(-0.18, 0.18);
       let boost = false;
 
-      const nearestHuman = nearest(bot, humans, 1150);
-      const nearestFood = nearest(bot, this.food, 900);
+      const nearestHuman = nearest(bot, humans, 700);
+      const nearestFood = nearest(bot, this.food, 1050);
       const danger = nearestDanger(bot, all);
 
-      if (danger && danger.d < bot.radius + danger.other.radius + 95) {
+      if (danger && danger.d < bot.radius + danger.other.radius + 70) {
         targetAngle = Math.atan2(bot.y - danger.y, bot.x - danger.x);
-        boost = bot.body.length > 35;
-      } else if (nearestHuman && bot.body.length > 26) {
-        const h = nearestHuman.item;
-        const attackBias = bot.body.length >= h.body.length * 0.78 || nearestHuman.d < 520;
 
-        if (attackBias) {
-          const lead = 0.42;
+        if (now > bot.nextBoostAt && bot.body.length > 40 && Math.random() < 0.18) {
+          boost = true;
+          bot.nextBoostAt = now + rand(9000, 18000);
+        }
+      } else if (nearestHuman && bot.body.length > 34) {
+        const h = nearestHuman.item;
+        const clearlyBigger = bot.body.length > h.body.length * 1.35;
+        const closeEnough = nearestHuman.d < 390;
+
+        if (clearlyBigger && closeEnough) {
+          const lead = 0.22;
           const hx = h.x + Math.cos(h.angle || 0) * nearestHuman.d * lead;
           const hy = h.y + Math.sin(h.angle || 0) * nearestHuman.d * lead;
 
           targetAngle = Math.atan2(hy - bot.y, hx - bot.x);
-          boost = nearestHuman.d < 650 && bot.body.length > 38;
+
+          if (now > bot.nextBoostAt && nearestHuman.d < 300 && Math.random() < 0.22) {
+            boost = true;
+            bot.nextBoostAt = now + rand(10000, 20000);
+          }
         } else if (nearestFood) {
           targetAngle = Math.atan2(nearestFood.item.y - bot.y, nearestFood.item.x - bot.x);
         }
       } else if (nearestFood) {
         targetAngle = Math.atan2(nearestFood.item.y - bot.y, nearestFood.item.x - bot.x);
-      } else {
-        targetAngle = bot.angle + rand(-0.7, 0.7);
       }
 
-      if (bot.x < 240) targetAngle = 0;
-      if (bot.x > WORLD - 240) targetAngle = Math.PI;
-      if (bot.y < 240) targetAngle = Math.PI / 2;
-      if (bot.y > WORLD - 240) targetAngle = -Math.PI / 2;
+      if (bot.x < 260) targetAngle = 0;
+      if (bot.x > WORLD - 260) targetAngle = Math.PI;
+      if (bot.y < 260) targetAngle = Math.PI / 2;
+      if (bot.y > WORLD - 260) targetAngle = -Math.PI / 2;
 
       this.inputs.set(bot.id, {
         angle: targetAngle,
@@ -367,19 +373,20 @@ export class TigerRoom {
       boost: false
     };
 
-    p.angle += angleDiff(p.angle, input.angle) * Math.min(1, dt * 9.5);
+    p.angle += angleDiff(p.angle, input.angle) * Math.min(1, dt * 8.2);
 
-    // ZICHTBAAR TRAGER BIJ GROTER WORDEN
-    // Start snel, maar grote spelers worden merkbaar logger.
     const len = p.body.length;
-    const slowdown = Math.min(120, Math.pow(Math.max(0, len - 20), 0.72) * 2.15);
 
-    const baseSpeed = 290;
-    const minSpeed = 145;
+    // Infinite scaling gevoel: hoe langer, hoe trager.
+    // Er is wel een minimum zodat je niet letterlijk stilstaat.
+    const slowdown = Math.log1p(Math.max(0, len - 20)) * 37 + Math.sqrt(Math.max(0, len - 20)) * 1.65;
+
+    const baseSpeed = 292;
+    const minSpeed = 105;
     const normalSpeed = Math.max(minSpeed, baseSpeed - slowdown);
 
     const canBoost = input.boost && p.body.length > 30;
-    const boostBonus = canBoost ? 125 : 0;
+    const boostBonus = canBoost ? 115 : 0;
     const speed = normalSpeed + boostBonus;
 
     if (canBoost && Math.random() < 0.18) {
@@ -403,7 +410,7 @@ export class TigerRoom {
 
     p.body.unshift({ x: p.x, y: p.y });
 
-    const growthScore = Math.min(p.score, 2200);
+    const growthScore = Math.min(p.score, 2600);
     const maxLen = Math.floor(20 + growthScore * 1.2);
 
     while (p.body.length > maxLen) p.body.pop();
@@ -420,9 +427,6 @@ export class TigerRoom {
         const f = this.food[i];
 
         if (dist2(p.x, p.y, f.x, f.y) < (p.radius + f.r + 8) ** 2) {
-          // Arnold/pic1 is exact 100 punten.
-          // Pic snacks zijn 5 punten.
-          // Flags zijn 0.8 - 2.2 punten.
           p.score += f.v;
 
           if (f.type === "arnold") {
@@ -449,11 +453,10 @@ export class TigerRoom {
         continue;
       }
 
-      // Self-hit iets milder zodat je niet random sterft door je eigen lichaam.
-      for (let i = Math.max(26, Math.floor(p.radius * 1.15)); i < p.body.length; i += 6) {
+      for (let i = Math.max(30, Math.floor(p.radius * 1.25)); i < p.body.length; i += 7) {
         const seg = p.body[i];
 
-        if (dist2(p.x, p.y, seg.x, seg.y) < (p.radius * 0.72 + 4) ** 2) {
+        if (dist2(p.x, p.y, seg.x, seg.y) < (p.radius * 0.66 + 4) ** 2) {
           this.kill(p, p, "self");
           break;
         }
@@ -465,20 +468,18 @@ export class TigerRoom {
         if (p === other || !other.alive) continue;
 
         const headDist = Math.sqrt(dist2(p.x, p.y, other.x, other.y));
-        const headHit = headDist < (p.radius + other.radius) * 0.78;
+        const headHit = headDist < (p.radius + other.radius) * 0.74;
 
         if (headHit) {
           this.resolveHeadOn(p, other);
           break;
         }
 
-        const startIndex = Math.max(9, Math.floor(other.radius * 0.75));
+        const startIndex = Math.max(10, Math.floor(other.radius * 0.85));
 
-        for (let i = startIndex; i < other.body.length; i += 5) {
+        for (let i = startIndex; i < other.body.length; i += 6) {
           const seg = other.body[i];
-
-          // Mildere hitbox: voelt eerlijker, minder bullshit deaths.
-          const hitRadius = p.radius * 0.58 + other.radius * 0.38 + 4;
+          const hitRadius = p.radius * 0.52 + other.radius * 0.34 + 4;
 
           if (dist2(p.x, p.y, seg.x, seg.y) < hitRadius ** 2) {
             this.kill(p, other, "player");
@@ -517,9 +518,6 @@ export class TigerRoom {
 
     dead.alive = false;
 
-    // Punten bij kill:
-    // bot dood = 20 punten
-    // echte speler dood = 50 punten
     if (killer && killer !== dead && killer.alive) {
       killer.score += dead.bot ? 20 : 50;
     }
@@ -572,7 +570,6 @@ export class TigerRoom {
     const picSnackCount = this.food.filter(f => f.type === "picSnack").length;
     const flagCount = this.food.filter(f => f.type === "flag").length;
 
-    // pic1 / Arnold: max 1 tegelijk, pas opnieuw na 60 seconden.
     if (arnoldCount < ARNOLD_TARGET && now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS) {
       this.lastArnoldSpawn = now;
 
@@ -610,7 +607,7 @@ export class TigerRoom {
       ));
     }
 
-    const maxFood = FLAG_FOOD_TARGET + PIC_SNACK_TARGET + ARNOLD_TARGET + 90;
+    const maxFood = FLAG_FOOD_TARGET + PIC_SNACK_TARGET + ARNOLD_TARGET + 80;
 
     if (this.food.length > maxFood) {
       this.food.splice(0, this.food.length - maxFood);
@@ -621,7 +618,7 @@ export class TigerRoom {
     const all = this.allPlayers();
 
     const players = all.map(p => {
-      const stride = p.body.length > 900 ? 8 : p.body.length > 450 ? 6 : p.body.length > 160 ? 5 : 4;
+      const stride = p.body.length > 900 ? 9 : p.body.length > 450 ? 7 : p.body.length > 160 ? 6 : 4;
 
       return {
         id: p.id,
