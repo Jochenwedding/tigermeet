@@ -405,15 +405,14 @@ function connect(name,nation){
         if(msg.countryTop3)drawCountryTop3(msg.countryTop3);
       }
 
-      if(msg.type==="event"){
-        const txt=String(msg.text||"").replace(/pic1\.webp/ig,"Arnold Pikaar Schwarzenegger");
-        showToast(txt);
+    if(msg.type==="event"){
+  const txt=String(msg.text||"").replace(/pic1\.webp/ig,"Arnold Pikaar Schwarzenegger");
+  showToast(txt);
 
-        if(txt === "Arnold Pikaar Schwarzenegger has spawned."){
-          playPicCycle();
-        }
-      }
-
+  if(txt === "Arnold Pikaar Schwarzenegger has spawned."){
+    playPicCycle();
+  }
+}
     }catch{
       setNet("MSG parse error");
     }
