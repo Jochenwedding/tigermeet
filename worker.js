@@ -17,19 +17,10 @@ export default {
 };
 
 const WORLD = 4200;
-
-const FLAG_FOOD_TARGET = 135;
-const PIC_SNACK_TARGET = 22;
-const ARNOLD_TARGET = 1;
-const ARNOLD_SPAWN_MS = 60000;
-
+const FOOD_TARGET = 140;
 const TICK_MS = 33;
-const BROADCAST_MS = 95;
-const MAX_FOOD_SEND = 170;
-
-const BOT_TARGET = 10;
-const BOT_RESPAWN_MS = 3500;
-const BOT_THINK_MS = 180;
+const BROADCAST_MS = 50;
+const MAX_FOOD_SEND = 150;
 
 const TOP_KEY = "top10_v2";
 const PLAYERS_KEY = "known_players_v1";
@@ -38,21 +29,12 @@ const ATTEMPTS_KEY = "login_attempts_v1";
 const COLORS = ["#ff8a00", "#ffb000", "#ff6a00", "#d96b00", "#ff3b30", "#ffe14a"];
 const FLAGS = ["🇨🇿","🇵🇱","🇩🇪","🇭🇺","🇨🇭","🇮🇹","🇬🇧","🇫🇷","🇪🇸","🇬🇷"];
 
-const TOPGUN_NAMES = [
-  "Maverick", "Iceman", "Goose", "Viper", "Jester",
-  "Slider", "Hollywood", "Wolfman", "Merlin", "Cougar",
-  "Rooster", "Hangman", "Phoenix", "Bob", "Payback", "Fanboy"
-];
-
-const PIC_SNACKS = ["/pic2.webp", "/pic3.webp", "/pic4.webp"];
-
 export class TigerRoom {
   constructor(state, env) {
     this.state = state;
     this.env = env;
 
     this.players = new Map();
-    this.bots = new Map();
     this.inputs = new Map();
     this.food = [];
 
@@ -63,10 +45,6 @@ export class TigerRoom {
     this.top10 = [];
     this.knownPlayers = [];
     this.loginAttempts = [];
-
-    this.lastBotThink = 0;
-    this.lastBotRespawn = 0;
-    this.lastArnoldSpawn = Date.now() - ARNOLD_SPAWN_MS + 5000;
 
     this.state.blockConcurrencyWhile(async () => {
       this.top10 = normalizeTop10((await this.state.storage.get(TOP_KEY)) || []);
@@ -106,7 +84,6 @@ export class TigerRoom {
       top10: this.top10
     }));
 
-
     return new Response(null, { status: 101, webSocket: client });
   }
 
@@ -130,8 +107,6 @@ export class TigerRoom {
       game: "Tigergames Online",
       now: Date.now(),
       onlineCount: online.length,
-      botCount: this.bots.size,
-      arnoldOnMap: this.food.some(f => f.type === "arnold"),
       online,
       top10: this.top10,
       knownPlayers: this.knownPlayers.slice(0, 200),
@@ -146,10 +121,10 @@ export class TigerRoom {
     if (msg.type === "join") {
       const name = safeName(msg.name || "Tiger");
 
-      this.logLoginAttempt(name, ws).catch(() => {});
-      this.rememberPlayer(name).catch(() => {});
+      await this.logLoginAttempt(name, ws);
+      await this.rememberPlayer(name);
 
-      const p = this.createPlayer(ws.id, name, false);
+      const p = this.createPlayer(ws.id, name);
 
       this.players.set(ws, p);
       this.inputs.set(ws.id, {
@@ -180,7 +155,7 @@ export class TigerRoom {
       const old = this.players.get(ws);
       if (!old) return;
 
-      this.players.set(ws, this.createPlayer(old.id, old.name, false));
+      this.players.set(ws, this.createPlayer(old.id, old.name));
       this.inputs.set(old.id, {
         angle: Math.random() * Math.PI * 2,
         boost: false
@@ -194,13 +169,13 @@ export class TigerRoom {
   onClose(ws) {
     const p = this.players.get(ws);
 
-    if (p) this.saveTop(p.name, Math.round(p.score)).catch(() => {});
+    if (p) this.saveTop(p.name, Math.round(p.score));
 
     this.players.delete(ws);
     this.inputs.delete(ws.id);
   }
 
-  createPlayer(id, name, bot = false) {
+  createPlayer(id, name) {
     const a = Math.random() * Math.PI * 2;
     const x = rand(300, WORLD - 300);
     const y = rand(300, WORLD - 300);
@@ -208,22 +183,18 @@ export class TigerRoom {
     const p = {
       id,
       name,
-      bot,
       x,
       y,
       angle: a,
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
       skin: "tigerDragon",
-      score: bot ? rand(8, 38) : 0,
+      score: 0,
       alive: true,
       body: [],
-      radius: 13,
-      bornAt: Date.now()
+      radius: 13
     };
 
-    const startLen = bot ? Math.floor(rand(24, 58)) : 20;
-
-    for (let i = 0; i < startLen; i++) {
+    for (let i = 0; i < 20; i++) {
       p.body.push({
         x: x - Math.cos(a) * i * 12,
         y: y - Math.sin(a) * i * 12
@@ -233,29 +204,10 @@ export class TigerRoom {
     return p;
   }
 
-  createBot() {
-    const index = this.bots.size % TOPGUN_NAMES.length;
-    const name = TOPGUN_NAMES[index] + (this.bots.size >= TOPGUN_NAMES.length ? ` ${this.bots.size + 1}` : "");
-    const id = "bot-" + crypto.randomUUID();
-
-    const bot = this.createPlayer(id, name, true);
-    this.bots.set(id, bot);
-    this.inputs.set(id, {
-      angle: bot.angle,
-      boost: false
-    });
-  }
-
-  ensureBots() {
-    while (this.bots.size < BOT_TARGET) this.createBot();
-  }
-
   ensureLoop() {
     if (this.tickHandle) return;
 
     this.seedFood();
-    this.ensureBots();
-
     this.lastTick = Date.now();
     this.lastBroadcast = 0;
 
@@ -263,17 +215,11 @@ export class TigerRoom {
   }
 
   tick() {
-   if (this.players.size === 0) {
-  this.bots.clear();
-
-  for (const id of [...this.inputs.keys()]) {
-    if (String(id).startsWith("bot-")) this.inputs.delete(id);
-  }
-
-  clearInterval(this.tickHandle);
-  this.tickHandle = null;
-  return;
-}
+    if (this.players.size === 0) {
+      clearInterval(this.tickHandle);
+      this.tickHandle = null;
+      return;
+    }
 
     const now = Date.now();
     const dt = Math.min((now - this.lastTick) / 1000, 0.06);
@@ -281,83 +227,16 @@ export class TigerRoom {
 
     this.seedFood();
 
-    if (now - this.lastBotThink >= BOT_THINK_MS) {
-      this.lastBotThink = now;
-      this.updateBotBrains();
-    }
-
-    for (const p of this.allPlayers()) {
+    for (const p of this.players.values()) {
       if (p.alive) this.updatePlayer(p, dt);
     }
 
     this.handleEating();
     this.handleCrashes();
 
-    if (now - this.lastBotRespawn >= BOT_RESPAWN_MS) {
-      this.lastBotRespawn = now;
-      this.cleanupAndRespawnBots();
-    }
-
     if (now - this.lastBroadcast >= BROADCAST_MS) {
       this.lastBroadcast = now;
       this.broadcastState(false);
-    }
-  }
-
-  allPlayers() {
-    return [...this.players.values(), ...this.bots.values()];
-  }
-
-  realPlayers() {
-    return [...this.players.values()];
-  }
-
-  updateBotBrains() {
-    const humans = this.realPlayers().filter(p => p.alive);
-    const all = this.allPlayers().filter(p => p.alive);
-
-    for (const bot of this.bots.values()) {
-      if (!bot.alive) continue;
-
-      let targetAngle = bot.angle;
-      let boost = false;
-
-      const nearestHuman = nearest(bot, humans, 1150);
-      const nearestFood = nearest(bot, this.food, 900);
-      const danger = nearestDanger(bot, all);
-
-      if (danger && danger.d < bot.radius + danger.other.radius + 95) {
-        targetAngle = Math.atan2(bot.y - danger.y, bot.x - danger.x);
-        boost = bot.body.length > 35;
-      } else if (nearestHuman && bot.body.length > 26) {
-        const h = nearestHuman.item;
-        const attackBias = bot.body.length >= h.body.length * 0.78 || nearestHuman.d < 520;
-
-        if (attackBias) {
-          const lead = 0.42;
-          const hx = h.x + Math.cos(h.angle || 0) * nearestHuman.d * lead;
-          const hy = h.y + Math.sin(h.angle || 0) * nearestHuman.d * lead;
-
-          targetAngle = Math.atan2(hy - bot.y, hx - bot.x);
-          boost = nearestHuman.d < 650 && bot.body.length > 38;
-        } else if (nearestFood) {
-          targetAngle = Math.atan2(nearestFood.item.y - bot.y, nearestFood.item.x - bot.x);
-        }
-      } else if (nearestFood) {
-        targetAngle = Math.atan2(nearestFood.item.y - bot.y, nearestFood.item.x - bot.x);
-      } else {
-        targetAngle = bot.angle + rand(-0.7, 0.7);
-      }
-
-      if (bot.x < 240) targetAngle = 0;
-      if (bot.x > WORLD - 240) targetAngle = Math.PI;
-      if (bot.y < 240) targetAngle = Math.PI / 2;
-      if (bot.y > WORLD - 240) targetAngle = -Math.PI / 2;
-
-      this.inputs.set(bot.id, {
-        angle: targetAngle,
-        boost
-      });
     }
   }
 
@@ -369,14 +248,10 @@ export class TigerRoom {
 
     p.angle += angleDiff(p.angle, input.angle) * Math.min(1, dt * 9.5);
 
-    const effectiveLen = Math.min(p.body.length, 2500);
-    const sizeSlowdown = Math.min(75, effectiveLen * 0.035);
-    const baseSpeed = 265 - sizeSlowdown;
-    const minSpeed = 188;
-    const canBoost = input.boost && p.body.length > 30;
-    const speed = Math.max(minSpeed, baseSpeed) + (canBoost ? 125 : 0);
+    const canBoost = input.boost && p.body.length > 28;
+    const speed = 205 + Math.max(0, 55 - p.body.length * 0.14) + (canBoost ? 135 : 0);
 
-    if (canBoost && Math.random() < 0.18) {
+    if (canBoost && Math.random() < 0.22) {
       const tail = p.body.pop();
 
       if (tail) {
@@ -384,12 +259,11 @@ export class TigerRoom {
           tail.x + rand(-8, 8),
           tail.y + rand(-8, 8),
           rand(5, 8),
-          1.1,
-          "flag"
+          1.1
         ));
       }
 
-      p.score = Math.max(0, p.score - 0.025);
+      p.score = Math.max(0, p.score - 0.035);
     }
 
     p.x = clamp(p.x + Math.cos(p.angle) * speed * dt, 20, WORLD - 20);
@@ -397,17 +271,14 @@ export class TigerRoom {
 
     p.body.unshift({ x: p.x, y: p.y });
 
-    const growthScore = Math.min(p.score, 2200);
-    const maxLen = Math.floor(20 + growthScore * 1.2);
-
+    const maxLen = Math.floor(20 + p.score * 1.25);
     while (p.body.length > maxLen) p.body.pop();
 
-    const radiusGrowthLen = Math.min(p.body.length, 1300);
-    p.radius = clamp(11 + Math.sqrt(radiusGrowthLen) * 1.04, 13, 38);
+    p.radius = clamp(11 + Math.sqrt(p.body.length) * 1.04, 13, 30);
   }
 
   handleEating() {
-    for (const p of this.allPlayers()) {
+    for (const p of this.players.values()) {
       if (!p.alive) continue;
 
       for (let i = this.food.length - 1; i >= 0; i--) {
@@ -415,15 +286,6 @@ export class TigerRoom {
 
         if (dist2(p.x, p.y, f.x, f.y) < (p.radius + f.r + 8) ** 2) {
           p.score += f.v;
-
-          if (f.type === "arnold") {
-            p.score += 40;
-            this.broadcast({
-              type: "event",
-              text: "Nomnomnomnom extra protein is on the menu boys."
-            });
-          }
-
           this.food.splice(i, 1);
         }
       }
@@ -431,20 +293,18 @@ export class TigerRoom {
   }
 
   handleCrashes() {
-    const all = this.allPlayers().filter(p => p.alive);
+    const all = [...this.players.values()].filter(p => p.alive);
 
     for (const p of all) {
-      if (!p.alive) continue;
-
       if (p.x <= 22 || p.x >= WORLD - 22 || p.y <= 22 || p.y >= WORLD - 22) {
         this.kill(p, null, "border");
         continue;
       }
 
-      for (let i = Math.max(22, Math.floor(p.radius)); i < p.body.length; i += 5) {
+      for (let i = 18; i < p.body.length; i += 4) {
         const seg = p.body[i];
 
-        if (dist2(p.x, p.y, seg.x, seg.y) < (p.radius + 4) ** 2) {
+        if (dist2(p.x, p.y, seg.x, seg.y) < (p.radius + 7) ** 2) {
           this.kill(p, p, "self");
           break;
         }
@@ -455,21 +315,10 @@ export class TigerRoom {
       for (const other of all) {
         if (p === other || !other.alive) continue;
 
-        const headDist = Math.sqrt(dist2(p.x, p.y, other.x, other.y));
-        const headHit = headDist < (p.radius + other.radius) * 0.82;
-
-        if (headHit) {
-          this.resolveHeadOn(p, other);
-          break;
-        }
-
-        const startIndex = Math.max(7, Math.floor(other.radius * 0.55));
-
-        for (let i = startIndex; i < other.body.length; i += 4) {
+        for (let i = 8; i < other.body.length; i += 4) {
           const seg = other.body[i];
-          const hitRadius = p.radius * 0.68 + other.radius * 0.46 + 5;
 
-          if (dist2(p.x, p.y, seg.x, seg.y) < hitRadius ** 2) {
+          if (dist2(p.x, p.y, seg.x, seg.y) < (p.radius + 9) ** 2) {
             this.kill(p, other, "player");
             break;
           }
@@ -480,50 +329,23 @@ export class TigerRoom {
     }
   }
 
-  resolveHeadOn(a, b) {
-    if (!a.alive || !b.alive) return;
-
-    const aPower = a.body.length + a.score * 0.22;
-    const bPower = b.body.length + b.score * 0.22;
-    const diff = Math.abs(aPower - bPower);
-    const tieZone = Math.max(12, Math.min(a.radius, b.radius) * 0.8);
-
-    if (diff < tieZone) {
-      this.kill(a, b, "headon");
-      this.kill(b, a, "headon");
-      return;
-    }
-
-    if (aPower > bPower) {
-      this.kill(b, a, "headon");
-    } else {
-      this.kill(a, b, "headon");
-    }
-  }
-
   kill(dead, killer, reason) {
     if (!dead.alive) return;
 
     dead.alive = false;
 
-if (killer && killer !== dead && killer.alive) {
-  killer.score += dead.bot ? 50 : 200;
-}
-    }
+    if (killer && killer !== dead) killer.score += 10;
 
-    if (!dead.bot) {
-      this.saveTop(dead.name, Math.round(dead.score)).catch(() => {});
-    }
+    this.saveTop(dead.name, Math.round(dead.score));
 
-    for (let i = 0; i < dead.body.length; i += 4) {
+    for (let i = 0; i < dead.body.length; i += 5) {
       const b = dead.body[i];
 
       this.food.push(makeFood(
         b.x + rand(-18, 18),
         b.y + rand(-18, 18),
         rand(5, 9),
-        rand(1.2, 3.1),
-        Math.random() < 0.10 ? "picSnack" : "flag"
+        rand(1.2, 3.1)
       ));
     }
 
@@ -531,114 +353,54 @@ if (killer && killer !== dead && killer.alive) {
 
     if (reason === "self") text = `${dead.name} ate his own tiger tail 🐯`;
     else if (reason === "border") text = `${dead.name} left the Tiger zone 💀`;
-    else if (reason === "headon" && killer && killer !== dead) text = `${killer.name} won the head-on against ${dead.name} 💥`;
-    else if (killer && killer !== dead) text = `${killer.name} destroyed ${dead.name} 🐯`;
+    else if (killer) text = `${killer.name} destroyed ${dead.name} 🐯`;
 
-    if (!dead.bot || !killer?.bot) {
-      this.broadcast({ type: "event", text });
-    }
-
+    this.broadcast({ type: "event", text });
     this.broadcastState(true);
   }
 
-  cleanupAndRespawnBots() {
-    for (const [id, bot] of this.bots.entries()) {
-      if (!bot.alive) {
-        this.bots.delete(id);
-        this.inputs.delete(id);
-      }
-    }
-
-    this.ensureBots();
-  }
-
   seedFood() {
-    const now = Date.now();
-
-    const arnoldCount = this.food.filter(f => f.type === "arnold").length;
-    const picSnackCount = this.food.filter(f => f.type === "picSnack").length;
-    const flagCount = this.food.filter(f => f.type === "flag").length;
-
-    if (arnoldCount < ARNOLD_TARGET && now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS) {
-      this.lastArnoldSpawn = now;
-
-      this.food.push(makeFood(
-        rand(130, WORLD - 130),
-        rand(130, WORLD - 130),
-        38,
-        100,
-        "arnold"
-      ));
-
-      this.broadcast({
-        type: "event",
-        text: "Arnold pikhaar has spawned!!!"
-      });
-    }
-
-    for (let i = picSnackCount; i < PIC_SNACK_TARGET; i++) {
-      this.food.push(makeFood(
-        rand(60, WORLD - 60),
-        rand(60, WORLD - 60),
-        rand(7, 10),
-        5,
-        "picSnack"
-      ));
-    }
-
-    for (let i = flagCount; i < FLAG_FOOD_TARGET; i++) {
+    while (this.food.length < FOOD_TARGET) {
       this.food.push(makeFood(
         rand(50, WORLD - 50),
         rand(50, WORLD - 50),
         rand(5, 8),
-        rand(0.8, 2.2),
-        "flag"
+        rand(0.8, 2.2)
       ));
     }
 
-    const maxFood = FLAG_FOOD_TARGET + PIC_SNACK_TARGET + ARNOLD_TARGET + 90;
-
-    if (this.food.length > maxFood) {
-      this.food.splice(0, this.food.length - maxFood);
+    if (this.food.length > FOOD_TARGET + 130) {
+      this.food.splice(0, this.food.length - (FOOD_TARGET + 130));
     }
   }
 
   broadcastState(force = false) {
-    const all = this.allPlayers();
-
-    const players = all.map(p => {
-      const stride = p.body.length > 900 ? 8 : p.body.length > 450 ? 6 : p.body.length > 160 ? 5 : 4;
-
-      return {
-        id: p.id,
-        name: p.name,
-        bot: !!p.bot,
-        x: Math.round(p.x * 10) / 10,
-        y: Math.round(p.y * 10) / 10,
-        angle: Math.round(p.angle * 1000) / 1000,
-        color: p.color,
-        skin: p.skin,
-        score: Math.round(p.score * 10) / 10,
-        alive: p.alive,
-        radius: Math.round(p.radius * 10) / 10,
-        len: p.body.length,
-        body: p.body
-          .filter((_, i) => i % stride === 0)
-          .map(b => ({
-            x: Math.round(b.x * 10) / 10,
-            y: Math.round(b.y * 10) / 10
-          }))
-      };
-    });
+    const players = [...this.players.values()].map(p => ({
+      id: p.id,
+      name: p.name,
+      x: Math.round(p.x * 10) / 10,
+      y: Math.round(p.y * 10) / 10,
+      angle: Math.round(p.angle * 1000) / 1000,
+      color: p.color,
+      skin: p.skin,
+      score: Math.round(p.score * 10) / 10,
+      alive: p.alive,
+      radius: Math.round(p.radius * 10) / 10,
+      len: p.body.length,
+      body: p.body
+        .filter((_, i) => i % 3 === 0)
+        .map(b => ({
+          x: Math.round(b.x * 10) / 10,
+          y: Math.round(b.y * 10) / 10
+        }))
+    }));
 
     const food = this.food.slice(0, MAX_FOOD_SEND).map(f => ({
       x: Math.round(f.x),
       y: Math.round(f.y),
       r: Math.round(f.r),
       v: Math.round(f.v * 10) / 10,
-      flag: f.flag,
-      type: f.type || "flag",
-      img: f.img || null
+      flag: f.flag
     }));
 
     this.broadcastRaw(JSON.stringify({
@@ -676,20 +438,14 @@ if (killer && killer !== dead && killer.alive) {
       x => safeName(x.name).toLowerCase() === name.toLowerCase()
     );
 
-    let changed = false;
-
     if (existing) {
       if (score > existing.score) {
         existing.score = score;
         existing.at = Date.now();
-        changed = true;
       }
     } else {
       this.top10.push({ name, score, at: Date.now() });
-      changed = true;
     }
-
-    if (!changed) return;
 
     this.top10 = normalizeTop10(this.top10);
     await this.state.storage.put(TOP_KEY, this.top10);
@@ -733,85 +489,19 @@ if (killer && killer !== dead && killer.alive) {
   }
 }
 
-function makeFood(x, y, r, v, type = "flag") {
-  if (type === "arnold") {
-    return {
-      x,
-      y,
-      r,
-      v: 100,
-      type: "arnold",
-      img: "/pic1.webp",
-      flag: null
-    };
-  }
-
-  if (type === "picSnack") {
-    return {
-      x,
-      y,
-      r,
-      v: 5,
-      type: "picSnack",
-      img: PIC_SNACKS[Math.floor(Math.random() * PIC_SNACKS.length)],
-      flag: null
-    };
-  }
-
+function makeFood(x, y, r, v) {
   return {
     x,
     y,
     r,
     v,
-    type: "flag",
-    img: null,
     flag: FLAGS[Math.floor(Math.random() * FLAGS.length)]
-  };
-}
-
-function nearest(from, items, maxDist) {
-  let best = null;
-  let bestD2 = maxDist * maxDist;
-
-  for (const item of items) {
-    if (!item || item === from || item.alive === false) continue;
-
-    const d2 = dist2(from.x, from.y, item.x, item.y);
-    if (d2 < bestD2) {
-      bestD2 = d2;
-      best = item;
-    }
-  }
-
-  return best ? { item: best, d: Math.sqrt(bestD2) } : null;
-}
-
-function nearestDanger(bot, all) {
-  let best = null;
-  let bestD2 = 999999999;
-
-  for (const other of all) {
-    if (!other || other === bot || !other.alive) continue;
-
-    const d2 = dist2(bot.x, bot.y, other.x, other.y);
-    if (d2 < bestD2) {
-      bestD2 = d2;
-      best = other;
-    }
-  }
-
-  if (!best) return null;
-
-  return {
-    other: best,
-    x: best.x,
-    y: best.y,
-    d: Math.sqrt(bestD2)
   };
 }
 
 function normalizeTop10(list) {
   const clean = Array.isArray(list) ? list : [];
+
   const byName = new Map();
 
   for (const item of clean) {
