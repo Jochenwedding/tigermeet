@@ -18,14 +18,14 @@ export default {
 
 const WORLD = 4200;
 
-const FLAG_FOOD_TARGET = 125;
-const PIC_SNACK_TARGET = 18;
+const FLAG_FOOD_TARGET = 75;
+const PIC_SNACK_TARGET = 55;
 const ARNOLD_TARGET = 4;
 const ARNOLD_SPAWN_MS = 60000;
 
 const TICK_MS = 16;
-const BROADCAST_MS = 50;
-const MAX_FOOD_SEND = 170;
+const BROADCAST_MS = 75;
+const MAX_FOOD_SEND = 135;
 
 const BOT_TARGET = 5;
 const BOT_RESPAWN_MS = 5000;
@@ -146,7 +146,7 @@ export class TigerRoom {
       now: Date.now(),
       onlineCount: online.length,
       botCount: this.bots.size,
-      arnoldOnMap: this.food.some(f => f.type === "arnold"),
+      arnoldOnMap: this.food.filter(f => f.type === "arnold").length,
       online,
       top10: this.top10,
       countryTop3: this.countryTop3(),
@@ -215,6 +215,7 @@ export class TigerRoom {
       this.saveTop(p.name, Math.round(p.score)).catch(() => {});
       this.saveCountryScore(p.nation, Math.round(p.score)).catch(() => {});
     }
+
     this.players.delete(ws);
     this.inputs.delete(ws.id);
   }
@@ -417,6 +418,7 @@ export class TigerRoom {
 
     const len = p.body.length;
     const slowdown = Math.min(85, len * 0.085);
+
     const baseSpeed = 270;
     const minSpeed = 185;
     const normalSpeed = Math.max(minSpeed, baseSpeed - slowdown);
@@ -461,7 +463,7 @@ export class TigerRoom {
 
       for (let i = this.food.length - 1; i >= 0; i--) {
         const f = this.food[i];
-        const eatRadius = p.radius + f.r + (f.type === "arnold" ? 16 : 8);
+        const eatRadius = p.radius + f.r + (f.type === "arnold" ? 24 : 8);
 
         if (dist2(p.x, p.y, f.x, f.y) < eatRadius ** 2) {
           p.score += f.v;
@@ -576,7 +578,7 @@ export class TigerRoom {
         b.y + rand(-18, 18),
         rand(5, 9),
         rand(1.2, 3.1),
-        Math.random() < 0.10 ? "picSnack" : "flag"
+        Math.random() < 0.42 ? "picSnack" : "flag"
       ));
     }
 
@@ -611,22 +613,21 @@ export class TigerRoom {
     const arnoldCount = this.food.filter(f => f.type === "arnold").length;
     const picSnackCount = this.food.filter(f => f.type === "picSnack").length;
     const flagCount = this.food.filter(f => f.type === "flag").length;
-if (arnoldCount < ARNOLD_TARGET && now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS) {
-  this.lastArnoldSpawn = now;
 
-  this.food.push(makeFood(
-    rand(170, WORLD - 170),
-    rand(170, WORLD - 170),
-    38,
-    100,
-    "arnold"
-  ));
+    if (arnoldCount < ARNOLD_TARGET && now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS) {
+      this.lastArnoldSpawn = now;
 
-  this.broadcast({
-    type: "event",
-    text: "Arnold Pikaar Schwarzenegger has spawned."
-  });
-}
+      for (let i = arnoldCount; i < ARNOLD_TARGET; i++) {
+        const pos = this.findFoodSpot(420);
+
+        this.food.push(makeFood(
+          pos.x,
+          pos.y,
+          95,
+          100,
+          "arnold"
+        ));
+      }
 
       this.broadcast({
         type: "event",
@@ -636,12 +637,26 @@ if (arnoldCount < ARNOLD_TARGET && now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS
 
     for (let i = picSnackCount; i < PIC_SNACK_TARGET; i++) {
       const pos = this.findFoodSpot(95);
-      this.food.push(makeFood(pos.x, pos.y, rand(7, 10), 5, "picSnack"));
+
+      this.food.push(makeFood(
+        pos.x,
+        pos.y,
+        rand(7, 10),
+        5,
+        "picSnack"
+      ));
     }
 
     for (let i = flagCount; i < FLAG_FOOD_TARGET; i++) {
       const pos = this.findFoodSpot(75);
-      this.food.push(makeFood(pos.x, pos.y, rand(5, 8), rand(0.8, 2.2), "flag"));
+
+      this.food.push(makeFood(
+        pos.x,
+        pos.y,
+        rand(5, 8),
+        rand(0.8, 2.2),
+        "flag"
+      ));
     }
 
     const maxFood = FLAG_FOOD_TARGET + PIC_SNACK_TARGET + ARNOLD_TARGET + 80;
@@ -657,6 +672,7 @@ if (arnoldCount < ARNOLD_TARGET && now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS
       const y = rand(50, WORLD - 50);
 
       let ok = true;
+
       for (const f of this.food) {
         if (dist2(x, y, f.x, f.y) < minDistance * minDistance) {
           ok = false;
@@ -714,7 +730,7 @@ if (arnoldCount < ARNOLD_TARGET && now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS
       };
     });
 
-    const food = shuffled(this.food)
+    const food = this.food
       .slice(0, MAX_FOOD_SEND)
       .map(f => ({
         x: Math.round(f.x),
@@ -1021,17 +1037,6 @@ function safeNation(v) {
   if (key === "GB") return "UK";
   if (key === "USA") return "US";
   return NATION_FLAGS[key] ? key : "OTHER";
-}
-
-function shuffled(arr) {
-  const copy = arr.slice();
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const t = copy[i];
-    copy[i] = copy[j];
-    copy[j] = t;
-  }
-  return copy;
 }
 
 function rand(a, b) {
