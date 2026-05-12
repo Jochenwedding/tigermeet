@@ -419,8 +419,8 @@ export class TigerRoom {
     const len = p.body.length;
     const slowdown = Math.min(85, len * 0.085);
 
-    const baseSpeed = 270;
-    const minSpeed = 185;
+    const baseSpeed = 280;
+    const minSpeed = 100;
     const normalSpeed = Math.max(minSpeed, baseSpeed - slowdown);
 
     const canBoost = p.boosting && p.body.length > 30;
