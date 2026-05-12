@@ -18,14 +18,14 @@ export default {
 
 const WORLD = 4200;
 
-const FLAG_FOOD_TARGET = 75;
-const PIC_SNACK_TARGET = 55;
+const FLAG_FOOD_TARGET = 45;
+const PIC_SNACK_TARGET = 45;
 const ARNOLD_TARGET = 4;
 const ARNOLD_SPAWN_MS = 60000;
 
 const TICK_MS = 16;
-const BROADCAST_MS = 75;
-const MAX_FOOD_SEND = 135;
+const BROADCAST_MS = 33;
+const MAX_FOOD_SEND = 105;
 
 const BOT_TARGET = 5;
 const BOT_RESPAWN_MS = 5000;
@@ -212,7 +212,7 @@ export class TigerRoom {
   onClose(ws) {
     const p = this.players.get(ws);
     if (p) {
-      this.saveTop(p.name, Math.round(p.score)).catch(() => {});
+      this.saveTop(p.name, Math.round(p.score), p.nation).catch(() => {});
       this.saveCountryScore(p.nation, Math.round(p.score)).catch(() => {});
     }
 
@@ -566,7 +566,7 @@ export class TigerRoom {
     }
 
     if (!dead.bot) {
-      this.saveTop(dead.name, Math.round(dead.score)).catch(() => {});
+     this.saveTop(dead.name, Math.round(dead.score), dead.nation).catch(() => {});
       this.saveCountryScore(dead.nation, Math.round(dead.score)).catch(() => {});
     }
 
@@ -802,9 +802,10 @@ export class TigerRoom {
     }
   }
 
-  async saveTop(name, score) {
+    async saveTop(name, score, nation = "OTHER") {
     name = safeName(name);
     score = Math.round(score);
+    nation = safeNation(nation);
 
     if (!score || score < 1) return;
 
@@ -817,11 +818,15 @@ export class TigerRoom {
     if (existing) {
       if (score > existing.score) {
         existing.score = score;
+        existing.nation = nation;
         existing.at = Date.now();
+        changed = true;
+      } else if (!existing.nation || existing.nation === "OTHER") {
+        existing.nation = nation;
         changed = true;
       }
     } else {
-      this.top10.push({ name, score, at: Date.now() });
+      this.top10.push({ name, score, nation, at: Date.now() });
       changed = true;
     }
 
@@ -830,7 +835,6 @@ export class TigerRoom {
     this.top10 = normalizeTop10(this.top10);
     await this.state.storage.put(TOP_KEY, this.top10);
   }
-
   async saveCountryScore(nation, score) {
     nation = safeNation(nation);
     score = Math.round(Number(score || 0));
@@ -990,10 +994,11 @@ function normalizeTop10(list) {
 
     if (!old || score > old.score) {
       byName.set(key, {
-        name,
-        score,
-        at: Number(item.at || Date.now())
-      });
+  name,
+  score,
+  nation: safeNation(item.nation || "OTHER"),
+  at: Number(item.at || Date.now())
+});
     }
   }
 
