@@ -37,8 +37,8 @@ const MORPHEUS_REPEAT_SPAWN_MS = 180000;
 const MORPHEUS_GATE_DELAY_MS = 10000;
 const MORPHEUS_PILL_TARGET_EACH = 14;
 
-const OUTSIDE_PILL_LIMIT_EACH = 1;
-const OUTSIDE_PILL_CHECK_MS = 45000;
+const OUTSIDE_PILL_LIMIT_EACH = 2;
+const OUTSIDE_PILL_CHECK_MS = 20000;
 
 const TICK_MS = 16;
 const BROADCAST_MS = 50;
@@ -51,12 +51,12 @@ const BOT_THINK_MS = 260;
 const BOOST_ACTIVE_MS = 3000;
 const BOOST_TOTAL_COOLDOWN_MS = 18000;
 
-const RED_PILL_MS = 10000;
-const BLUE_PILL_MS = 10000;
-const BUFF_COOLDOWN_MS = 30000;
+const RED_PILL_MS = 20000;
+const BLUE_PILL_MS = 20000;
+const BUFF_COOLDOWN_MS = 20000;
 
 const HAZARD_RESPAWN_MS = 60000;
-const ZEUS_SHOT_MS = 2000;
+const ZEUS_SHOT_MS = 1000;
 
 const TOP_KEY = "top10_v2";
 const PLAYERS_KEY = "known_players_v1";
@@ -757,7 +757,11 @@ export class TigerRoom {
       vy: (dy / d) * speed,
       r: 26,
       spawnedAt: Date.now(),
-      expiresAt: Date.now() + ttl
+      expiresAt: Date.now() + ttl,
+      ownerHazardId: zeus.id,
+      reflected: false,
+      reflectedBy: null,
+      reflectedByName: ""
     });
   }
 
@@ -777,18 +781,80 @@ export class TigerRoom {
         continue;
       }
 
+      if (p.reflected) {
+        let removed = false;
+        for (const hz of this.hazards) {
+          if (!hz.alive || hz.type !== "zeus") continue;
+
+          const hitRadius = p.r + hz.r * 0.48;
+          if (dist2(p.x, p.y, hz.x, hz.y) < hitRadius ** 2) {
+            hz.alive = false;
+            hz.deadUntil = now + HAZARD_RESPAWN_MS;
+
+            const killerName = p.reflectedByName || "Someone";
+            const killerPlayer = this.allPlayers().find(pl => pl.id === p.reflectedBy);
+            if (killerPlayer && killerPlayer.alive && !killerPlayer.spectator) {
+              killerPlayer.score += ZEUS_KILL_SCORE;
+            }
+
+            this.emitEvent(`${killerName} reflected Zeus lightning back ⚡`, "zeusDown");
+            this.projectiles.splice(i, 1);
+            removed = true;
+            break;
+          }
+        }
+        if (removed) continue;
+      }
+
       for (const player of this.allPlayers()) {
         if (!player.alive || player.spectator) continue;
 
-        const isImmune = now < Number(player.shieldUntil || 0) || now < Number(player.matrixImmuneUntil || 0);
-        if (isImmune) continue;
+        const hasBluePill = now < Number(player.shieldUntil || 0);
+        const hasMatrixPower = now < Number(player.matrixImmuneUntil || 0);
 
         const hitRadius = p.r + player.radius * 0.72;
-        if (dist2(p.x, p.y, player.x, player.y) < hitRadius ** 2) {
-          this.kill(player, null, "zeusLightning");
-          this.projectiles.splice(i, 1);
-          break;
+        if (dist2(p.x, p.y, player.x, player.y) >= hitRadius ** 2) continue;
+
+        if (!p.reflected && hasBluePill) {
+          const zeusTargets = this.hazards.filter(h => h.alive && h.type === "zeus");
+          if (zeusTargets.length) {
+            let targetZeus = zeusTargets[0];
+            let bestD2 = dist2(player.x, player.y, targetZeus.x, targetZeus.y);
+
+            for (const z of zeusTargets) {
+              const d2 = dist2(player.x, player.y, z.x, z.y);
+              if (d2 < bestD2) {
+                bestD2 = d2;
+                targetZeus = z;
+              }
+            }
+
+            const dx = targetZeus.x - player.x;
+            const dy = targetZeus.y - player.y;
+            const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+            const speed = 1150;
+
+            p.x = player.x;
+            p.y = player.y;
+            p.vx = (dx / d) * speed;
+            p.vy = (dy / d) * speed;
+            p.reflected = true;
+            p.reflectedBy = player.id;
+            p.reflectedByName = player.name;
+            p.expiresAt = now + 1400;
+
+            this.emitEvent(`${player.name} reflected Zeus lightning ⚡`, "zeusReflect");
+            break;
+          }
         }
+
+        if (hasMatrixPower) {
+          continue;
+        }
+
+        this.kill(player, null, "zeusLightning");
+        this.projectiles.splice(i, 1);
+        break;
       }
     }
   }
@@ -969,10 +1035,17 @@ export class TigerRoom {
         const hitRadius = p.radius + hz.r * 0.46;
         if (dist2(p.x, p.y, hz.x, hz.y) >= hitRadius ** 2) continue;
 
+        const hasRedPill = now < Number(p.speedUntil || 0);
+        const hasBluePill = now < Number(p.shieldUntil || 0);
+        const hasMatrixPower = now < Number(p.matrixImmuneUntil || 0);
+
         const canKillHazard =
-          now < Number(p.speedUntil || 0) ||
-          now < Number(p.shieldUntil || 0) ||
-          now < Number(p.matrixImmuneUntil || 0);
+          hz.type === "zeus"
+            ? hasMatrixPower
+            : (hasRedPill || hasBluePill || hasMatrixPower);
+
+        const protectedFromHazard =
+          hasBluePill || hasMatrixPower;
 
         if (canKillHazard) {
           hz.alive = false;
@@ -980,11 +1053,15 @@ export class TigerRoom {
 
           if (hz.type === "zeus") {
             p.score += ZEUS_KILL_SCORE;
-            this.emitEvent(`${p.name} zapped Zeus out of the sky ⚡`, "zeusDown");
+            this.emitEvent(`${p.name} destroyed Zeus ⚡`, "zeusDown");
           } else {
             p.score += GAY_KILL_SCORE;
             this.emitEvent(`${p.name} deleted ${hz.type === "gay2" ? "3CPBROMO" : "ARUGAY2 - Jorrit"} 💥`, "hazardDown");
           }
+          continue;
+        }
+
+        if (protectedFromHazard) {
           continue;
         }
 
@@ -1133,13 +1210,24 @@ export class TigerRoom {
     const redCount = this.food.filter(f => f.type === "redPill").length;
     const blueCount = this.food.filter(f => f.type === "bluePill").length;
 
-    if (redCount < OUTSIDE_PILL_LIMIT_EACH && Math.random() < 0.30) {
-      const pos = this.findFoodSpot(110);
-      this.food.push(makeFood(pos.x, pos.y, 22, 0, "redPill"));
+    if (redCount < OUTSIDE_PILL_LIMIT_EACH) {
+      const missing = OUTSIDE_PILL_LIMIT_EACH - redCount;
+      for (let i = 0; i < missing; i++) {
+        if (Math.random() < 0.55) {
+          const pos = this.findFoodSpot(110);
+          this.food.push(makeFood(pos.x, pos.y, 22, 0, "redPill"));
+        }
+      }
     }
-    if (blueCount < OUTSIDE_PILL_LIMIT_EACH && Math.random() < 0.30) {
-      const pos = this.findFoodSpot(110);
-      this.food.push(makeFood(pos.x, pos.y, 22, 0, "bluePill"));
+
+    if (blueCount < OUTSIDE_PILL_LIMIT_EACH) {
+      const missing = OUTSIDE_PILL_LIMIT_EACH - blueCount;
+      for (let i = 0; i < missing; i++) {
+        if (Math.random() < 0.70) {
+          const pos = this.findFoodSpot(110);
+          this.food.push(makeFood(pos.x, pos.y, 22, 0, "bluePill"));
+        }
+      }
     }
   }
 
@@ -1283,7 +1371,8 @@ export class TigerRoom {
       y: round1(p.y),
       r: Math.round(p.r),
       vx: round1(p.vx),
-      vy: round1(p.vy)
+      vy: round1(p.vy),
+      reflected: !!p.reflected
     }));
 
     const mazeWalls = this.morpheusEvent?.active
