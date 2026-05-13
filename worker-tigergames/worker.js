@@ -19,22 +19,26 @@ export default {
 const WORLD = 4200;
 
 const SNACK_TARGET = 58;
-const ARNOLD_EVENT_COUNT = 4;
-const GAY1_TARGET = 2;
-const GAY2_TARGET = 2;
+const ARNOLD_TARGET = 4;
 
+const GAY_TARGET = 2;
+const GAY2_TARGET = 2;
+const ZEUS_TARGET = 1;
+
+const HAZARD_KILL_SCORE = 25;
 const ARNOLD_SPAWN_MS = 60000;
-const FIRST_MORPHEUS_SPAWN_MS = 120000;
-const MORPHEUS_SPAWN_MS = 180000;
-const RED_PILL_TARGET = 14;
-const BLUE_PILL_TARGET = 14;
-const MAZE_LOCK_MS = 10000;
-const HAZARD_RESPAWN_MS = 60000;
-const MORPHEUS_IMMUNE_MS = 5000;
+
+const MORPHEUS_FIRST_SPAWN_MS = 120000;
+const MORPHEUS_REPEAT_SPAWN_MS = 180000;
+const MORPHEUS_GATE_DELAY_MS = 10000;
+const MORPHEUS_PILL_TARGET_EACH = 14;
+
+const OUTSIDE_PILL_LIMIT_EACH = 1;
+const OUTSIDE_PILL_CHECK_MS = 45000;
 
 const TICK_MS = 16;
 const BROADCAST_MS = 50;
-const MAX_FOOD_SEND = 150;
+const MAX_FOOD_SEND = 135;
 
 const BOT_TARGET = 5;
 const BOT_RESPAWN_MS = 5000;
@@ -42,8 +46,13 @@ const BOT_THINK_MS = 260;
 
 const BOOST_ACTIVE_MS = 3000;
 const BOOST_TOTAL_COOLDOWN_MS = 18000;
+
 const RED_PILL_MS = 10000;
 const BLUE_PILL_MS = 10000;
+const BUFF_COOLDOWN_MS = 30000;
+
+const HAZARD_RESPAWN_MS = 60000;
+const ZEUS_SHOT_MS = 2000;
 
 const TOP_KEY = "top10_v2";
 const PLAYERS_KEY = "known_players_v1";
@@ -63,9 +72,8 @@ const TOPGUN_NAMES = ["Maverick", "Iceman", "Goose", "Viper", "Jester"];
 const BOT_NATIONS = ["US", "US", "US", "US", "US"];
 
 const SNACK_IMAGES = ["pic2.webp", "pic3.webp", "pic4.webp", "pic5.webp", "pic6.webp", "pic7.webp"];
-const ARNOLD_IMAGE = "pic1.webp";
 
-const MORPHEUS_SPAWN_POINTS = [
+const MORPHEUS_SPAWNS = [
   { x: 980,  y: 980,  variant: 0 },
   { x: 3220, y: 980,  variant: 1 },
   { x: 980,  y: 3220, variant: 2 },
@@ -83,6 +91,7 @@ export class TigerRoom {
 
     this.food = [];
     this.hazards = [];
+    this.projectiles = [];
     this.morpheusEvent = null;
 
     this.lastTick = Date.now();
@@ -96,13 +105,18 @@ export class TigerRoom {
 
     this.lastBotThink = 0;
     this.lastBotRespawn = 0;
-    this.lastArnoldSpawn = Date.now() - ARNOLD_SPAWN_MS + 5000;
-    this.lastMorpheusSpawn = null;
-    this.nextMorpheusSpawnAt = Date.now() + FIRST_MORPHEUS_SPAWN_MS;
-    this.nextMorpheusSpawnIndex = 0;
+    this.lastArnoldSpawn = Date.now() - ARNOLD_SPAWN_MS + 3000;
+    this.nextMorpheusSpawnAt = Date.now() + MORPHEUS_FIRST_SPAWN_MS;
+    this.lastOutsidePillCheck = 0;
+    this.morpheusSpawnIndex = 0;
 
-    this.eventCounter = 0;
-    this.currentEvent = null;
+    this.lastEvent = {
+      id: "",
+      type: "",
+      text: "",
+      at: 0,
+      mazeUnlockAt: 0
+    };
 
     this.state.blockConcurrencyWhile(async () => {
       this.top10 = normalizeTop10((await this.state.storage.get(TOP_KEY)) || []);
@@ -155,26 +169,32 @@ export class TigerRoom {
       return json({ ok: false, error: "Unauthorized tiger move" }, 401);
     }
 
+    const now = Date.now();
+
     const online = [...this.players.values()].map(p => ({
       name: p.name,
       nation: p.nation,
       score: Math.round(p.score || 0),
       alive: !!p.alive,
       len: p.body ? p.body.length : 0,
-      shieldMs: Math.max(0, Number(p.shieldUntil || 0) - Date.now()),
-      speedMs: Math.max(0, Number(p.speedUntil || 0) - Date.now()),
-      matrixImmuneMs: Math.max(0, Number(p.matrixImmuneUntil || 0) - Date.now())
+      shieldMs: Math.max(0, Number(p.shieldUntil || 0) - now),
+      speedMs: Math.max(0, Number(p.speedUntil || 0) - now),
+      matrixImmuneMs: Math.max(0, Number(p.matrixImmuneUntil || 0) - now),
+      buffCooldownMs: Math.max(0, Number(p.buffCooldownUntil || 0) - now)
     })).sort((a, b) => b.score - a.score);
 
     return json({
       ok: true,
       game: "Tigergames Online",
-      now: Date.now(),
+      now,
       onlineCount: online.length,
       botCount: this.bots.size,
       morpheusActive: !!this.morpheusEvent,
       arnoldOnMap: this.food.filter(f => f.type === "arnold").length,
-      activeHazards: this.hazards.filter(h => !h.deadUntil || h.deadUntil <= Date.now()).length,
+      gayOnMap: this.hazards.filter(h => h.alive && h.type === "gay").length,
+      gay2OnMap: this.hazards.filter(h => h.alive && h.type === "gay2").length,
+      zeusOnMap: this.hazards.filter(h => h.alive && h.type === "zeus").length,
+      lightningCount: this.projectiles.length,
       online,
       top10: this.top10,
       countryTop3: this.countryTop3(),
@@ -203,8 +223,7 @@ export class TigerRoom {
         boost: false
       });
 
-      this.broadcastEvent("join", `${name} joined Tigergames Online 🐯`);
-
+      this.emitEvent(`${name} joined Tigergames Online 🐯`, "join");
       this.ensureLoop();
       this.broadcastState(true);
       return;
@@ -275,7 +294,8 @@ export class TigerRoom {
 
       shieldUntil: 0,
       speedUntil: 0,
-      matrixImmuneUntil: 0
+      matrixImmuneUntil: 0,
+      buffCooldownUntil: 0
     };
 
     const startLen = bot ? Math.floor(rand(20, 38)) : 20;
@@ -313,7 +333,7 @@ export class TigerRoom {
 
     this.seedFood();
     this.ensureBots();
-    this.ensureHazards();
+    this.ensureHazards(Date.now());
 
     this.lastTick = Date.now();
     this.lastBroadcast = 0;
@@ -325,12 +345,9 @@ export class TigerRoom {
     if (this.players.size === 0) {
       this.bots.clear();
       this.hazards = [];
+      this.projectiles = [];
       this.morpheusEvent = null;
       this.food = [];
-      this.currentEvent = null;
-      this.lastMorpheusSpawn = null;
-      this.nextMorpheusSpawnAt = Date.now() + FIRST_MORPHEUS_SPAWN_MS;
-      this.nextMorpheusSpawnIndex = 0;
 
       for (const id of [...this.inputs.keys()]) {
         if (String(id).startsWith("bot-")) this.inputs.delete(id);
@@ -346,7 +363,7 @@ export class TigerRoom {
     this.lastTick = now;
 
     this.seedFood();
-    this.ensureHazards();
+    this.ensureHazards(now);
     this.updateMorpheusGate(now);
 
     if (now - this.lastBotThink >= BOT_THINK_MS) {
@@ -359,6 +376,8 @@ export class TigerRoom {
     }
 
     this.updateHazards(dt, now);
+    this.updateProjectiles(dt, now);
+
     this.handleEating(now);
     this.handleCrashes(now);
     this.handleMazeWallCrashes(now);
@@ -383,6 +402,24 @@ export class TigerRoom {
     return [...this.players.values()];
   }
 
+  emitEvent(text = "", eventType = "", extra = {}) {
+    this.lastEvent = {
+      id: crypto.randomUUID(),
+      type: eventType || "",
+      text: text || "",
+      at: Date.now(),
+      mazeUnlockAt: extra.mazeUnlockAt || 0
+    };
+
+    this.broadcast({
+      type: "event",
+      text: text || "",
+      eventType: eventType || "",
+      eventId: this.lastEvent.id,
+      ...extra
+    });
+  }
+
   updateBotBrains() {
     const now = Date.now();
     const humans = this.realPlayers().filter(p => p.alive);
@@ -391,11 +428,11 @@ export class TigerRoom {
     for (const bot of this.bots.values()) {
       if (!bot.alive) continue;
 
-      let targetAngle = bot.angle + rand(-0.9, 0.9);
+      let targetAngle = bot.angle + rand(-1.1, 1.1);
       let boost = false;
 
       const nearestHuman = nearest(bot, humans, 740);
-      const nearestFood = nearest(bot, this.food.filter(f => f.type !== "morpheus"), 1150);
+      const nearestFood = nearest(bot, this.food.filter(f => f.type !== "morpheus"), 1200);
       const danger = nearestDanger(bot, all);
 
       if (danger && danger.d < bot.radius + danger.other.radius + 75) {
@@ -426,7 +463,7 @@ export class TigerRoom {
         } else if (nearestFood) {
           targetAngle = Math.atan2(nearestFood.item.y - bot.y, nearestFood.item.x - bot.x);
         }
-      } else if (this.morpheusEvent && this.morpheusEvent.active && now >= this.morpheusEvent.unlockAt && Math.random() < 0.28) {
+      } else if (this.morpheusEvent && this.morpheusEvent.active && Math.random() < 0.24) {
         targetAngle = Math.atan2(this.morpheusEvent.center.y - bot.y, this.morpheusEvent.center.x - bot.x);
       } else if (nearestFood) {
         targetAngle = Math.atan2(nearestFood.item.y - bot.y, nearestFood.item.x - bot.x);
@@ -450,7 +487,7 @@ export class TigerRoom {
       boost: false
     };
 
-    const turnRate = Math.max(2.6, 6.6 - Math.min(3.1, Math.sqrt(p.body.length) * 0.15));
+    const turnRate = Math.max(2.4, 6.9 - Math.min(3.6, Math.sqrt(p.body.length) * 0.17));
     p.angle += angleDiff(p.angle, input.angle) * Math.min(1, dt * turnRate);
 
     if (input.boost && !p.boosting && p.body.length > 30 && now >= Number(p.boostCooldownUntil || 0)) {
@@ -482,7 +519,7 @@ export class TigerRoom {
         this.food.push(makeFood(
           tail.x + rand(-8, 8),
           tail.y + rand(-8, 8),
-          rand(10, 12),
+          rand(7, 9),
           1.1,
           "snack"
         ));
@@ -504,58 +541,197 @@ export class TigerRoom {
     p.radius = clamp(11 + Math.sqrt(radiusGrowthLen) * 1.04, 13, 38);
   }
 
-  ensureHazards() {
-    this.ensureHazardType("gay", "gay.webp", GAY1_TARGET);
-    this.ensureHazardType("gay2", "gay2.webp", GAY2_TARGET);
+  ensureHazards(now) {
+    for (const hz of this.hazards) {
+      if (!hz.alive && now >= Number(hz.deadUntil || 0)) {
+        this.respawnHazard(hz);
+      }
+    }
+
+    while (this.countAliveHazards("gay") < GAY_TARGET) {
+      this.hazards.push(this.makeHazard("gay"));
+    }
+    while (this.countAliveHazards("gay2") < GAY2_TARGET) {
+      this.hazards.push(this.makeHazard("gay2"));
+    }
+    while (this.countAliveHazards("zeus") < ZEUS_TARGET) {
+      this.hazards.push(this.makeHazard("zeus"));
+    }
   }
 
-  ensureHazardType(type, img, target) {
-    const current = this.hazards.filter(h => h.type === type).length;
-    for (let i = current; i < target; i++) {
-      this.hazards.push({
-        id: `${type}-` + crypto.randomUUID(),
-        type,
-        img,
-        x: rand(250, WORLD - 250),
-        y: rand(250, WORLD - 250),
-        r: 72,
-        vx: rand(-20, 20),
-        vy: rand(-20, 20),
-        deadUntil: 0
-      });
+  countAliveHazards(type) {
+    return this.hazards.filter(h => h.alive && h.type === type).length;
+  }
+
+  makeHazard(type) {
+    if (type === "zeus") {
+      return {
+        id: "zeus-" + crypto.randomUUID(),
+        type: "zeus",
+        img: "zeus.webp",
+        x: 160,
+        y: 160,
+        r: 106,
+        alive: true,
+        deadUntil: 0,
+        routeIndex: 0,
+        lastShotAt: 0
+      };
     }
+
+    return {
+      id: type + "-" + crypto.randomUUID(),
+      type,
+      img: type === "gay2" ? "gay2.webp" : "gay.webp",
+      x: rand(250, WORLD - 250),
+      y: rand(250, WORLD - 250),
+      r: 72,
+      vx: rand(-15, 15),
+      vy: rand(-15, 15),
+      alive: true,
+      deadUntil: 0
+    };
+  }
+
+  respawnHazard(hz) {
+    if (hz.type === "zeus") {
+      hz.alive = true;
+      hz.deadUntil = 0;
+      hz.x = 160;
+      hz.y = 160;
+      hz.routeIndex = 0;
+      hz.lastShotAt = 0;
+      return;
+    }
+
+    hz.alive = true;
+    hz.deadUntil = 0;
+    hz.x = rand(250, WORLD - 250);
+    hz.y = rand(250, WORLD - 250);
+    hz.vx = rand(-15, 15);
+    hz.vy = rand(-15, 15);
   }
 
   updateHazards(dt, now) {
     const alivePlayers = this.allPlayers().filter(p => p.alive);
 
     for (const hz of this.hazards) {
-      if (hz.deadUntil && hz.deadUntil > now) continue;
+      if (!hz.alive) continue;
 
-      const near = nearest(hz, alivePlayers, 900);
-      let targetVx = 0;
-      let targetVy = 0;
+      if (hz.type === "gay" || hz.type === "gay2") {
+        const near = nearest(hz, alivePlayers, 560);
+        let targetVx = 0;
+        let targetVy = 0;
 
-      if (near) {
-        const dx = near.item.x - hz.x;
-        const dy = near.item.y - hz.y;
-        const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
-        const speed = near.d < 320 ? 205 : 178;
-        targetVx = (dx / d) * speed;
-        targetVy = (dy / d) * speed;
-      } else {
-        targetVx = (hz.vx || 0) + rand(-12, 12);
-        targetVy = (hz.vy || 0) + rand(-12, 12);
+        if (near) {
+          const dx = near.item.x - hz.x;
+          const dy = near.item.y - hz.y;
+          const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+          const speed = hz.type === "gay2" ? 170 : 160;
+          targetVx = (dx / d) * speed;
+          targetVy = (dy / d) * speed;
+        } else {
+          targetVx = (hz.vx || 0) + rand(-10, 10);
+          targetVy = (hz.vy || 0) + rand(-10, 10);
+        }
+
+        hz.vx = lerpNum(hz.vx || 0, clamp(targetVx, -175, 175), 0.06);
+        hz.vy = lerpNum(hz.vy || 0, clamp(targetVy, -175, 175), 0.06);
+
+        hz.x = clamp(hz.x + hz.vx * dt, 45, WORLD - 45);
+        hz.y = clamp(hz.y + hz.vy * dt, 45, WORLD - 45);
+
+        if (hz.x <= 46 || hz.x >= WORLD - 46) hz.vx *= -0.6;
+        if (hz.y <= 46 || hz.y >= WORLD - 46) hz.vy *= -0.6;
+        continue;
       }
 
-      hz.vx = lerpNum(hz.vx || 0, clamp(targetVx, -215, 215), 0.085);
-      hz.vy = lerpNum(hz.vy || 0, clamp(targetVy, -215, 215), 0.085);
+      if (hz.type === "zeus") {
+        const path = [
+          { x: 160, y: 160 },
+          { x: WORLD - 160, y: 160 },
+          { x: WORLD - 160, y: WORLD - 160 },
+          { x: 160, y: WORLD - 160 }
+        ];
 
-      hz.x = clamp(hz.x + hz.vx * dt, 45, WORLD - 45);
-      hz.y = clamp(hz.y + hz.vy * dt, 45, WORLD - 45);
+        const target = path[hz.routeIndex % path.length];
+        const dx = target.x - hz.x;
+        const dy = target.y - hz.y;
+        const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+        const speed = 110;
 
-      if (hz.x <= 46 || hz.x >= WORLD - 46) hz.vx *= -0.7;
-      if (hz.y <= 46 || hz.y >= WORLD - 46) hz.vy *= -0.7;
+        hz.x += (dx / d) * speed * dt;
+        hz.y += (dy / d) * speed * dt;
+
+        if (d < 30) hz.routeIndex = (hz.routeIndex + 1) % path.length;
+
+        const shotTarget = nearest(hz, alivePlayers, 620);
+        if (shotTarget && now - Number(hz.lastShotAt || 0) >= ZEUS_SHOT_MS) {
+          hz.lastShotAt = now;
+          this.spawnLightning(hz, shotTarget.item);
+          this.emitEvent("", "zeusShot");
+        }
+      }
+    }
+  }
+
+  spawnLightning(zeus, target) {
+    const dx = target.x - zeus.x;
+    const dy = target.y - zeus.y;
+    const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+    const speed = 860;
+    const ttl = Math.min(2200, Math.max(650, (d / speed) * 1000 + 200));
+
+    this.projectiles.push({
+      id: "bolt-" + crypto.randomUUID(),
+      type: "zeusBolt",
+      x: zeus.x,
+      y: zeus.y,
+      vx: (dx / d) * speed,
+      vy: (dy / d) * speed,
+      r: 18,
+      spawnedAt: Date.now(),
+      expiresAt: Date.now() + ttl
+    });
+  }
+
+  updateProjectiles(dt, now) {
+    for (let i = this.projectiles.length - 1; i >= 0; i--) {
+      const p = this.projectiles[i];
+
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+
+      if (
+        now >= Number(p.expiresAt || 0) ||
+        p.x < -50 || p.x > WORLD + 50 ||
+        p.y < -50 || p.y > WORLD + 50
+      ) {
+        this.projectiles.splice(i, 1);
+        continue;
+      }
+
+      for (const player of this.allPlayers()) {
+        if (!player.alive) continue;
+
+        const isImmune = now < Number(player.shieldUntil || 0) || now < Number(player.matrixImmuneUntil || 0);
+        if (isImmune) continue;
+
+        const hitRadius = p.r + player.radius * 0.55;
+        if (dist2(p.x, p.y, player.x, player.y) < hitRadius ** 2) {
+          this.kill(player, null, "zeusLightning");
+          this.projectiles.splice(i, 1);
+          break;
+        }
+      }
+    }
+  }
+
+  updateMorpheusGate(now) {
+    if (!this.morpheusEvent || !this.morpheusEvent.active) return;
+    if (!this.morpheusEvent.gateOpen && now >= this.morpheusEvent.unlockAt) {
+      this.morpheusEvent.gateOpen = true;
+      this.emitEvent("GATES OPEN", "matrixGateOpen");
     }
   }
 
@@ -568,48 +744,54 @@ export class TigerRoom {
         const eatRadius = p.radius + f.r + (
           f.type === "morpheus" ? 30 :
           f.type === "arnold" ? 24 :
-          f.type === "redPill" || f.type === "bluePill" ? 12 :
+          f.type === "redPill" || f.type === "bluePill" ? 10 :
           7
         );
 
-        if (dist2(p.x, p.y, f.x, f.y) < eatRadius ** 2) {
-          if (f.type === "snack") {
-            p.score += f.v;
-            this.food.splice(i, 1);
-            continue;
-          }
+        if (dist2(p.x, p.y, f.x, f.y) >= eatRadius ** 2) continue;
 
-          if (f.type === "arnold") {
-            p.score += 100;
-            this.food.splice(i, 1);
-            continue;
-          }
+        if (f.type === "snack") {
+          p.score += f.v;
+          this.food.splice(i, 1);
+          continue;
+        }
+
+        if (f.type === "arnold") {
+          p.score += 100;
+          this.food.splice(i, 1);
+          continue;
+        }
+
+        if (f.type === "redPill" || f.type === "bluePill") {
+          const hasAnyBuff =
+            now < Number(p.speedUntil || 0) ||
+            now < Number(p.shieldUntil || 0) ||
+            now < Number(p.matrixImmuneUntil || 0);
+          const buffLocked = now < Number(p.buffCooldownUntil || 0);
+
+          if (hasAnyBuff || buffLocked) continue;
 
           if (f.type === "redPill") {
             p.speedUntil = now + RED_PILL_MS;
-            this.food.splice(i, 1);
-            if (!p.bot) this.sendToPlayer(p.id, { type: "event", text: "RED PILL ACTIVE — 10s SPEED + gayboiis killable" });
-            continue;
-          }
-
-          if (f.type === "bluePill") {
+            p.buffCooldownUntil = now + RED_PILL_MS + BUFF_COOLDOWN_MS;
+          } else {
             p.shieldUntil = now + BLUE_PILL_MS;
-            this.food.splice(i, 1);
-            if (!p.bot) this.sendToPlayer(p.id, { type: "event", text: "BLUE PILL ACTIVE — 10s PHASE + gayboiis killable" });
-            continue;
+            p.buffCooldownUntil = now + BLUE_PILL_MS + BUFF_COOLDOWN_MS;
           }
 
-          if (f.type === "morpheus") {
-            p.score += 500;
-            this.massGrowPlayer(p, 150);
-            p.matrixImmuneUntil = now + MORPHEUS_IMMUNE_MS;
-            this.food.splice(i, 1);
-            this.clearMorpheusEvent();
-            this.broadcastEvent("morpheusTaken", `${p.name} has taken Morpheus.`);
-            this.broadcastEvent("matrixCollapse", "THE MATRIX IS COLLAPSING");
-            if (!p.bot) this.sendToPlayer(p.id, { type: "event", text: "MORPHEUS POWER — 5s IMMUNE TO EVERYTHING" });
-            continue;
-          }
+          this.food.splice(i, 1);
+          continue;
+        }
+
+        if (f.type === "morpheus") {
+          p.score += 500;
+          this.massGrowPlayer(p, 120);
+          p.matrixImmuneUntil = now + 5000;
+          this.food.splice(i, 1);
+          this.clearMorpheusEvent();
+          this.emitEvent(`${p.name} has taken Morpheus.`, "morpheusTaken");
+          this.emitEvent("THE MATRIX IS COLLAPSING", "matrixCollapse");
+          continue;
         }
       }
     }
@@ -627,7 +809,6 @@ export class TigerRoom {
 
     for (const p of all) {
       if (!p.alive) continue;
-      if (now < Number(p.matrixImmuneUntil || 0)) continue;
 
       if (p.x <= 22 || p.x >= WORLD - 22 || p.y <= 22 || p.y >= WORLD - 22) {
         this.kill(p, null, "border");
@@ -690,8 +871,8 @@ export class TigerRoom {
   handleMazeWallCrashes(now) {
     if (!this.morpheusEvent || !this.morpheusEvent.active) return;
 
-    const walls = this.getActiveMazeWalls(now);
-    if (!walls.length) return;
+    const walls = this.morpheusEvent.walls || [];
+    const gate = !this.morpheusEvent.gateOpen ? this.morpheusEvent.gate : null;
 
     for (const p of this.allPlayers()) {
       if (!p.alive) continue;
@@ -703,41 +884,47 @@ export class TigerRoom {
           break;
         }
       }
+
+      if (!p.alive) continue;
+
+      if (gate && circleRectHit(p.x, p.y, p.radius * 0.75, gate)) {
+        this.kill(p, null, "matrixwall");
+      }
     }
   }
 
   handleHazardHits(now) {
-    if (!this.hazards.length) return;
-
     for (const hz of this.hazards) {
-      if (hz.deadUntil && hz.deadUntil > now) continue;
+      if (!hz.alive) continue;
 
       for (const p of this.allPlayers()) {
         if (!p.alive) continue;
 
-        const hitRadius = p.radius + hz.r * 0.28;
-        if (dist2(p.x, p.y, hz.x, hz.y) < hitRadius ** 2) {
-          const canKillHazard =
-            now < Number(p.speedUntil || 0) ||
-            now < Number(p.shieldUntil || 0) ||
-            now < Number(p.matrixImmuneUntil || 0);
+        const hitRadius = p.radius + hz.r * 0.46;
+        if (dist2(p.x, p.y, hz.x, hz.y) >= hitRadius ** 2) continue;
 
-          if (canKillHazard) {
-            hz.deadUntil = now + HAZARD_RESPAWN_MS;
-            hz.x = rand(250, WORLD - 250);
-            hz.y = rand(250, WORLD - 250);
-            hz.vx = rand(-20, 20);
-            hz.vy = rand(-20, 20);
+        const canKillHazard =
+          now < Number(p.speedUntil || 0) ||
+          now < Number(p.shieldUntil || 0) ||
+          now < Number(p.matrixImmuneUntil || 0);
 
-            if (!p.bot) {
-              this.sendToPlayer(p.id, {
-                type: "event",
-                text: hz.type === "gay2" ? "3CPBROMO deleted." : "ARUGAY2 - Jorrit deleted."
-              });
-            }
-          } else if (now >= Number(p.matrixImmuneUntil || 0)) {
-            this.kill(p, null, hz.type === "gay2" ? "gay2" : "gay");
+        if (canKillHazard) {
+          hz.alive = false;
+          hz.deadUntil = now + HAZARD_RESPAWN_MS;
+          p.score += HAZARD_KILL_SCORE;
+
+          if (hz.type === "zeus") {
+            this.emitEvent(`${p.name} zapped Zeus out of the sky ⚡`, "zeusDown");
+          } else {
+            this.emitEvent(`${p.name} deleted ${hz.type === "gay2" ? "3CPBROMO" : "ARUGAY2 - Jorrit"} 💥`, "hazardDown");
           }
+          continue;
+        }
+
+        if (hz.type === "gay" || hz.type === "gay2") {
+          this.kill(p, null, "gay");
+        } else if (hz.type === "zeus") {
+          this.kill(p, null, "zeusTouch");
         }
       }
     }
@@ -781,29 +968,25 @@ export class TigerRoom {
       this.food.push(makeFood(
         b.x + rand(-18, 18),
         b.y + rand(-18, 18),
-        rand(10, 12),
+        rand(7, 10),
         rand(1.2, 3.1),
         "snack"
       ));
     }
 
     let text = `${dead.name} died 💀`;
-    let eventType = "death";
 
     if (reason === "self") text = `${dead.name} ate his own tiger tail 🐯`;
     else if (reason === "border") text = `${dead.name} left the Tiger zone 💀`;
     else if (reason === "matrixwall") text = `${dead.name} got deleted by the Matrix wall 💀`;
-    else if (reason === "gay" || reason === "gay2") {
-      text = `aah lil gay fella i got u — ${dead.name} got caught by ${reason === "gay2" ? "3CPBROMO" : "ARUGAY2 - Jorrit"} 💀`;
-      eventType = "gayKill";
-    } else if (reason === "headon" && killer && killer !== dead) {
-      text = `${killer.name} won the head-on against ${dead.name} 💥`;
-    } else if (killer && killer !== dead) {
-      text = `${killer.name} destroyed ${dead.name} 🐯`;
-    }
+    else if (reason === "gay") text = `aah lil gay fella i got u — ${dead.name} 💀`;
+    else if (reason === "zeusLightning") text = `${dead.name} got smoked by Zeus lightning ⚡`;
+    else if (reason === "zeusTouch") text = `${dead.name} touched Zeus and got fried ⚡`;
+    else if (reason === "headon" && killer && killer !== dead) text = `${killer.name} won the head-on against ${dead.name} 💥`;
+    else if (killer && killer !== dead) text = `${killer.name} destroyed ${dead.name} 🐯`;
 
     if (!dead.bot || !killer?.bot) {
-      this.broadcastEvent(eventType, text);
+      this.emitEvent(text, "death");
     }
 
     this.broadcastState(true);
@@ -822,118 +1005,110 @@ export class TigerRoom {
   seedFood() {
     const now = Date.now();
 
-    this.food = this.food.filter(f => {
-      return f && (
-        f.type === "snack" ||
-        f.type === "arnold" ||
-        f.type === "morpheus" ||
-        f.type === "redPill" ||
-        f.type === "bluePill"
-      );
-    });
-
     const snackCount = this.food.filter(f => f.type === "snack").length;
-    const redCount = this.food.filter(f => f.type === "redPill").length;
-    const blueCount = this.food.filter(f => f.type === "bluePill").length;
+    const arnoldCount = this.food.filter(f => f.type === "arnold").length;
 
     if (now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS) {
       this.lastArnoldSpawn = now;
-      this.spawnArnoldWave();
+      while (this.food.filter(f => f.type === "arnold").length < ARNOLD_TARGET) {
+        const pos = this.findFoodSpot(440);
+        this.food.push(makeFood(pos.x, pos.y, 92, 100, "arnold"));
+      }
+      this.emitEvent("Arnold has spawned.", "arnoldSpawn");
     }
 
     if (!this.morpheusEvent && now >= this.nextMorpheusSpawnAt) {
       this.spawnMorpheusEvent(now);
+      this.nextMorpheusSpawnAt = now + MORPHEUS_REPEAT_SPAWN_MS;
+    }
+
+    if (this.morpheusEvent && this.morpheusEvent.active) {
+      this.ensureMorpheusPills();
+    } else {
+      this.ensureRareOutsidePills(now);
     }
 
     for (let i = snackCount; i < SNACK_TARGET; i++) {
-      const pos = this.findFoodSpot(110);
-      this.food.push(makeFood(pos.x, pos.y, rand(10, 12), rand(1.3, 5.4), "snack"));
+      const pos = this.findFoodSpot(92);
+      this.food.push(makeFood(pos.x, pos.y, rand(12, 15), rand(1.3, 5.4), "snack"));
     }
 
-    for (let i = redCount; i < RED_PILL_TARGET; i++) {
-      const pos = this.findPillSpot(110);
-      this.food.push(makeFood(pos.x, pos.y, 24, 0, "redPill"));
+    while (this.food.filter(f => f.type === "snack").length > SNACK_TARGET + 30) {
+      const idx = this.food.findIndex(f => f.type === "snack");
+      if (idx === -1) break;
+      this.food.splice(idx, 1);
     }
 
-    for (let i = blueCount; i < BLUE_PILL_TARGET; i++) {
-      const pos = this.findPillSpot(110);
-      this.food.push(makeFood(pos.x, pos.y, 24, 0, "bluePill"));
-    }
-
-    const maxFood = SNACK_TARGET + 24 + 12 + 120;
-    if (this.food.length > maxFood) {
-      this.food.splice(0, this.food.length - maxFood);
+    while (this.food.length > MAX_FOOD_SEND + 55) {
+      const idx = this.food.findIndex(f => f.type === "snack");
+      if (idx === -1) break;
+      this.food.splice(idx, 1);
     }
   }
 
-  spawnArnoldWave() {
-    for (let i = 0; i < ARNOLD_EVENT_COUNT; i++) {
-      const pos = this.findFoodSpot(420);
-      this.food.push(makeFood(pos.x, pos.y, 92, 100, "arnold"));
+  ensureMorpheusPills() {
+    const redCount = this.food.filter(f => f.type === "redPill").length;
+    const blueCount = this.food.filter(f => f.type === "bluePill").length;
+
+    for (let i = redCount; i < MORPHEUS_PILL_TARGET_EACH; i++) {
+      const pos = this.findFoodSpot(110);
+      this.food.push(makeFood(pos.x, pos.y, 22, 0, "redPill"));
     }
-    this.broadcastEvent("arnoldSpawn", "Arnold Pikhaar Shwarzenegger has spawned.");
+    for (let i = blueCount; i < MORPHEUS_PILL_TARGET_EACH; i++) {
+      const pos = this.findFoodSpot(110);
+      this.food.push(makeFood(pos.x, pos.y, 22, 0, "bluePill"));
+    }
+  }
+
+  ensureRareOutsidePills(now) {
+    if (now - this.lastOutsidePillCheck < OUTSIDE_PILL_CHECK_MS) return;
+    this.lastOutsidePillCheck = now;
+
+    const redCount = this.food.filter(f => f.type === "redPill").length;
+    const blueCount = this.food.filter(f => f.type === "bluePill").length;
+
+    if (redCount < OUTSIDE_PILL_LIMIT_EACH && Math.random() < 0.30) {
+      const pos = this.findFoodSpot(110);
+      this.food.push(makeFood(pos.x, pos.y, 22, 0, "redPill"));
+    }
+    if (blueCount < OUTSIDE_PILL_LIMIT_EACH && Math.random() < 0.30) {
+      const pos = this.findFoodSpot(110);
+      this.food.push(makeFood(pos.x, pos.y, 22, 0, "bluePill"));
+    }
   }
 
   spawnMorpheusEvent(now) {
-    const point = MORPHEUS_SPAWN_POINTS[this.nextMorpheusSpawnIndex % MORPHEUS_SPAWN_POINTS.length];
-    this.nextMorpheusSpawnIndex++;
+    const spawn = MORPHEUS_SPAWNS[this.morpheusSpawnIndex % MORPHEUS_SPAWNS.length];
+    this.morpheusSpawnIndex++;
 
-    const center = {
-      x: clamp(point.x, 640, WORLD - 640),
-      y: clamp(point.y, 640, WORLD - 640)
-    };
-
-    const maze = buildMatrixMazeVariant(center.x, center.y, point.variant);
-    const unlockAt = now + MAZE_LOCK_MS;
+    const maze = buildMatrixMazeVariant(spawn.x, spawn.y, spawn.variant);
 
     this.morpheusEvent = {
       active: true,
       spawnedAt: now,
-      center,
-      variant: point.variant,
-      baseWalls: maze.baseWalls,
-      gateWall: maze.gateWall,
-      unlockAt,
-      opened: false
+      center: { x: spawn.x, y: spawn.y },
+      walls: maze.walls,
+      gate: maze.gate,
+      gateOpen: false,
+      unlockAt: now + MORPHEUS_GATE_DELAY_MS
     };
 
-    this.lastMorpheusSpawn = now;
-    this.nextMorpheusSpawnAt = now + MORPHEUS_SPAWN_MS;
+    this.food = this.food.filter(f => f.type !== "morpheus" && f.type !== "redPill" && f.type !== "bluePill");
+    this.food.push(makeFood(spawn.x, spawn.y, 120, 500, "morpheus"));
+    this.ensureMorpheusPills();
 
-    this.food = this.food.filter(f => f.type !== "morpheus");
-    this.food.push(makeFood(center.x, center.y, 120, 500, "morpheus"));
-
-    this.broadcastEvent("morpheusSpawn", "ENTER THE MATRIX");
-  }
-
-  updateMorpheusGate(now) {
-    if (!this.morpheusEvent || !this.morpheusEvent.active) return;
-    if (now >= this.morpheusEvent.unlockAt && !this.morpheusEvent.opened) {
-      this.morpheusEvent.opened = true;
-      this.broadcastEvent("matrixGateOpen", "GATES OPEN");
-    }
+    this.emitEvent("ENTER THE MATRIX", "morpheusSpawn", {
+      mazeUnlockAt: this.morpheusEvent.unlockAt
+    });
   }
 
   clearMorpheusEvent() {
     this.morpheusEvent = null;
-  }
-
-  getActiveMazeWalls(now = Date.now()) {
-    if (!this.morpheusEvent || !this.morpheusEvent.active) return [];
-    if (now < this.morpheusEvent.unlockAt) {
-      return [...this.morpheusEvent.baseWalls, this.morpheusEvent.gateWall];
-    }
-    return [...this.morpheusEvent.baseWalls];
-  }
-
-  getGateWall(now = Date.now()) {
-    if (!this.morpheusEvent || !this.morpheusEvent.active) return null;
-    if (now < this.morpheusEvent.unlockAt) return this.morpheusEvent.gateWall;
-    return null;
+    this.food = this.food.filter(f => f.type !== "morpheus" && f.type !== "redPill" && f.type !== "bluePill");
   }
 
   findFoodSpot(minDistance = 70) {
-    for (let tries = 0; tries < 24; tries++) {
+    for (let tries = 0; tries < 22; tries++) {
       const x = rand(80, WORLD - 80);
       const y = rand(80, WORLD - 80);
 
@@ -946,10 +1121,7 @@ export class TigerRoom {
         }
       }
 
-      if (!ok) continue;
-
-      const mazeWalls = this.morpheusEvent ? this.getActiveMazeWalls(Date.now()) : [];
-      if (!pointInAnyRect(x, y, mazeWalls)) {
+      if (ok && (!this.morpheusEvent || !pointInAnyRect(x, y, this.morpheusEvent.walls))) {
         return { x, y };
       }
     }
@@ -958,27 +1130,6 @@ export class TigerRoom {
       x: rand(80, WORLD - 80),
       y: rand(80, WORLD - 80)
     };
-  }
-
-  findPillSpot(minDistance = 90) {
-    for (let tries = 0; tries < 40; tries++) {
-      const x = rand(90, WORLD - 90);
-      const y = rand(90, WORLD - 90);
-
-      const walls = this.morpheusEvent ? this.getActiveMazeWalls(Date.now()) : [];
-      if (pointInAnyRect(x, y, walls)) continue;
-
-      let nearOther = false;
-      for (const f of this.food) {
-        if (dist2(x, y, f.x, f.y) < minDistance * minDistance) {
-          nearOther = true;
-          break;
-        }
-      }
-      if (!nearOther) return { x, y };
-    }
-
-    return this.findFoodSpot(minDistance);
   }
 
   broadcastState(force = false) {
@@ -1002,6 +1153,7 @@ export class TigerRoom {
       const shieldMs = Math.max(0, Number(p.shieldUntil || 0) - now);
       const speedMs = Math.max(0, Number(p.speedUntil || 0) - now);
       const matrixImmuneMs = Math.max(0, Number(p.matrixImmuneUntil || 0) - now);
+      const buffCooldownMs = Math.max(0, Number(p.buffCooldownUntil || 0) - now);
 
       return {
         id: p.id,
@@ -1023,6 +1175,7 @@ export class TigerRoom {
         shieldMs,
         speedMs,
         matrixImmuneMs,
+        buffCooldownMs,
         body: p.body
           .filter((_, i) => i % stride === 0)
           .map(b => ({
@@ -1046,7 +1199,7 @@ export class TigerRoom {
       }));
 
     const hazards = this.hazards
-      .filter(h => !h.deadUntil || h.deadUntil <= now)
+      .filter(h => h.alive)
       .map(h => ({
         id: h.id,
         type: h.type,
@@ -1056,19 +1209,33 @@ export class TigerRoom {
         r: Math.round(h.r)
       }));
 
-    const gateWall = this.getGateWall(now);
-    const mazeWalls = this.getActiveMazeWalls(now).filter(w => gateWall ? w !== gateWall : true).map(w => ({
-      x: Math.round(w.x),
-      y: Math.round(w.y),
-      w: Math.round(w.w),
-      h: Math.round(w.h)
+    const projectiles = this.projectiles.map(p => ({
+      id: p.id,
+      type: p.type,
+      x: round1(p.x),
+      y: round1(p.y),
+      r: Math.round(p.r),
+      vx: round1(p.vx),
+      vy: round1(p.vy)
     }));
 
-    const eventPayload = this.currentEvent ? {
-      eventId: this.currentEvent.id,
-      eventType: this.currentEvent.eventType,
-      eventText: this.currentEvent.text
-    } : {};
+    const mazeWalls = this.morpheusEvent?.active
+      ? this.morpheusEvent.walls.map(w => ({
+          x: Math.round(w.x),
+          y: Math.round(w.y),
+          w: Math.round(w.w),
+          h: Math.round(w.h)
+        }))
+      : [];
+
+    const mazeGate = (this.morpheusEvent?.active && !this.morpheusEvent.gateOpen)
+      ? {
+          x: Math.round(this.morpheusEvent.gate.x),
+          y: Math.round(this.morpheusEvent.gate.y),
+          w: Math.round(this.morpheusEvent.gate.w),
+          h: Math.round(this.morpheusEvent.gate.h)
+        }
+      : null;
 
     this.broadcastRaw(JSON.stringify({
       type: "state",
@@ -1077,19 +1244,17 @@ export class TigerRoom {
       players,
       food,
       hazards,
+      projectiles,
       mazeWalls,
-      mazeGate: gateWall ? {
-        x: Math.round(gateWall.x),
-        y: Math.round(gateWall.y),
-        w: Math.round(gateWall.w),
-        h: Math.round(gateWall.h)
-      } : null,
+      mazeGate,
+      morpheusActive: !!this.morpheusEvent,
+      mazeUnlockAt: this.morpheusEvent?.active && !this.morpheusEvent.gateOpen ? this.morpheusEvent.unlockAt : 0,
       top10: this.top10,
       countryTop3: this.countryTop3(),
-      force,
-      ...eventPayload,
-      morpheusActive: !!this.morpheusEvent?.active,
-      mazeUnlockAt: this.morpheusEvent?.active ? Number(this.morpheusEvent.unlockAt || 0) : 0
+      eventId: this.lastEvent.id,
+      eventType: this.lastEvent.type,
+      eventText: this.lastEvent.text,
+      force
     }));
   }
 
@@ -1129,33 +1294,6 @@ export class TigerRoom {
 
   broadcast(obj) {
     this.broadcastRaw(JSON.stringify(obj));
-  }
-
-  broadcastEvent(eventType, text) {
-    const id = `evt-${++this.eventCounter}`;
-    this.currentEvent = { id, eventType, text, at: Date.now() };
-
-    const payload = {
-      type: "event",
-      eventType,
-      eventId: id,
-      text
-    };
-
-    if (this.morpheusEvent?.active) {
-      payload.mazeUnlockAt = Number(this.morpheusEvent.unlockAt || 0);
-    }
-
-    this.broadcast(payload);
-  }
-
-  sendToPlayer(playerId, obj) {
-    for (const [ws, p] of this.players.entries()) {
-      if (p.id === playerId) {
-        try { ws.send(JSON.stringify(obj)); } catch {}
-        return;
-      }
-    }
   }
 
   broadcastRaw(msg) {
@@ -1274,7 +1412,7 @@ function makeFood(x, y, r, v, type = "snack") {
     return {
       x, y, r, v: 100,
       type: "arnold",
-      img: ARNOLD_IMAGE
+      img: "pic1.webp"
     };
   }
 
@@ -1319,91 +1457,110 @@ function foodPriority(type) {
 }
 
 function buildMatrixMazeVariant(cx, cy, variant = 0) {
-  const t = 56;
-  const half = 460;
-  const inner = 210;
-  const gateSize = 185;
+  const walls = [];
+  const t = 54;
+  const outer = 470;
+  const inner = 240;
+  const gateW = 210;
 
-  const clampWall = w => ({
+  if (variant === 0) {
+    walls.push({ x: cx - outer, y: cy - outer, w: outer * 2, h: t });
+    walls.push({ x: cx - outer, y: cy - outer, w: t, h: outer * 2 });
+    walls.push({ x: cx + outer - t, y: cy - outer, w: t, h: outer * 2 });
+    walls.push({ x: cx - outer, y: cy + outer - t, w: outer - gateW / 2, h: t });
+    walls.push({ x: cx + gateW / 2, y: cy + outer - t, w: outer - gateW / 2, h: t });
+
+    walls.push({ x: cx - inner, y: cy - inner, w: inner * 2, h: t });
+    walls.push({ x: cx - inner, y: cy - inner, w: t, h: inner * 2 - 120 });
+    walls.push({ x: cx + inner - t, y: cy - inner + 120, w: t, h: inner * 2 - 120 });
+    walls.push({ x: cx - inner, y: cy + inner - t, w: inner - 85, h: t });
+    walls.push({ x: cx + 85, y: cy + inner - t, w: inner - 85, h: t });
+
+    walls.push({ x: cx - 60, y: cy - 340, w: t, h: 210 });
+    walls.push({ x: cx + 110, y: cy - 40, w: t, h: 220 });
+    walls.push({ x: cx - 240, y: cy + 80, w: 180, h: t });
+
+    return {
+      walls: clampWalls(walls),
+      gate: { x: cx - gateW / 2, y: cy + outer - t, w: gateW, h: t }
+    };
+  }
+
+  if (variant === 1) {
+    walls.push({ x: cx - outer, y: cy + outer - t, w: outer * 2, h: t });
+    walls.push({ x: cx - outer, y: cy - outer, w: t, h: outer * 2 });
+    walls.push({ x: cx + outer - t, y: cy - outer, w: t, h: outer * 2 });
+    walls.push({ x: cx - outer, y: cy - outer, w: outer - gateW / 2, h: t });
+    walls.push({ x: cx + gateW / 2, y: cy - outer, w: outer - gateW / 2, h: t });
+
+    walls.push({ x: cx - inner, y: cy + inner - t, w: inner * 2, h: t });
+    walls.push({ x: cx - inner, y: cy - inner, w: t, h: inner * 2 - 120 });
+    walls.push({ x: cx + inner - t, y: cy - inner + 120, w: t, h: inner * 2 - 120 });
+    walls.push({ x: cx - inner, y: cy - inner, w: inner - 85, h: t });
+    walls.push({ x: cx + 85, y: cy - inner, w: inner - 85, h: t });
+
+    walls.push({ x: cx - 60, y: cy + 120, w: t, h: 210 });
+    walls.push({ x: cx + 110, y: cy - 180, w: t, h: 220 });
+    walls.push({ x: cx - 240, y: cy - 120, w: 180, h: t });
+
+    return {
+      walls: clampWalls(walls),
+      gate: { x: cx - gateW / 2, y: cy - outer, w: gateW, h: t }
+    };
+  }
+
+  if (variant === 2) {
+    walls.push({ x: cx - outer, y: cy - outer, w: outer * 2, h: t });
+    walls.push({ x: cx - outer, y: cy + outer - t, w: outer * 2, h: t });
+    walls.push({ x: cx + outer - t, y: cy - outer, w: t, h: outer * 2 });
+    walls.push({ x: cx - outer, y: cy - outer, w: t, h: outer - gateW / 2 });
+    walls.push({ x: cx - outer, y: cy + gateW / 2, w: t, h: outer - gateW / 2 });
+
+    walls.push({ x: cx - inner, y: cy - inner, w: inner * 2, h: t });
+    walls.push({ x: cx - inner, y: cy + inner - t, w: inner * 2, h: t });
+    walls.push({ x: cx - inner, y: cy - inner, w: t, h: inner - 85 });
+    walls.push({ x: cx - inner, y: cy + 85, w: t, h: inner - 85 });
+    walls.push({ x: cx + inner - t, y: cy - inner, w: t, h: inner * 2 });
+
+    walls.push({ x: cx - 340, y: cy - 60, w: 210, h: t });
+    walls.push({ x: cx - 40, y: cy + 110, w: 220, h: t });
+    walls.push({ x: cx + 80, y: cy - 240, w: t, h: 180 });
+
+    return {
+      walls: clampWalls(walls),
+      gate: { x: cx - outer, y: cy - gateW / 2, w: t, h: gateW }
+    };
+  }
+
+  walls.push({ x: cx - outer, y: cy - outer, w: outer * 2, h: t });
+  walls.push({ x: cx - outer, y: cy + outer - t, w: outer * 2, h: t });
+  walls.push({ x: cx - outer, y: cy - outer, w: t, h: outer * 2 });
+  walls.push({ x: cx + outer - t, y: cy - outer, w: t, h: outer - gateW / 2 });
+  walls.push({ x: cx + outer - t, y: cy + gateW / 2, w: t, h: outer - gateW / 2 });
+
+  walls.push({ x: cx - inner, y: cy - inner, w: inner * 2, h: t });
+  walls.push({ x: cx - inner, y: cy + inner - t, w: inner * 2, h: t });
+  walls.push({ x: cx - inner, y: cy - inner, w: t, h: inner * 2 });
+  walls.push({ x: cx + inner - t, y: cy - inner, w: t, h: inner - 85 });
+  walls.push({ x: cx + inner - t, y: cy + 85, w: t, h: inner - 85 });
+
+  walls.push({ x: cx + 120, y: cy - 60, w: 210, h: t });
+  walls.push({ x: cx - 180, y: cy + 110, w: 220, h: t });
+  walls.push({ x: cx - 120, y: cy - 240, w: t, h: 180 });
+
+  return {
+    walls: clampWalls(walls),
+    gate: { x: cx + outer - t, y: cy - gateW / 2, w: t, h: gateW }
+  };
+}
+
+function clampWalls(walls) {
+  return walls.map(w => ({
     x: clamp(w.x, 40, WORLD - 40),
     y: clamp(w.y, 40, WORLD - 40),
     w: w.w,
     h: w.h
-  });
-
-  const baseWalls = [];
-  let gateWall;
-
-  if (variant === 0) {
-    baseWalls.push({ x: cx - half, y: cy - half, w: half * 2, h: t });
-    baseWalls.push({ x: cx - half, y: cy - half, w: t, h: half * 2 });
-    baseWalls.push({ x: cx + half - t, y: cy - half, w: t, h: half * 2 });
-    baseWalls.push({ x: cx - half, y: cy + half - t, w: half * 2, h: t });
-
-    baseWalls.push({ x: cx - inner, y: cy - inner, w: inner * 2, h: t });
-    baseWalls.push({ x: cx - inner, y: cy - inner, w: t, h: inner * 2 });
-    baseWalls.push({ x: cx + inner - t, y: cy - inner, w: t, h: inner * 2 });
-    baseWalls.push({ x: cx - inner, y: cy + inner - t, w: inner * 2, h: t });
-
-    baseWalls.push({ x: cx - 300, y: cy - 120, w: 220, h: t });
-    baseWalls.push({ x: cx + 80, y: cy + 70, w: 220, h: t });
-    baseWalls.push({ x: cx - 50, y: cy - 350, w: t, h: 170 });
-
-    gateWall = { x: cx - gateSize / 2, y: cy + half - t, w: gateSize, h: t };
-  } else if (variant === 1) {
-    baseWalls.push({ x: cx - half, y: cy - half, w: half * 2, h: t });
-    baseWalls.push({ x: cx - half, y: cy - half, w: t, h: half * 2 });
-    baseWalls.push({ x: cx + half - t, y: cy - half, w: t, h: half * 2 });
-    baseWalls.push({ x: cx - half, y: cy + half - t, w: half * 2, h: t });
-
-    baseWalls.push({ x: cx - inner, y: cy - inner, w: inner * 2, h: t });
-    baseWalls.push({ x: cx - inner, y: cy - inner, w: t, h: inner * 2 });
-    baseWalls.push({ x: cx + inner - t, y: cy - inner, w: t, h: inner * 2 });
-    baseWalls.push({ x: cx - inner, y: cy + inner - t, w: inner * 2, h: t });
-
-    baseWalls.push({ x: cx - 140, y: cy - 300, w: t, h: 220 });
-    baseWalls.push({ x: cx + 70, y: cy + 80, w: t, h: 220 });
-    baseWalls.push({ x: cx - 280, y: cy + 30, w: 180, h: t });
-
-    gateWall = { x: cx - half, y: cy - gateSize / 2, w: t, h: gateSize };
-  } else if (variant === 2) {
-    baseWalls.push({ x: cx - half, y: cy - half, w: half * 2, h: t });
-    baseWalls.push({ x: cx - half, y: cy - half, w: t, h: half * 2 });
-    baseWalls.push({ x: cx + half - t, y: cy - half, w: t, h: half * 2 });
-    baseWalls.push({ x: cx - half, y: cy + half - t, w: half * 2, h: t });
-
-    baseWalls.push({ x: cx - inner, y: cy - inner, w: inner * 2, h: t });
-    baseWalls.push({ x: cx - inner, y: cy - inner, w: t, h: inner * 2 });
-    baseWalls.push({ x: cx + inner - t, y: cy - inner, w: t, h: inner * 2 });
-    baseWalls.push({ x: cx - inner, y: cy + inner - t, w: inner * 2, h: t });
-
-    baseWalls.push({ x: cx - 280, y: cy - 50, w: 180, h: t });
-    baseWalls.push({ x: cx + 80, y: cy - 110, w: 220, h: t });
-    baseWalls.push({ x: cx + 30, y: cy + 130, w: t, h: 200 });
-
-    gateWall = { x: cx + half - t, y: cy - gateSize / 2, w: t, h: gateSize };
-  } else {
-    baseWalls.push({ x: cx - half, y: cy - half, w: half * 2, h: t });
-    baseWalls.push({ x: cx - half, y: cy - half, w: t, h: half * 2 });
-    baseWalls.push({ x: cx + half - t, y: cy - half, w: t, h: half * 2 });
-    baseWalls.push({ x: cx - half, y: cy + half - t, w: half * 2, h: t });
-
-    baseWalls.push({ x: cx - inner, y: cy - inner, w: inner * 2, h: t });
-    baseWalls.push({ x: cx - inner, y: cy - inner, w: t, h: inner * 2 });
-    baseWalls.push({ x: cx + inner - t, y: cy - inner, w: t, h: inner * 2 });
-    baseWalls.push({ x: cx - inner, y: cy + inner - t, w: inner * 2, h: t });
-
-    baseWalls.push({ x: cx - 60, y: cy - 340, w: t, h: 210 });
-    baseWalls.push({ x: cx + 120, y: cy - 40, w: t, h: 220 });
-    baseWalls.push({ x: cx - 240, y: cy + 70, w: 180, h: t });
-
-    gateWall = { x: cx - gateSize / 2, y: cy - half, w: gateSize, h: t };
-  }
-
-  return {
-    baseWalls: baseWalls.map(clampWall),
-    gateWall: clampWall(gateWall)
-  };
+  }));
 }
 
 function pointInAnyRect(x, y, rects) {
