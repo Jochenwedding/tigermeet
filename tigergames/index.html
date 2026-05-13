@@ -75,8 +75,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
   padding:10px;
   backdrop-filter:blur(4px)
 }
-.mine{width:182px}
-.board{width:194px}
+.mine{width:208px}
+.board{width:230px}
 .name,.title{font-weight:900;font-size:13px;color:#ffb14a}
 .score{font-size:28px;font-weight:900}
 .meta{font-size:11px;color:#bbb}
@@ -92,6 +92,16 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
 .dot{width:9px;height:9px;border-radius:50%}
 .rname{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .rscore{text-align:right;font-weight:900}
+
+.pointsLegend{
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px solid rgba(255,255,255,.08);
+  font-size:10px;
+  line-height:1.45;
+  color:#ccc
+}
+.pointsLegend b{color:#ffcf7f}
 
 .buttons{position:fixed;right:12px;bottom:130px;display:flex;gap:7px;z-index:12}
 .buttons button{font-size:11px;padding:9px 10px}
@@ -190,14 +200,28 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
 }
 .enterIntro.show{display:block}
 .enterRain{
-  position:absolute;inset:0;color:#2cff77;opacity:.23;font-weight:900;line-height:1;
+  position:absolute;inset:-8% 0 -8% 0;
+  color:#2cff77;opacity:.28;font-weight:900;line-height:.88;
   font-family:Consolas,monospace;white-space:pre;pointer-events:none;
-  filter:drop-shadow(0 0 8px rgba(44,255,119,.22));
-  animation:rainDrift 2.8s linear infinite
+  filter:drop-shadow(0 0 8px rgba(44,255,119,.28));
+  animation:rainDrift 2.3s linear infinite;
+  font-size:clamp(13px,1.35vw,20px);
+  letter-spacing:.02em;
+}
+.enterRain.layer2{
+  opacity:.18;
+  transform:scale(1.08);
+  animation-duration:1.45s;
+  filter:drop-shadow(0 0 10px rgba(44,255,119,.35));
+}
+.enterRain.layer3{
+  opacity:.12;
+  transform:scale(1.16);
+  animation-duration:3.2s;
 }
 @keyframes rainDrift{
-  0%{transform:translateY(-12px)}
-  100%{transform:translateY(18px)}
+  0%{transform:translateY(-24px)}
+  100%{transform:translateY(38px)}
 }
 .enterHead{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
@@ -243,10 +267,33 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
 .buffBadge.matrix{color:#8cff93;border-color:rgba(44,255,119,.5)}
 .buffBadge.cooldown{color:#ffcf87;border-color:rgba(255,170,60,.45)}
 
+.spectatorBanner{
+  position:fixed;left:50%;top:46px;transform:translateX(-50%);
+  z-index:16;
+  background:rgba(0,0,0,.76);
+  border:1px solid rgba(44,255,119,.55);
+  color:#8bffab;
+  border-radius:999px;
+  padding:8px 14px;
+  font-size:12px;
+  font-weight:900;
+  box-shadow:0 0 18px rgba(44,255,119,.18)
+}
+.spectatorHint{
+  margin-top:10px;
+  padding:10px;
+  border-radius:14px;
+  background:rgba(44,255,119,.08);
+  border:1px solid rgba(44,255,119,.18);
+  color:#baffc7;
+  font-size:12px;
+  line-height:1.45
+}
+
 @media(max-width:720px){
   .hud{top:38px}
-  .mine{width:156px}
-  .board{width:170px}
+  .mine{width:178px}
+  .board{width:184px}
   .score{font-size:24px}
   .buttons{bottom:145px}
   .morpheusIntro img{width:min(96vw,620px)}
@@ -302,6 +349,11 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
       <div id="countryTopRows"><div class="small" style="text-align:center">Nation stats laden...</div></div>
     </div>
 
+    <div class="spectatorHint">
+      Typ <b>spectator</b> als naam voor observer mode.<br>
+      Zoom = muiswiel · Pan = rechtermuisknop slepen · WASD / pijltjes = camera.
+    </div>
+
     <p class="small">Mobile: joystick links, boost rechts. PC: muis = sturen, SPACE of boostknop = boost.</p>
   </div>
 </section>
@@ -309,6 +361,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
 <section id="gameScreen" class="hidden">
   <canvas id="game"></canvas>
   <div class="net" id="net">connecting...</div>
+  <div id="spectatorBanner" class="spectatorBanner hidden">SPECTATOR MODE · wheel zoom · right-drag pan · WASD move</div>
 
   <div class="hud">
     <div class="box mine">
@@ -322,6 +375,12 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
           <span id="boostTime">LOCAL</span>
         </div>
         <div class="boostBar"><div id="boostFill" class="boostFill"></div></div>
+      </div>
+      <div class="pointsLegend">
+        <div><b>Arnold</b> = 50</div>
+        <div><b>Gayboys</b> = 80</div>
+        <div><b>Zeus</b> = 100</div>
+        <div><b>Morpheus</b> = 300</div>
       </div>
     </div>
 
@@ -337,7 +396,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
     <button id="musicBtn">MUSIC ON</button>
   </div>
 
-  <div class="controls">
+  <div class="controls" id="controlsWrap">
     <div id="joy" class="joy"><div id="stick" class="stick"></div></div>
     <div id="boost" class="boost ready"><span>BOOST</span><small>READY</small></div>
   </div>
@@ -363,13 +422,15 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
 
 <div id="enterIntro" class="enterIntro">
   <div id="enterRain" class="enterRain"></div>
+  <div id="enterRain2" class="enterRain layer2"></div>
+  <div id="enterRain3" class="enterRain layer3"></div>
   <div id="enterHead" class="enterHead"><img src="mor1.webp" alt="Morpheus"></div>
   <div id="enterText" class="enterText">ENTER THE MATRIX</div>
 </div>
 
 <script>
 (() => {
-const MAINTENANCE_MODE = false;
+const MAINTENANCE_MODE = true;
 const WORLD = 4200;
 const BOOST_ACTIVE_MS = 3000;
 const BOOST_TOTAL_COOLDOWN_MS = 18000;
@@ -379,8 +440,8 @@ const MAX_DPR = LOW_GRAPHICS ? 1.15 : 1.5;
 
 const PIC_ICON_SIZE = LOW_GRAPHICS ? 64 : 80;
 const ARNOLD_SIZE = LOW_GRAPHICS ? 190 : 230;
-const GAY_SIZE = LOW_GRAPHICS ? 135 : 155;
-const ZEUS_SIZE = LOW_GRAPHICS ? 250 : 300;
+const GAY_SIZE = LOW_GRAPHICS ? 150 : 172;
+const ZEUS_SIZE = LOW_GRAPHICS ? 340 : 410;
 const MORPHEUS_SIZE = LOW_GRAPHICS ? 320 : 430;
 const PILL_SIZE = LOW_GRAPHICS ? 40 : 50;
 
@@ -439,8 +500,13 @@ const matrixCountdownTime = document.getElementById("matrixCountdownTime");
 const morpheusIntro = document.getElementById("morpheusIntro");
 const enterIntro = document.getElementById("enterIntro");
 const enterRain = document.getElementById("enterRain");
+const enterRain2 = document.getElementById("enterRain2");
+const enterRain3 = document.getElementById("enterRain3");
 const enterHead = document.getElementById("enterHead");
 const enterText = document.getElementById("enterText");
+const spectatorBanner = document.getElementById("spectatorBanner");
+const controlsWrap = document.getElementById("controlsWrap");
+const respawnBtn = document.getElementById("respawnBtn");
 
 let ws = null, previewWs = null, myId = null, state = null;
 let renderPlayers = new Map();
@@ -453,6 +519,13 @@ let lastEventId = "";
 let lastMySpeedActive = false, lastMyShieldActive = false, lastMyMatrixActive = false;
 let lastArnoldPointerSeed = 0;
 let enteringGame = false;
+
+let spectatorMode = false;
+let spectatorName = "";
+let spectatorZoom = 0.28;
+let spectatorTargetZoom = 0.28;
+let spectatorPan = { up:false, down:false, left:false, right:false };
+let dragPan = { active:false, lastX:0, lastY:0 };
 
 const camera = { x: WORLD/2, y: WORLD/2, zoom: 1 };
 const foodImages = new Map();
@@ -494,30 +567,35 @@ function getFoodImage(src){
   if(foodImages.has(src)) return foodImages.get(src);
   const img = new Image();
   img.decoding = "async";
-  img.src = src + "?v=61";
+  img.src = src + "?v=71";
   foodImages.set(src, img);
   return img;
 }
 
-function buildMatrixChars(){
-  const chars = "01アイウエオΞΔΣΛЖ†⚡";
-  const cols = Math.max(18, Math.floor(innerWidth / 26));
-  const rows = Math.max(14, Math.floor(innerHeight / 24));
+function buildMatrixChars(layer=1){
+  const chars = "01アイウエオΞΔΣΛЖ†⚡田由甲申甴电龘";
+  const cols = Math.max(28, Math.floor(innerWidth / (layer===1 ? 14 : layer===2 ? 18 : 22)));
+  const rows = Math.max(18, Math.floor(innerHeight / (layer===1 ? 14 : layer===2 ? 18 : 22)));
   let out = "";
   for(let y=0;y<rows;y++){
     let line = "";
     for(let x=0;x<cols;x++){
-      line += chars[Math.floor(Math.random() * chars.length)] + " ";
+      const ch = chars[Math.floor(Math.random() * chars.length)];
+      line += ch + (layer===1 ? "" : " ");
     }
     out += line + "\n";
   }
-  enterRain.textContent = out;
+  return out;
 }
 
 async function playEnterIntro(){
   if(enteringGame) return;
   enteringGame = true;
-  buildMatrixChars();
+
+  enterRain.textContent = buildMatrixChars(1);
+  enterRain2.textContent = buildMatrixChars(2);
+  enterRain3.textContent = buildMatrixChars(3);
+
   enterIntro.classList.add("show");
   enterHead.classList.remove("show");
   enterText.classList.remove("show");
@@ -525,12 +603,7 @@ async function playEnterIntro(){
   void enterText.offsetWidth;
   enterHead.classList.add("show");
   enterText.classList.add("show");
-  try{
-    const m = matrixAudio.cloneNode(true);
-    m.volume = .95;
-    m.currentTime = 0;
-    m.play().catch(()=>{});
-  }catch{}
+
   await sleep(2600);
   enterIntro.classList.remove("show");
   enteringGame = false;
@@ -544,6 +617,10 @@ document.getElementById("playBtn").onclick = async () => {
 
   const name = (document.getElementById("playerName").value.trim() || "Unknown Tiger").slice(0,16);
   const nation = document.getElementById("playerNation").value || "OTHER";
+
+  spectatorMode = name.toLowerCase() === "spectator";
+  spectatorName = name;
+
   localStorage.setItem("tigergames_name", name);
   localStorage.setItem("tigergames_nation", nation);
 
@@ -556,9 +633,35 @@ document.getElementById("playBtn").onclick = async () => {
 
   login.classList.add("hidden");
   gameScreen.classList.remove("hidden");
+
+  applySpectatorUi();
+
   if(musicEnabled) startAudio();
   connect(name, nation);
 };
+
+function applySpectatorUi(){
+  spectatorBanner.classList.toggle("hidden", !spectatorMode);
+  controlsWrap.classList.toggle("hidden", spectatorMode);
+  respawnBtn.classList.toggle("hidden", spectatorMode);
+
+  if(spectatorMode){
+    camera.x = WORLD/2;
+    camera.y = WORLD/2;
+    camera.zoom = spectatorZoom;
+    spectatorTargetZoom = spectatorZoom;
+    document.getElementById("meName").textContent = "Spectator";
+    document.getElementById("meScore").textContent = "—";
+    document.getElementById("meMeta").textContent = "Ghost overview mode";
+    document.getElementById("meBuffs").innerHTML = `<span class="buffBadge matrix">FREE CAMERA</span>`;
+    boostLabel.textContent = "SPECTATOR";
+    boostTime.textContent = "ZOOM";
+    boostFill.style.width = "100%";
+    boostBtn.classList.remove("active","cooldown");
+    boostBtn.classList.add("ready");
+    boostBtn.innerHTML = `<span>VIEW</span><small>FREE</small>`;
+  }
+}
 
 document.getElementById("menuBtn").onclick = () => {
   running = false;
@@ -568,12 +671,15 @@ document.getElementById("menuBtn").onclick = () => {
   renderPlayers.clear();
   state = null;
   myId = null;
+  spectatorMode = false;
+  spectatorName = "";
   hideMatrixCountdown();
   morpheusIntro.classList.remove("show");
   preloadLoginStats();
 };
 
-document.getElementById("respawnBtn").onclick = () => {
+respawnBtn.onclick = () => {
+  if(spectatorMode) return;
   if(ws && ws.readyState===1) ws.send(JSON.stringify({type:"respawn"}));
 };
 
@@ -750,12 +856,14 @@ function startCollapseFx(){
 }
 
 function setBoostPressed(v){
+  if(spectatorMode) return;
   boostPressed = !!v;
   boostBtn.classList.toggle("active", boostPressed);
   updateLocalBoostUi();
 }
 
 function triggerBoostTap(){
+  if(spectatorMode) return;
   const now = performance.now();
   if(now - lastBoostTap < 250) return;
   lastBoostTap = now;
@@ -772,6 +880,18 @@ function triggerBoostTap(){
 }
 
 function updateLocalBoostUi(){
+  if(spectatorMode){
+    boostBtn.classList.remove("active","cooldown");
+    boostBtn.classList.add("ready");
+    boostBtn.style.setProperty("--boost-fill","100%");
+    boostFill.classList.remove("active","cooldown");
+    boostFill.style.width="100%";
+    boostLabel.textContent="SPECTATOR";
+    boostTime.textContent="ZOOM";
+    boostBtn.innerHTML=`<span>VIEW</span><small>FREE</small>`;
+    return;
+  }
+
   if(boostPressed){
     boostBtn.classList.remove("ready","cooldown");
     boostBtn.classList.add("active");
@@ -809,8 +929,14 @@ function connect(name,nation){
   hideMatrixCountdown();
   morpheusIntro.classList.remove("show");
 
+  if(spectatorMode){
+    camera.x = WORLD/2;
+    camera.y = WORLD/2;
+    camera.zoom = spectatorZoom;
+  }
+
   setNet("ONLINE");
-  showToast("Connecting websocket...");
+  showToast(spectatorMode ? "Connecting spectator view..." : "Connecting websocket...");
 
   try{
     ws = new WebSocket(wsUrl());
@@ -822,8 +948,13 @@ function connect(name,nation){
 
   ws.onopen = () => {
     setNet("ONLINE ✅");
-    showToast("ONLINE ✅");
-    ws.send(JSON.stringify({type:"join",name,nation}));
+    showToast(spectatorMode ? "SPECTATOR ONLINE ✅" : "ONLINE ✅");
+    ws.send(JSON.stringify({
+      type:"join",
+      name,
+      nation,
+      spectator:spectatorMode
+    }));
   };
 
   ws.onmessage = e => {
@@ -936,6 +1067,8 @@ function ingestState(msg){
 }
 
 function checkLocalBuffToasts(){
+  if(spectatorMode) return;
+
   const me = renderPlayers.get(myId)?.target || renderPlayers.get(myId);
   if(!me) return;
 
@@ -959,6 +1092,7 @@ function checkLocalBuffToasts(){
 }
 
 function sendInput(force=false){
+  if(spectatorMode) return;
   if(!ws || ws.readyState !== 1) return;
   const now = performance.now();
   if(!force && now - lastInput < 33) return;
@@ -970,10 +1104,25 @@ function loop(){
   if(!running) return;
   sendInput();
   smoothPlayers();
+  updateSpectatorCamera();
   updateMatrixCountdown();
   maybePlayGayAudio();
   draw();
   requestAnimationFrame(loop);
+}
+
+function updateSpectatorCamera(){
+  if(!spectatorMode) return;
+
+  const panSpeed = 18 / Math.max(0.18, camera.zoom);
+  if(spectatorPan.up) camera.y -= panSpeed;
+  if(spectatorPan.down) camera.y += panSpeed;
+  if(spectatorPan.left) camera.x -= panSpeed;
+  if(spectatorPan.right) camera.x += panSpeed;
+
+  camera.x = clamp(camera.x, 0, WORLD);
+  camera.y = clamp(camera.y, 0, WORLD);
+  camera.zoom = lerp(camera.zoom, spectatorTargetZoom, 0.16);
 }
 
 function smoothPlayers(){
@@ -1019,6 +1168,7 @@ function smoothPlayers(){
 }
 
 function maybePlayGayAudio(){
+  if(spectatorMode) return;
   if(!state || !state.hazards || !state.hazards.length) return;
   const me = renderPlayers.get(myId);
   if(!me || !me.alive) return;
@@ -1038,12 +1188,12 @@ function draw(){
   ctx.clearRect(0,0,w,h);
 
   if(!state){
-    drawText("Waiting for Tiger server...");
+    drawText(spectatorMode ? "Waiting for spectator state..." : "Waiting for Tiger server...");
     return;
   }
 
   const me = renderPlayers.get(myId);
-  if(me){
+  if(!spectatorMode && me){
     camera.x += (me.x - camera.x) * .18;
     camera.y += (me.y - camera.y) * .18;
     camera.zoom += (Math.max(.62,1.06-(me.len||20)/520) - camera.zoom) * .08;
@@ -1214,9 +1364,9 @@ function drawFood(f){
       ctx.textAlign = "center";
       ctx.font = LOW_GRAPHICS ? "900 14px Arial" : "900 16px Arial";
       ctx.fillStyle = "#111";
-      ctx.fillText("Arnold Pikhaar Shwarzenegger",0,size*.68+1);
+      ctx.fillText("Arnold +50",0,size*.68+1);
       ctx.fillStyle = "#ffd36a";
-      ctx.fillText("Arnold Pikhaar Shwarzenegger",0,size*.68);
+      ctx.fillText("Arnold +50",0,size*.68);
     }else{
       const pulse = LOW_GRAPHICS ? 1 : 1 + Math.sin((performance.now()+f.x+f.y)/260)*.02;
       ctx.scale(pulse,pulse);
@@ -1283,28 +1433,46 @@ function drawHazard(hz){
 
   if(!LOW_GRAPHICS){
     ctx.shadowColor =
-      hz.type === "gay2" ? "rgba(107,174,255,.75)" :
-      hz.type === "zeus" ? "rgba(255,255,120,.75)" :
-      "rgba(255,60,140,.75)";
-    ctx.shadowBlur = hz.type === "zeus" ? 24 : 18;
+      hz.type === "gay2" ? "rgba(107,174,255,.85)" :
+      hz.type === "zeus" ? "rgba(255,255,120,.92)" :
+      "rgba(255,60,140,.82)";
+    ctx.shadowBlur = hz.type === "zeus" ? 34 : 22;
   }
 
-  const pulse = 1 + Math.sin((performance.now()+hz.x)/190)*.04;
+  const pulse = 1 + Math.sin((performance.now()+hz.x)/190)*.05;
   ctx.scale(pulse,pulse);
+
+  if(hz.type === "zeus"){
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(255,245,120,.95)";
+    ctx.lineWidth = 12;
+    ctx.arc(0,0,size*.52,0,Math.PI*2);
+    ctx.stroke();
+
+    if(!LOW_GRAPHICS){
+      ctx.beginPath();
+      ctx.strokeStyle = "rgba(255,245,120,.28)";
+      ctx.lineWidth = 24;
+      ctx.arc(0,0,size*.67,0,Math.PI*2);
+      ctx.stroke();
+    }
+  }
 
   if(img.complete && img.naturalWidth > 0){
     ctx.drawImage(img,-size/2,-size/2,size,size);
   }
 
   ctx.textAlign = "center";
-  ctx.font = LOW_GRAPHICS ? "900 12px Arial" : "900 14px Arial";
+  ctx.font = hz.type === "zeus"
+    ? (LOW_GRAPHICS ? "900 16px Arial" : "900 18px Arial")
+    : (LOW_GRAPHICS ? "900 12px Arial" : "900 14px Arial");
 
   const label =
-    hz.type === "gay2" ? "3CPBROMO" :
-    hz.type === "zeus" ? "ZEUS" :
-    "ARUGAY2 - Jorrit";
+    hz.type === "gay2" ? "3CPBROMO +80" :
+    hz.type === "zeus" ? "ZEUS +100" :
+    "ARUGAY2 +80";
 
-  ctx.fillStyle = "rgba(0,0,0,.86)";
+  ctx.fillStyle = "rgba(0,0,0,.9)";
   ctx.fillText(label,0,size*.67+1);
   ctx.fillStyle =
     hz.type === "gay2" ? "#9bc6ff" :
@@ -1324,22 +1492,26 @@ function drawProjectiles(list, view){
     ctx.rotate(ang);
 
     if(!LOW_GRAPHICS){
-      ctx.shadowColor = "rgba(255,255,140,.85)";
-      ctx.shadowBlur = 16;
+      ctx.shadowColor = "rgba(255,255,140,.95)";
+      ctx.shadowBlur = 24;
     }
 
     ctx.fillStyle = "#fff59b";
     ctx.beginPath();
-    ctx.moveTo(26,0);
-    ctx.lineTo(2,-7);
-    ctx.lineTo(10,-1);
-    ctx.lineTo(-18,-10);
-    ctx.lineTo(-4,0);
-    ctx.lineTo(-18,10);
-    ctx.lineTo(10,1);
-    ctx.lineTo(2,7);
+    ctx.moveTo(44,0);
+    ctx.lineTo(10,-12);
+    ctx.lineTo(20,-3);
+    ctx.lineTo(-30,-18);
+    ctx.lineTo(-6,0);
+    ctx.lineTo(-30,18);
+    ctx.lineTo(20,3);
+    ctx.lineTo(10,12);
     ctx.closePath();
     ctx.fill();
+
+    ctx.strokeStyle = "rgba(255,255,255,.95)";
+    ctx.lineWidth = 2.2;
+    ctx.stroke();
 
     ctx.restore();
   }
@@ -1415,6 +1587,7 @@ function drawEdgePointerToTarget(tx,ty,w,h,label,color,margin,labelYOffset){
 
 function drawTigerDragonSnake(p,view){
   if(!p.alive) return;
+  if(spectatorMode && p.name && String(p.name).toLowerCase() === "spectator") return;
 
   const body = p.body || [];
   const mainColor = playerColor(p);
@@ -1581,30 +1754,43 @@ function updateHud(){
   if(!state) return;
 
   const players = [...renderPlayers.values()]
-    .filter(p => p.alive && !p.bot)
+    .filter(p => p.alive && !p.bot && (!spectatorMode || String(p.name).toLowerCase() !== "spectator"))
     .sort((a,b)=>b.score-a.score);
 
-  const me = renderPlayers.get(myId);
-  if(me){
-    document.getElementById("meName").textContent = me.name;
-    document.getElementById("meScore").textContent = Math.round(me.score || 0);
-    const rank = players.findIndex(p => p.id === myId) + 1;
-    document.getElementById("meMeta").textContent = `Lengte ${me.len||0} · Rank #${rank>0?rank:"-"}`;
+  if(spectatorMode){
+    document.getElementById("meName").textContent = "Spectator";
+    document.getElementById("meScore").textContent = players.length;
+    document.getElementById("meMeta").textContent = `Players alive ${players.length} · Zoom ${camera.zoom.toFixed(2)}x`;
+    document.getElementById("meBuffs").innerHTML = `<span class="buffBadge matrix">FREE CAMERA</span>`;
+    updateLocalBoostUi();
+  }else{
+    const me = renderPlayers.get(myId);
+    if(me){
+      document.getElementById("meName").textContent = me.name;
+      document.getElementById("meScore").textContent = Math.round(me.score || 0);
+      const rank = players.findIndex(p => p.id === myId) + 1;
+      document.getElementById("meMeta").textContent = `Lengte ${me.len||0} · Rank #${rank>0?rank:"-"}`;
 
-    const buffs = [];
-    if(me.speedMs > 0) buffs.push(`<span class="buffBadge speed">RED PILL ${Math.ceil(me.speedMs/1000)}s</span>`);
-    if(me.shieldMs > 0) buffs.push(`<span class="buffBadge shield">BLUE PILL ${Math.ceil(me.shieldMs/1000)}s</span>`);
-    if(me.matrixImmuneMs > 0) buffs.push(`<span class="buffBadge matrix">MATRIX IMMUNE ${Math.ceil(me.matrixImmuneMs/1000)}s</span>`);
-    if(me.buffCooldownMs > 0 && me.speedMs <= 0 && me.shieldMs <= 0) buffs.push(`<span class="buffBadge cooldown">BUFF CD ${Math.ceil(me.buffCooldownMs/1000)}s</span>`);
-    document.getElementById("meBuffs").innerHTML = buffs.join(" ");
+      const buffs = [];
+      if(me.speedMs > 0) buffs.push(`<span class="buffBadge speed">RED PILL ${Math.ceil(me.speedMs/1000)}s</span>`);
+      if(me.shieldMs > 0) buffs.push(`<span class="buffBadge shield">BLUE PILL ${Math.ceil(me.shieldMs/1000)}s</span>`);
+      if(me.matrixImmuneMs > 0) buffs.push(`<span class="buffBadge matrix">MATRIX IMMUNE ${Math.ceil(me.matrixImmuneMs/1000)}s</span>`);
+      if(me.buffCooldownMs > 0 && me.speedMs <= 0 && me.shieldMs <= 0) buffs.push(`<span class="buffBadge cooldown">BUFF CD ${Math.ceil(me.buffCooldownMs/1000)}s</span>`);
+      document.getElementById("meBuffs").innerHTML = buffs.join(" ");
 
-    updateBoostUi(me);
+      updateBoostUi(me);
+    }
   }
 
   document.getElementById("liveRows").innerHTML = players.slice(0,5).map((p,i) => row(i,p,p.score,playerColor(p))).join("");
 }
 
 function updateBoostUi(me){
+  if(spectatorMode){
+    updateLocalBoostUi();
+    return;
+  }
+
   const active = !!me.boosting;
   const activeMs = Number(me.boostActiveMs || 0);
   const cdMs = Number(me.boostCooldownMs || 0);
@@ -1714,11 +1900,24 @@ function hashCode(str){let h=0;str=String(str||"");for(let i=0;i<str.length;i++)
 function setDirFromScreen(x,y){const dx=x-innerWidth/2,dy=y-innerHeight/2;angle=Math.atan2(dy,dx)}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 
-addEventListener("mousemove",e=>setDirFromScreen(e.clientX,e.clientY));
+addEventListener("mousemove",e=>{
+  if(spectatorMode || dragPan.active) return;
+  setDirFromScreen(e.clientX,e.clientY);
+});
 
 addEventListener("keydown",e=>{
   const k=e.key.toLowerCase();
+
   if([" ","spacebar","arrowup","arrowdown","arrowleft","arrowright"].includes(k)) e.preventDefault();
+
+  if(spectatorMode){
+    if(k==="w"||k==="arrowup") spectatorPan.up = true;
+    if(k==="s"||k==="arrowdown") spectatorPan.down = true;
+    if(k==="a"||k==="arrowleft") spectatorPan.left = true;
+    if(k==="d"||k==="arrowright") spectatorPan.right = true;
+    return;
+  }
+
   if(k==="w"||k==="arrowup") angle=-Math.PI/2;
   if(k==="s"||k==="arrowdown") angle=Math.PI/2;
   if(k==="a"||k==="arrowleft") angle=Math.PI;
@@ -1729,7 +1928,50 @@ addEventListener("keydown",e=>{
 addEventListener("keyup",e=>{
   const k=e.key.toLowerCase();
   if(k===" "||k==="spacebar") e.preventDefault();
+
+  if(spectatorMode){
+    if(k==="w"||k==="arrowup") spectatorPan.up = false;
+    if(k==="s"||k==="arrowdown") spectatorPan.down = false;
+    if(k==="a"||k==="arrowleft") spectatorPan.left = false;
+    if(k==="d"||k==="arrowright") spectatorPan.right = false;
+  }
 });
+
+canvas.addEventListener("wheel",e=>{
+  if(!spectatorMode) return;
+  e.preventDefault();
+  const mult = e.deltaY < 0 ? 1.12 : 0.89;
+  spectatorTargetZoom = clamp(spectatorTargetZoom * mult, 0.12, 1.35);
+},{passive:false});
+
+canvas.addEventListener("contextmenu",e=>{
+  if(spectatorMode) e.preventDefault();
+});
+
+canvas.addEventListener("pointerdown",e=>{
+  if(!spectatorMode) return;
+  if(e.button !== 2 && e.button !== 1) return;
+  dragPan.active = true;
+  dragPan.lastX = e.clientX;
+  dragPan.lastY = e.clientY;
+  canvas.setPointerCapture?.(e.pointerId);
+});
+
+canvas.addEventListener("pointermove",e=>{
+  if(!spectatorMode || !dragPan.active) return;
+  const dx = e.clientX - dragPan.lastX;
+  const dy = e.clientY - dragPan.lastY;
+  dragPan.lastX = e.clientX;
+  dragPan.lastY = e.clientY;
+
+  camera.x -= dx / Math.max(0.08,camera.zoom);
+  camera.y -= dy / Math.max(0.08,camera.zoom);
+  camera.x = clamp(camera.x, 0, WORLD);
+  camera.y = clamp(camera.y, 0, WORLD);
+});
+
+canvas.addEventListener("pointerup",()=>{ dragPan.active = false; });
+canvas.addEventListener("pointercancel",()=>{ dragPan.active = false; });
 
 const joy=document.getElementById("joy");
 const stick=document.getElementById("stick");
@@ -1743,6 +1985,7 @@ joy.addEventListener("touchend",e=>{
 },{passive:false});
 
 boost.addEventListener("pointerdown",e=>{
+  if(spectatorMode) return;
   e.preventDefault();
   boost.setPointerCapture?.(e.pointerId);
   triggerBoostTap();
@@ -1750,6 +1993,7 @@ boost.addEventListener("pointerdown",e=>{
 boost.addEventListener("pointerup",e=>e.preventDefault());
 boost.addEventListener("pointercancel",e=>e.preventDefault());
 boost.addEventListener("click",e=>{
+  if(spectatorMode) return;
   e.preventDefault();
   triggerBoostTap();
 });
@@ -1757,6 +2001,7 @@ boost.addEventListener("click",e=>{
 document.body.addEventListener("touchstart",()=>{if(musicEnabled)startAudio()},{passive:true,once:true});
 
 function joyMove(e){
+  if(spectatorMode) return;
   e.preventDefault();
   const t=e.changedTouches[0], r=joy.getBoundingClientRect();
   const cx=r.left+r.width/2, cy=r.top+r.height/2;
