@@ -75,8 +75,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
   padding:10px;
   backdrop-filter:blur(4px)
 }
-.mine{width:175px}
-.board{width:190px}
+.mine{width:182px}
+.board{width:194px}
 .name,.title{font-weight:900;font-size:13px;color:#ffb14a}
 .score{font-size:28px;font-weight:900}
 .meta{font-size:11px;color:#bbb}
@@ -119,7 +119,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
 .toast{
   position:fixed;left:50%;bottom:255px;transform:translateX(-50%) scale(.9);
   background:rgba(0,0,0,.86);border:1px solid #ff8a00;border-radius:999px;padding:10px 16px;
-  opacity:0;transition:.2s;z-index:18;font-weight:900;max-width:min(92vw,680px);text-align:center
+  opacity:0;transition:.2s;z-index:18;font-weight:900;max-width:min(92vw,720px);text-align:center
 }
 .toast.show{opacity:1;transform:translateX(-50%) scale(1)}
 
@@ -185,6 +185,48 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
   100%{opacity:0;transform:scale(1.06)}
 }
 
+.enterIntro{
+  position:fixed;inset:0;z-index:40;background:#000;display:none;overflow:hidden
+}
+.enterIntro.show{display:block}
+.enterRain{
+  position:absolute;inset:0;color:#2cff77;opacity:.23;font-weight:900;line-height:1;
+  font-family:Consolas,monospace;white-space:pre;pointer-events:none;
+  filter:drop-shadow(0 0 8px rgba(44,255,119,.22));
+  animation:rainDrift 2.8s linear infinite
+}
+@keyframes rainDrift{
+  0%{transform:translateY(-12px)}
+  100%{transform:translateY(18px)}
+}
+.enterHead{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;opacity:0
+}
+.enterHead img{
+  width:min(72vw,720px);opacity:.28;filter:drop-shadow(0 0 34px rgba(44,255,119,.35))
+}
+.enterHead.show{animation:enterHeadAnim 2.3s ease forwards}
+@keyframes enterHeadAnim{
+  0%{opacity:0;transform:scale(.92)}
+  20%{opacity:1}
+  70%{opacity:.9}
+  100%{opacity:0;transform:scale(1.06)}
+}
+.enterText{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  color:#2cff77;font-weight:900;letter-spacing:.14em;
+  font-size:clamp(22px,4vw,48px);opacity:0;text-align:center;
+  text-shadow:0 0 10px rgba(44,255,119,.8),0 0 24px rgba(44,255,119,.3)
+}
+.enterText.show{animation:enterTextAnim 2.6s ease forwards}
+@keyframes enterTextAnim{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.9)}
+  20%{opacity:1}
+  75%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.05)}
+}
+
 .buffBadge{
   display:inline-block;
   margin-top:6px;
@@ -199,10 +241,11 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
 .buffBadge.speed{color:#ff8f8f;border-color:rgba(255,80,80,.4)}
 .buffBadge.shield{color:#8ec8ff;border-color:rgba(78,161,255,.4)}
 .buffBadge.matrix{color:#8cff93;border-color:rgba(44,255,119,.5)}
+.buffBadge.cooldown{color:#ffcf87;border-color:rgba(255,170,60,.45)}
 
 @media(max-width:720px){
   .hud{top:38px}
-  .mine{width:152px}
+  .mine{width:156px}
   .board{width:170px}
   .score{font-size:24px}
   .buttons{bottom:145px}
@@ -309,14 +352,20 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
   </div>
 
   <div id="morpheusIntro" class="morpheusIntro">
-    <img id="morpheusIntroImg" src="mor1.webp" alt="Morpheus">
+    <img src="mor1.webp" alt="Morpheus">
   </div>
 
   <audio id="music" src="Araxos%20Baby.mp3" preload="auto" loop></audio>
-  <audio id="roar" src="roar.mp3" preload="auto"></audio>
   <audio id="matrixAudio" src="matrix.ogg" preload="auto"></audio>
   <audio id="gayAudio" src="gay.mp3" preload="auto"></audio>
+  <audio id="zeusAudio" src="zeus.mp3" preload="auto"></audio>
 </section>
+
+<div id="enterIntro" class="enterIntro">
+  <div id="enterRain" class="enterRain"></div>
+  <div id="enterHead" class="enterHead"><img src="mor1.webp" alt="Morpheus"></div>
+  <div id="enterText" class="enterText">ENTER THE MATRIX</div>
+</div>
 
 <script>
 (() => {
@@ -331,11 +380,12 @@ const MAX_DPR = LOW_GRAPHICS ? 1.15 : 1.5;
 const PIC_ICON_SIZE = LOW_GRAPHICS ? 64 : 80;
 const ARNOLD_SIZE = LOW_GRAPHICS ? 190 : 230;
 const GAY_SIZE = LOW_GRAPHICS ? 135 : 155;
+const ZEUS_SIZE = LOW_GRAPHICS ? 250 : 300;
 const MORPHEUS_SIZE = LOW_GRAPHICS ? 320 : 430;
 const PILL_SIZE = LOW_GRAPHICS ? 40 : 50;
 
-const SNACK_IMAGES = ["pic2.webp","pic3.webp","pic4.webp","pic5.webp","pic6.webp","pic7.webp"];
 const ARNOLD_IMAGE = "pic1.webp";
+const SNACK_IMAGES = ["pic2.webp","pic3.webp","pic4.webp","pic5.webp","pic6.webp","pic7.webp"];
 const ARNOLD_SOUNDS = ["pic.ogg","pic2.ogg","pic3.ogg","pic4.ogg","pic5.ogg","pic11.ogg","pic12.ogg","pic13.ogg","pic14.ogg","pic15.ogg"];
 
 window.showAdminLogin = function(){
@@ -373,11 +423,10 @@ const ctx = canvas.getContext("2d",{alpha:false});
 
 const login = document.getElementById("login");
 const gameScreen = document.getElementById("gameScreen");
-
 const music = document.getElementById("music");
-const roar = document.getElementById("roar");
 const matrixAudio = document.getElementById("matrixAudio");
 const gayAudio = document.getElementById("gayAudio");
+const zeusAudio = document.getElementById("zeusAudio");
 const musicBtn = document.getElementById("musicBtn");
 const boostBtn = document.getElementById("boost");
 const boostFill = document.getElementById("boostFill");
@@ -388,22 +437,22 @@ const matrixText = document.getElementById("matrixText");
 const matrixCountdown = document.getElementById("matrixCountdown");
 const matrixCountdownTime = document.getElementById("matrixCountdownTime");
 const morpheusIntro = document.getElementById("morpheusIntro");
+const enterIntro = document.getElementById("enterIntro");
+const enterRain = document.getElementById("enterRain");
+const enterHead = document.getElementById("enterHead");
+const enterText = document.getElementById("enterText");
 
 let ws = null, previewWs = null, myId = null, state = null;
 let renderPlayers = new Map();
 let running = false, angle = 0, boostPressed = false, musicEnabled = true;
-let lastInput = 0, lastRoar = 0, lastBoostTap = 0;
-let lastHudUpdate = 0;
-let matrixCollapseUntil = 0;
-let matrixCountdownTargetAt = 0;
-let gayAudioCooldownUntil = 0;
-let audioQueue = [];
-let audioQueueBusy = false;
+let lastInput = 0, lastBoostTap = 0, lastHudUpdate = 0;
+let matrixCollapseUntil = 0, matrixCountdownTargetAt = 0;
+let gayAudioCooldownUntil = 0, zeusAudioCooldownUntil = 0;
+let audioQueue = [], audioQueueBusy = false;
 let lastEventId = "";
-let lastMySpeedActive = false;
-let lastMyShieldActive = false;
-let lastMyMatrixActive = false;
+let lastMySpeedActive = false, lastMyShieldActive = false, lastMyMatrixActive = false;
 let lastArnoldPointerSeed = 0;
+let enteringGame = false;
 
 const camera = { x: WORLD/2, y: WORLD/2, zoom: 1 };
 const foodImages = new Map();
@@ -436,7 +485,7 @@ preloadFoodImages();
 if(allowedLogin) preloadLoginStats();
 
 function preloadFoodImages(){
-  ["mor1.webp","gay.webp","gay2.webp",ARNOLD_IMAGE,...SNACK_IMAGES].forEach(src => getFoodImage(src));
+  ["mor1.webp","gay.webp","gay2.webp","zeus.webp",ARNOLD_IMAGE,...SNACK_IMAGES].forEach(src => getFoodImage(src));
 }
 
 function getFoodImage(src){
@@ -445,16 +494,54 @@ function getFoodImage(src){
   if(foodImages.has(src)) return foodImages.get(src);
   const img = new Image();
   img.decoding = "async";
-  img.src = src + "?v=53";
+  img.src = src + "?v=61";
   foodImages.set(src, img);
   return img;
 }
 
-document.getElementById("playBtn").onclick = () => {
+function buildMatrixChars(){
+  const chars = "01アイウエオΞΔΣΛЖ†⚡";
+  const cols = Math.max(18, Math.floor(innerWidth / 26));
+  const rows = Math.max(14, Math.floor(innerHeight / 24));
+  let out = "";
+  for(let y=0;y<rows;y++){
+    let line = "";
+    for(let x=0;x<cols;x++){
+      line += chars[Math.floor(Math.random() * chars.length)] + " ";
+    }
+    out += line + "\n";
+  }
+  enterRain.textContent = out;
+}
+
+async function playEnterIntro(){
+  if(enteringGame) return;
+  enteringGame = true;
+  buildMatrixChars();
+  enterIntro.classList.add("show");
+  enterHead.classList.remove("show");
+  enterText.classList.remove("show");
+  void enterHead.offsetWidth;
+  void enterText.offsetWidth;
+  enterHead.classList.add("show");
+  enterText.classList.add("show");
+  try{
+    const m = matrixAudio.cloneNode(true);
+    m.volume = .95;
+    m.currentTime = 0;
+    m.play().catch(()=>{});
+  }catch{}
+  await sleep(2600);
+  enterIntro.classList.remove("show");
+  enteringGame = false;
+}
+
+document.getElementById("playBtn").onclick = async () => {
   if(MAINTENANCE_MODE && sessionStorage.getItem("tigergames_admin")!=="true"){
     initMaintenance();
     return;
   }
+
   const name = (document.getElementById("playerName").value.trim() || "Unknown Tiger").slice(0,16);
   const nation = document.getElementById("playerNation").value || "OTHER";
   localStorage.setItem("tigergames_name", name);
@@ -464,6 +551,8 @@ document.getElementById("playBtn").onclick = () => {
     try{previewWs.close()}catch{}
     previewWs = null;
   }
+
+  await playEnterIntro();
 
   login.classList.add("hidden");
   gameScreen.classList.remove("hidden");
@@ -603,6 +692,18 @@ function playGayProximitySound(){
   try{
     const a = gayAudio.cloneNode(true);
     a.volume = .92;
+    a.currentTime = 0;
+    a.play().catch(()=>{});
+  }catch{}
+}
+
+function playZeusSound(){
+  const now = Date.now();
+  if(now < zeusAudioCooldownUntil) return;
+  zeusAudioCooldownUntil = now + 60000;
+  try{
+    const a = zeusAudio.cloneNode(true);
+    a.volume = .95;
     a.currentTime = 0;
     a.play().catch(()=>{});
   }catch{}
@@ -794,6 +895,10 @@ function handleServerEvent(msg){
   if(type === "matrixGateOpen"){
     hideMatrixCountdown();
   }
+
+  if(type === "zeusShot"){
+    playZeusSound();
+  }
 }
 
 function readEventHints(msg){
@@ -839,10 +944,10 @@ function checkLocalBuffToasts(){
   const matrixActive = Number(me.matrixImmuneMs || 0) > 0;
 
   if(speedActive && !lastMySpeedActive){
-    showToast("RED PILL ACTIVE — 10s SPEED + gayboiis killable");
+    showToast("RED PILL ACTIVE — 10s SPEED + hazards killable");
   }
   if(shieldActive && !lastMyShieldActive){
-    showToast("BLUE PILL ACTIVE — 10s PHASE + gayboiis killable");
+    showToast("BLUE PILL ACTIVE — 10s PHASE + hazards killable");
   }
   if(matrixActive && !lastMyMatrixActive){
     showToast("MORPHEUS POWER — 5s IMMUNE TO EVERYTHING");
@@ -892,7 +997,8 @@ function smoothPlayers(){
       boostActiveMs:Number(t.boostActiveMs||0),
       shieldMs:Number(t.shieldMs||0),
       speedMs:Number(t.speedMs||0),
-      matrixImmuneMs:Number(t.matrixImmuneMs||0)
+      matrixImmuneMs:Number(t.matrixImmuneMs||0),
+      buffCooldownMs:Number(t.buffCooldownMs||0)
     });
 
     const tb = t.body || [];
@@ -916,11 +1022,14 @@ function maybePlayGayAudio(){
   if(!state || !state.hazards || !state.hazards.length) return;
   const me = renderPlayers.get(myId);
   if(!me || !me.alive) return;
+
   let best = Infinity;
   for(const hz of state.hazards){
+    if(hz.type !== "gay" && hz.type !== "gay2") continue;
     const d = Math.sqrt((hz.x - me.x) ** 2 + (hz.y - me.y) ** 2);
     if(d < best) best = d;
   }
+
   if(best < 330) playGayProximitySound();
 }
 
@@ -954,10 +1063,10 @@ function draw(){
   drawWorld();
 
   const view = {
-    x1:camera.x - w/camera.zoom/2 - 340,
-    y1:camera.y - h/camera.zoom/2 - 340,
-    x2:camera.x + w/camera.zoom/2 + 340,
-    y2:camera.y + h/camera.zoom/2 + 340
+    x1:camera.x - w/camera.zoom/2 - 380,
+    y1:camera.y - h/camera.zoom/2 - 380,
+    x2:camera.x + w/camera.zoom/2 + 380,
+    y2:camera.y + h/camera.zoom/2 + 380
   };
 
   drawMazeWalls(state.mazeWalls || [], state.mazeGate || null, view);
@@ -969,6 +1078,8 @@ function draw(){
   for(const hz of state.hazards || []){
     if(inView(hz.x,hz.y,view)) drawHazard(hz);
   }
+
+  drawProjectiles(state.projectiles || [], view);
 
   [...renderPlayers.values()]
     .sort((a,b)=>(a.len||0)-(b.len||0))
@@ -1047,10 +1158,7 @@ function drawMazeWalls(walls, gate, view){
 
 function drawFood(f){
   if(!f || !f.type) return;
-
-  if(f.type!=="snack" && f.type!=="arnold" && f.type!=="morpheus" && f.type!=="redPill" && f.type!=="bluePill"){
-    return;
-  }
+  if(f.type!=="snack" && f.type!=="arnold" && f.type!=="morpheus" && f.type!=="redPill" && f.type!=="bluePill") return;
 
   ctx.save();
 
@@ -1161,34 +1269,80 @@ function drawPill(f){
 }
 
 function drawHazard(hz){
-  if(hz.type !== "gay" && hz.type !== "gay2") return;
-  const img = getFoodImage(hz.img || (hz.type === "gay2" ? "gay2.webp" : "gay.webp"));
-  const size = GAY_SIZE;
+  const img = getFoodImage(hz.img || (
+    hz.type === "gay2" ? "gay2.webp" :
+    hz.type === "zeus" ? "zeus.webp" : "gay.webp"
+  ));
+  if(!img) return;
+
+  let size = GAY_SIZE;
+  if(hz.type === "zeus") size = ZEUS_SIZE;
 
   ctx.save();
   ctx.translate(hz.x,hz.y);
 
   if(!LOW_GRAPHICS){
-    ctx.shadowColor = hz.type === "gay2" ? "rgba(107,174,255,.75)" : "rgba(255,60,140,.75)";
-    ctx.shadowBlur = 18;
+    ctx.shadowColor =
+      hz.type === "gay2" ? "rgba(107,174,255,.75)" :
+      hz.type === "zeus" ? "rgba(255,255,120,.75)" :
+      "rgba(255,60,140,.75)";
+    ctx.shadowBlur = hz.type === "zeus" ? 24 : 18;
   }
 
   const pulse = 1 + Math.sin((performance.now()+hz.x)/190)*.04;
   ctx.scale(pulse,pulse);
 
-  if(img && img.complete && img.naturalWidth > 0){
+  if(img.complete && img.naturalWidth > 0){
     ctx.drawImage(img,-size/2,-size/2,size,size);
   }
 
   ctx.textAlign = "center";
   ctx.font = LOW_GRAPHICS ? "900 12px Arial" : "900 14px Arial";
-  const label = hz.type === "gay2" ? "3CPBROMO" : "ARUGAY2 - Jorrit";
+
+  const label =
+    hz.type === "gay2" ? "3CPBROMO" :
+    hz.type === "zeus" ? "ZEUS" :
+    "ARUGAY2 - Jorrit";
+
   ctx.fillStyle = "rgba(0,0,0,.86)";
   ctx.fillText(label,0,size*.67+1);
-  ctx.fillStyle = hz.type === "gay2" ? "#9bc6ff" : "#ff89bf";
+  ctx.fillStyle =
+    hz.type === "gay2" ? "#9bc6ff" :
+    hz.type === "zeus" ? "#fff08a" :
+    "#ff89bf";
   ctx.fillText(label,0,size*.67);
 
   ctx.restore();
+}
+
+function drawProjectiles(list, view){
+  for(const p of list){
+    if(!inView(p.x,p.y,view)) continue;
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    const ang = Math.atan2(p.vy || 0, p.vx || 0);
+    ctx.rotate(ang);
+
+    if(!LOW_GRAPHICS){
+      ctx.shadowColor = "rgba(255,255,140,.85)";
+      ctx.shadowBlur = 16;
+    }
+
+    ctx.fillStyle = "#fff59b";
+    ctx.beginPath();
+    ctx.moveTo(26,0);
+    ctx.lineTo(2,-7);
+    ctx.lineTo(10,-1);
+    ctx.lineTo(-18,-10);
+    ctx.lineTo(-4,0);
+    ctx.lineTo(-18,10);
+    ctx.lineTo(10,1);
+    ctx.lineTo(2,7);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
 }
 
 function drawWorldIndicators(w,h){
@@ -1441,6 +1595,7 @@ function updateHud(){
     if(me.speedMs > 0) buffs.push(`<span class="buffBadge speed">RED PILL ${Math.ceil(me.speedMs/1000)}s</span>`);
     if(me.shieldMs > 0) buffs.push(`<span class="buffBadge shield">BLUE PILL ${Math.ceil(me.shieldMs/1000)}s</span>`);
     if(me.matrixImmuneMs > 0) buffs.push(`<span class="buffBadge matrix">MATRIX IMMUNE ${Math.ceil(me.matrixImmuneMs/1000)}s</span>`);
+    if(me.buffCooldownMs > 0 && me.speedMs <= 0 && me.shieldMs <= 0) buffs.push(`<span class="buffBadge cooldown">BUFF CD ${Math.ceil(me.buffCooldownMs/1000)}s</span>`);
     document.getElementById("meBuffs").innerHTML = buffs.join(" ");
 
     updateBoostUi(me);
@@ -1557,6 +1712,7 @@ function lerpAngle(a,b,t){return a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
 function hashCode(str){let h=0;str=String(str||"");for(let i=0;i<str.length;i++){h=((h<<5)-h)+str.charCodeAt(i);h|=0}return Math.abs(h)}
 function setDirFromScreen(x,y){const dx=x-innerWidth/2,dy=y-innerHeight/2;angle=Math.atan2(dy,dx)}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 
 addEventListener("mousemove",e=>setDirFromScreen(e.clientX,e.clientY));
 
