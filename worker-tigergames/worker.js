@@ -20,17 +20,21 @@ const WORLD = 4200;
 
 const SNACK_TARGET = 58;
 const ARNOLD_EVENT_COUNT = 4;
-const GAY_TARGET = 4;
+const GAY1_TARGET = 2;
+const GAY2_TARGET = 2;
 
 const ARNOLD_SPAWN_MS = 60000;
 const FIRST_MORPHEUS_SPAWN_MS = 120000;
 const MORPHEUS_SPAWN_MS = 180000;
-const MORPHEUS_PILL_COUNT_PER_COLOR = 8;
+const RED_PILL_TARGET = 14;
+const BLUE_PILL_TARGET = 14;
 const MAZE_LOCK_MS = 10000;
+const HAZARD_RESPAWN_MS = 60000;
+const MORPHEUS_IMMUNE_MS = 5000;
 
 const TICK_MS = 16;
 const BROADCAST_MS = 50;
-const MAX_FOOD_SEND = 120;
+const MAX_FOOD_SEND = 150;
 
 const BOT_TARGET = 5;
 const BOT_RESPAWN_MS = 5000;
@@ -38,8 +42,8 @@ const BOT_THINK_MS = 260;
 
 const BOOST_ACTIVE_MS = 3000;
 const BOOST_TOTAL_COOLDOWN_MS = 18000;
-const RED_PILL_MS = 4000;
-const BLUE_PILL_MS = 4000;
+const RED_PILL_MS = 10000;
+const BLUE_PILL_MS = 10000;
 
 const TOP_KEY = "top10_v2";
 const PLAYERS_KEY = "known_players_v1";
@@ -58,7 +62,8 @@ const NATION_FLAGS = {
 const TOPGUN_NAMES = ["Maverick", "Iceman", "Goose", "Viper", "Jester"];
 const BOT_NATIONS = ["US", "US", "US", "US", "US"];
 
-const SNACK_IMAGES = ["pic1.webp", "pic2.webp", "pic3.webp", "pic4.webp", "pic5.webp", "pic6.webp", "pic7.webp"];
+const SNACK_IMAGES = ["pic2.webp", "pic3.webp", "pic4.webp", "pic5.webp", "pic6.webp", "pic7.webp"];
+const ARNOLD_IMAGE = "pic1.webp";
 
 const MORPHEUS_SPAWN_POINTS = [
   { x: 980,  y: 980,  variant: 0 },
@@ -157,7 +162,8 @@ export class TigerRoom {
       alive: !!p.alive,
       len: p.body ? p.body.length : 0,
       shieldMs: Math.max(0, Number(p.shieldUntil || 0) - Date.now()),
-      speedMs: Math.max(0, Number(p.speedUntil || 0) - Date.now())
+      speedMs: Math.max(0, Number(p.speedUntil || 0) - Date.now()),
+      matrixImmuneMs: Math.max(0, Number(p.matrixImmuneUntil || 0) - Date.now())
     })).sort((a, b) => b.score - a.score);
 
     return json({
@@ -168,8 +174,7 @@ export class TigerRoom {
       botCount: this.bots.size,
       morpheusActive: !!this.morpheusEvent,
       arnoldOnMap: this.food.filter(f => f.type === "arnold").length,
-      gayOnMap: this.hazards.length,
-      matrixGateLocked: !!(this.morpheusEvent?.active && Date.now() < this.morpheusEvent.unlockAt),
+      activeHazards: this.hazards.filter(h => !h.deadUntil || h.deadUntil <= Date.now()).length,
       online,
       top10: this.top10,
       countryTop3: this.countryTop3(),
@@ -269,7 +274,8 @@ export class TigerRoom {
       boostCooldownUntil: 0,
 
       shieldUntil: 0,
-      speedUntil: 0
+      speedUntil: 0,
+      matrixImmuneUntil: 0
     };
 
     const startLen = bot ? Math.floor(rand(20, 38)) : 20;
@@ -307,7 +313,7 @@ export class TigerRoom {
 
     this.seedFood();
     this.ensureBots();
-    this.ensureGayHazard();
+    this.ensureHazards();
 
     this.lastTick = Date.now();
     this.lastBroadcast = 0;
@@ -340,7 +346,7 @@ export class TigerRoom {
     this.lastTick = now;
 
     this.seedFood();
-    this.ensureGayHazard();
+    this.ensureHazards();
     this.updateMorpheusGate(now);
 
     if (now - this.lastBotThink >= BOT_THINK_MS) {
@@ -352,11 +358,11 @@ export class TigerRoom {
       if (p.alive) this.updatePlayer(p, dt, now);
     }
 
-    this.updateHazards(dt);
+    this.updateHazards(dt, now);
     this.handleEating(now);
     this.handleCrashes(now);
     this.handleMazeWallCrashes(now);
-    this.handleHazardHits();
+    this.handleHazardHits(now);
 
     if (now - this.lastBotRespawn >= BOT_RESPAWN_MS) {
       this.lastBotRespawn = now;
@@ -476,7 +482,7 @@ export class TigerRoom {
         this.food.push(makeFood(
           tail.x + rand(-8, 8),
           tail.y + rand(-8, 8),
-          rand(8, 10),
+          rand(10, 12),
           1.1,
           "snack"
         ));
@@ -498,30 +504,33 @@ export class TigerRoom {
     p.radius = clamp(11 + Math.sqrt(radiusGrowthLen) * 1.04, 13, 38);
   }
 
-  ensureGayHazard() {
-    while (this.hazards.length < GAY_TARGET) {
+  ensureHazards() {
+    this.ensureHazardType("gay", "gay.webp", GAY1_TARGET);
+    this.ensureHazardType("gay2", "gay2.webp", GAY2_TARGET);
+  }
+
+  ensureHazardType(type, img, target) {
+    const current = this.hazards.filter(h => h.type === type).length;
+    for (let i = current; i < target; i++) {
       this.hazards.push({
-        id: "gay-" + crypto.randomUUID(),
-        type: "gay",
-        img: "gay.webp",
+        id: `${type}-` + crypto.randomUUID(),
+        type,
+        img,
         x: rand(250, WORLD - 250),
         y: rand(250, WORLD - 250),
         r: 72,
         vx: rand(-20, 20),
-        vy: rand(-20, 20)
+        vy: rand(-20, 20),
+        deadUntil: 0
       });
-    }
-
-    if (this.hazards.length > GAY_TARGET) {
-      this.hazards.length = GAY_TARGET;
     }
   }
 
-  updateHazards(dt) {
+  updateHazards(dt, now) {
     const alivePlayers = this.allPlayers().filter(p => p.alive);
 
     for (const hz of this.hazards) {
-      if (hz.type !== "gay") continue;
+      if (hz.deadUntil && hz.deadUntil > now) continue;
 
       const near = nearest(hz, alivePlayers, 900);
       let targetVx = 0;
@@ -531,7 +540,7 @@ export class TigerRoom {
         const dx = near.item.x - hz.x;
         const dy = near.item.y - hz.y;
         const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
-        const speed = near.d < 320 ? 205 : 175;
+        const speed = near.d < 320 ? 205 : 178;
         targetVx = (dx / d) * speed;
         targetVy = (dy / d) * speed;
       } else {
@@ -559,7 +568,7 @@ export class TigerRoom {
         const eatRadius = p.radius + f.r + (
           f.type === "morpheus" ? 30 :
           f.type === "arnold" ? 24 :
-          f.type === "redPill" || f.type === "bluePill" ? 10 :
+          f.type === "redPill" || f.type === "bluePill" ? 12 :
           7
         );
 
@@ -573,29 +582,32 @@ export class TigerRoom {
           if (f.type === "arnold") {
             p.score += 100;
             this.food.splice(i, 1);
-            this.broadcastEvent("arnoldEaten", `${p.name} ate Arnold Pikhaar Shwarzenegger.`);
             continue;
           }
 
           if (f.type === "redPill") {
             p.speedUntil = now + RED_PILL_MS;
             this.food.splice(i, 1);
+            if (!p.bot) this.sendToPlayer(p.id, { type: "event", text: "RED PILL ACTIVE — 10s SPEED + gayboiis killable" });
             continue;
           }
 
           if (f.type === "bluePill") {
             p.shieldUntil = now + BLUE_PILL_MS;
             this.food.splice(i, 1);
+            if (!p.bot) this.sendToPlayer(p.id, { type: "event", text: "BLUE PILL ACTIVE — 10s PHASE + gayboiis killable" });
             continue;
           }
 
           if (f.type === "morpheus") {
             p.score += 500;
-            this.massGrowPlayer(p, 95);
+            this.massGrowPlayer(p, 150);
+            p.matrixImmuneUntil = now + MORPHEUS_IMMUNE_MS;
             this.food.splice(i, 1);
             this.clearMorpheusEvent();
             this.broadcastEvent("morpheusTaken", `${p.name} has taken Morpheus.`);
             this.broadcastEvent("matrixCollapse", "THE MATRIX IS COLLAPSING");
+            if (!p.bot) this.sendToPlayer(p.id, { type: "event", text: "MORPHEUS POWER — 5s IMMUNE TO EVERYTHING" });
             continue;
           }
         }
@@ -615,6 +627,7 @@ export class TigerRoom {
 
     for (const p of all) {
       if (!p.alive) continue;
+      if (now < Number(p.matrixImmuneUntil || 0)) continue;
 
       if (p.x <= 22 || p.x >= WORLD - 22 || p.y <= 22 || p.y >= WORLD - 22) {
         this.kill(p, null, "border");
@@ -638,7 +651,11 @@ export class TigerRoom {
       for (const other of all) {
         if (p === other || !other.alive) continue;
 
-        const eitherShielded = now < Number(p.shieldUntil || 0) || now < Number(other.shieldUntil || 0);
+        const eitherShielded =
+          now < Number(p.shieldUntil || 0) ||
+          now < Number(other.shieldUntil || 0) ||
+          now < Number(p.matrixImmuneUntil || 0) ||
+          now < Number(other.matrixImmuneUntil || 0);
 
         const headDist = Math.sqrt(dist2(p.x, p.y, other.x, other.y));
         const headHitRadius = (p.radius + other.radius) * 0.70;
@@ -678,6 +695,7 @@ export class TigerRoom {
 
     for (const p of this.allPlayers()) {
       if (!p.alive) continue;
+      if (now < Number(p.matrixImmuneUntil || 0)) continue;
 
       for (const w of walls) {
         if (circleRectHit(p.x, p.y, p.radius * 0.75, w)) {
@@ -688,18 +706,38 @@ export class TigerRoom {
     }
   }
 
-  handleHazardHits() {
+  handleHazardHits(now) {
     if (!this.hazards.length) return;
 
     for (const hz of this.hazards) {
-      if (hz.type !== "gay") continue;
+      if (hz.deadUntil && hz.deadUntil > now) continue;
 
       for (const p of this.allPlayers()) {
         if (!p.alive) continue;
 
         const hitRadius = p.radius + hz.r * 0.28;
         if (dist2(p.x, p.y, hz.x, hz.y) < hitRadius ** 2) {
-          this.kill(p, null, "gay");
+          const canKillHazard =
+            now < Number(p.speedUntil || 0) ||
+            now < Number(p.shieldUntil || 0) ||
+            now < Number(p.matrixImmuneUntil || 0);
+
+          if (canKillHazard) {
+            hz.deadUntil = now + HAZARD_RESPAWN_MS;
+            hz.x = rand(250, WORLD - 250);
+            hz.y = rand(250, WORLD - 250);
+            hz.vx = rand(-20, 20);
+            hz.vy = rand(-20, 20);
+
+            if (!p.bot) {
+              this.sendToPlayer(p.id, {
+                type: "event",
+                text: hz.type === "gay2" ? "3CPBROMO deleted." : "ARUGAY2 - Jorrit deleted."
+              });
+            }
+          } else if (now >= Number(p.matrixImmuneUntil || 0)) {
+            this.kill(p, null, hz.type === "gay2" ? "gay2" : "gay");
+          }
         }
       }
     }
@@ -743,7 +781,7 @@ export class TigerRoom {
       this.food.push(makeFood(
         b.x + rand(-18, 18),
         b.y + rand(-18, 18),
-        rand(8, 10),
+        rand(10, 12),
         rand(1.2, 3.1),
         "snack"
       ));
@@ -755,8 +793,8 @@ export class TigerRoom {
     if (reason === "self") text = `${dead.name} ate his own tiger tail 🐯`;
     else if (reason === "border") text = `${dead.name} left the Tiger zone 💀`;
     else if (reason === "matrixwall") text = `${dead.name} got deleted by the Matrix wall 💀`;
-    else if (reason === "gay") {
-      text = `aah lil gay fella i got u — ${dead.name} got caught by ARUGAY2 - Jorrit 💀`;
+    else if (reason === "gay" || reason === "gay2") {
+      text = `aah lil gay fella i got u — ${dead.name} got caught by ${reason === "gay2" ? "3CPBROMO" : "ARUGAY2 - Jorrit"} 💀`;
       eventType = "gayKill";
     } else if (reason === "headon" && killer && killer !== dead) {
       text = `${killer.name} won the head-on against ${dead.name} 💥`;
@@ -795,6 +833,8 @@ export class TigerRoom {
     });
 
     const snackCount = this.food.filter(f => f.type === "snack").length;
+    const redCount = this.food.filter(f => f.type === "redPill").length;
+    const blueCount = this.food.filter(f => f.type === "bluePill").length;
 
     if (now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS) {
       this.lastArnoldSpawn = now;
@@ -810,26 +850,28 @@ export class TigerRoom {
       this.food.push(makeFood(pos.x, pos.y, rand(10, 12), rand(1.3, 5.4), "snack"));
     }
 
-    const maxFood = SNACK_TARGET + 20 + 1 + MORPHEUS_PILL_COUNT_PER_COLOR * 2 + 90;
+    for (let i = redCount; i < RED_PILL_TARGET; i++) {
+      const pos = this.findPillSpot(110);
+      this.food.push(makeFood(pos.x, pos.y, 24, 0, "redPill"));
+    }
+
+    for (let i = blueCount; i < BLUE_PILL_TARGET; i++) {
+      const pos = this.findPillSpot(110);
+      this.food.push(makeFood(pos.x, pos.y, 24, 0, "bluePill"));
+    }
+
+    const maxFood = SNACK_TARGET + 24 + 12 + 120;
     if (this.food.length > maxFood) {
       this.food.splice(0, this.food.length - maxFood);
     }
   }
 
   spawnArnoldWave() {
-    let spawned = 0;
-    const existing = this.food.filter(f => f.type === "arnold").length;
-    const needed = Math.max(ARNOLD_EVENT_COUNT, existing < ARNOLD_EVENT_COUNT ? ARNOLD_EVENT_COUNT - existing : ARNOLD_EVENT_COUNT);
-
-    for (let i = 0; i < needed; i++) {
+    for (let i = 0; i < ARNOLD_EVENT_COUNT; i++) {
       const pos = this.findFoodSpot(420);
       this.food.push(makeFood(pos.x, pos.y, 92, 100, "arnold"));
-      spawned++;
     }
-
-    if (spawned > 0) {
-      this.broadcastEvent("arnoldSpawn", "Arnold Pikhaar Shwarzenegger has spawned.");
-    }
+    this.broadcastEvent("arnoldSpawn", "Arnold Pikhaar Shwarzenegger has spawned.");
   }
 
   spawnMorpheusEvent(now) {
@@ -851,39 +893,29 @@ export class TigerRoom {
       variant: point.variant,
       baseWalls: maze.baseWalls,
       gateWall: maze.gateWall,
-      unlockAt
+      unlockAt,
+      opened: false
     };
 
     this.lastMorpheusSpawn = now;
     this.nextMorpheusSpawnAt = now + MORPHEUS_SPAWN_MS;
 
-    this.food = this.food.filter(f => f.type !== "morpheus" && f.type !== "redPill" && f.type !== "bluePill");
+    this.food = this.food.filter(f => f.type !== "morpheus");
     this.food.push(makeFood(center.x, center.y, 120, 500, "morpheus"));
-
-    for (let i = 0; i < MORPHEUS_PILL_COUNT_PER_COLOR; i++) {
-      const red = this.findPillSpot(90);
-      this.food.push(makeFood(red.x, red.y, 18, 0, "redPill"));
-
-      const blue = this.findPillSpot(90);
-      this.food.push(makeFood(blue.x, blue.y, 18, 0, "bluePill"));
-    }
 
     this.broadcastEvent("morpheusSpawn", "ENTER THE MATRIX");
   }
 
   updateMorpheusGate(now) {
     if (!this.morpheusEvent || !this.morpheusEvent.active) return;
-    if (!this.morpheusEvent.unlockAt) return;
-
-    if (!this.morpheusEvent.opened && now >= this.morpheusEvent.unlockAt) {
+    if (now >= this.morpheusEvent.unlockAt && !this.morpheusEvent.opened) {
       this.morpheusEvent.opened = true;
-      this.broadcastEvent("matrixGateOpen", "MAZE OPEN");
+      this.broadcastEvent("matrixGateOpen", "GATES OPEN");
     }
   }
 
   clearMorpheusEvent() {
     this.morpheusEvent = null;
-    this.food = this.food.filter(f => f.type !== "morpheus" && f.type !== "redPill" && f.type !== "bluePill");
   }
 
   getActiveMazeWalls(now = Date.now()) {
@@ -892,6 +924,12 @@ export class TigerRoom {
       return [...this.morpheusEvent.baseWalls, this.morpheusEvent.gateWall];
     }
     return [...this.morpheusEvent.baseWalls];
+  }
+
+  getGateWall(now = Date.now()) {
+    if (!this.morpheusEvent || !this.morpheusEvent.active) return null;
+    if (now < this.morpheusEvent.unlockAt) return this.morpheusEvent.gateWall;
+    return null;
   }
 
   findFoodSpot(minDistance = 70) {
@@ -923,7 +961,7 @@ export class TigerRoom {
   }
 
   findPillSpot(minDistance = 90) {
-    for (let tries = 0; tries < 32; tries++) {
+    for (let tries = 0; tries < 40; tries++) {
       const x = rand(90, WORLD - 90);
       const y = rand(90, WORLD - 90);
 
@@ -963,6 +1001,7 @@ export class TigerRoom {
 
       const shieldMs = Math.max(0, Number(p.shieldUntil || 0) - now);
       const speedMs = Math.max(0, Number(p.speedUntil || 0) - now);
+      const matrixImmuneMs = Math.max(0, Number(p.matrixImmuneUntil || 0) - now);
 
       return {
         id: p.id,
@@ -983,6 +1022,7 @@ export class TigerRoom {
         boostCooldownMs,
         shieldMs,
         speedMs,
+        matrixImmuneMs,
         body: p.body
           .filter((_, i) => i % stride === 0)
           .map(b => ({
@@ -993,11 +1033,7 @@ export class TigerRoom {
     });
 
     const food = [...this.food]
-      .sort((a, b) => {
-        const pa = foodPriority(a.type);
-        const pb = foodPriority(b.type);
-        return pa - pb;
-      })
+      .sort((a, b) => foodPriority(a.type) - foodPriority(b.type))
       .slice(0, MAX_FOOD_SEND)
       .map(f => ({
         x: Math.round(f.x),
@@ -1009,16 +1045,19 @@ export class TigerRoom {
         spin: round3(f.spin || 0)
       }));
 
-    const hazards = this.hazards.map(h => ({
-      id: h.id,
-      type: h.type,
-      img: h.img || null,
-      x: Math.round(h.x),
-      y: Math.round(h.y),
-      r: Math.round(h.r)
-    }));
+    const hazards = this.hazards
+      .filter(h => !h.deadUntil || h.deadUntil <= now)
+      .map(h => ({
+        id: h.id,
+        type: h.type,
+        img: h.img || null,
+        x: Math.round(h.x),
+        y: Math.round(h.y),
+        r: Math.round(h.r)
+      }));
 
-    const mazeWalls = this.getActiveMazeWalls(now).map(w => ({
+    const gateWall = this.getGateWall(now);
+    const mazeWalls = this.getActiveMazeWalls(now).filter(w => gateWall ? w !== gateWall : true).map(w => ({
       x: Math.round(w.x),
       y: Math.round(w.y),
       w: Math.round(w.w),
@@ -1031,10 +1070,6 @@ export class TigerRoom {
       eventText: this.currentEvent.text
     } : {};
 
-    const mazeUnlockInMs = this.morpheusEvent?.active
-      ? Math.max(0, Number(this.morpheusEvent.unlockAt || 0) - now)
-      : 0;
-
     this.broadcastRaw(JSON.stringify({
       type: "state",
       game: "Tigergames Online",
@@ -1043,13 +1078,17 @@ export class TigerRoom {
       food,
       hazards,
       mazeWalls,
+      mazeGate: gateWall ? {
+        x: Math.round(gateWall.x),
+        y: Math.round(gateWall.y),
+        w: Math.round(gateWall.w),
+        h: Math.round(gateWall.h)
+      } : null,
       top10: this.top10,
       countryTop3: this.countryTop3(),
       force,
       ...eventPayload,
       morpheusActive: !!this.morpheusEvent?.active,
-      matrixMazeOpenInMs: mazeUnlockInMs,
-      mazeUnlockInMs,
       mazeUnlockAt: this.morpheusEvent?.active ? Number(this.morpheusEvent.unlockAt || 0) : 0
     }));
   }
@@ -1104,11 +1143,19 @@ export class TigerRoom {
     };
 
     if (this.morpheusEvent?.active) {
-      payload.mazeUnlockInMs = Math.max(0, Number(this.morpheusEvent.unlockAt || 0) - Date.now());
       payload.mazeUnlockAt = Number(this.morpheusEvent.unlockAt || 0);
     }
 
     this.broadcast(payload);
+  }
+
+  sendToPlayer(playerId, obj) {
+    for (const [ws, p] of this.players.entries()) {
+      if (p.id === playerId) {
+        try { ws.send(JSON.stringify(obj)); } catch {}
+        return;
+      }
+    }
   }
 
   broadcastRaw(msg) {
@@ -1227,7 +1274,7 @@ function makeFood(x, y, r, v, type = "snack") {
     return {
       x, y, r, v: 100,
       type: "arnold",
-      img: "pic.webp"
+      img: ARNOLD_IMAGE
     };
   }
 
