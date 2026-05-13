@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>Tigergames Online</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -13,7 +13,7 @@ html,body{
 }
 body{
   background:
-    radial-gradient(circle at top,rgba(255,136,0,.22),transparent 38%),
+    radial-gradient(circle at top,rgba(255,136,0,.18),transparent 38%),
     linear-gradient(135deg,#050505,#111,#000)
 }
 .hidden{display:none!important}
@@ -120,8 +120,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
 
 .toast{
   position:fixed;left:50%;bottom:255px;transform:translateX(-50%) scale(.9);
-  background:rgba(0,0,0,.82);border:1px solid #ff8a00;border-radius:999px;padding:10px 16px;
-  opacity:0;transition:.2s;z-index:18;font-weight:900;max-width:min(90vw,560px);text-align:center
+  background:rgba(0,0,0,.86);border:1px solid #ff8a00;border-radius:999px;padding:10px 16px;
+  opacity:0;transition:.2s;z-index:18;font-weight:900;max-width:min(92vw,640px);text-align:center
 }
 .toast.show{opacity:1;transform:translateX(-50%) scale(1)}
 
@@ -161,6 +161,32 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
   100%{opacity:0;transform:translateX(-50%) scale(1.04)}
 }
 
+.matrixCountdown{
+  position:fixed;left:50%;top:29%;transform:translateX(-50%);
+  z-index:17;pointer-events:none;opacity:0;text-align:center;
+  color:#7affab;font-weight:900;letter-spacing:.08em;
+  text-shadow:0 0 10px rgba(44,255,119,.6),0 0 26px rgba(44,255,119,.28)
+}
+.matrixCountdown.show{opacity:1}
+.matrixCountdown .label{font-size:clamp(12px,2vw,18px);opacity:.8}
+.matrixCountdown .time{font-size:clamp(30px,7vw,74px);line-height:1}
+
+.morpheusIntro{
+  position:fixed;inset:0;z-index:14;pointer-events:none;opacity:0;
+  display:flex;align-items:center;justify-content:center;
+  mix-blend-mode:screen;
+}
+.morpheusIntro img{
+  width:min(90vw,900px);height:auto;opacity:.22;filter:drop-shadow(0 0 40px rgba(44,255,119,.25));
+}
+.morpheusIntro.show{animation:morpheusIntroAnim 5s ease forwards}
+@keyframes morpheusIntroAnim{
+  0%{opacity:0;transform:scale(.92)}
+  15%{opacity:1;transform:scale(1)}
+  48%{opacity:.78}
+  100%{opacity:0;transform:scale(1.06)}
+}
+
 .buffBadge{
   display:inline-block;
   margin-top:6px;
@@ -181,6 +207,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
   .board{width:168px}
   .score{font-size:24px}
   .buttons{bottom:145px}
+  .morpheusIntro img{width:min(96vw,620px)}
 }
 </style>
 </head>
@@ -277,6 +304,15 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
   <div id="matrixFx" class="matrixFx"></div>
   <div id="matrixText" class="matrixText">ENTER THE MATRIX</div>
 
+  <div id="matrixCountdown" class="matrixCountdown hidden">
+    <div class="label">MAZE OPENS IN</div>
+    <div class="time" id="matrixCountdownTime">10</div>
+  </div>
+
+  <div id="morpheusIntro" class="morpheusIntro">
+    <img id="morpheusIntroImg" src="mor1.webp" alt="Morpheus">
+  </div>
+
   <audio id="music" src="Araxos%20Baby.mp3" preload="auto" loop></audio>
   <audio id="roar" src="roar.mp3" preload="auto"></audio>
   <audio id="matrixAudio" src="matrix.ogg" preload="auto"></audio>
@@ -288,11 +324,12 @@ const MAINTENANCE_MODE = false;
 const WORLD = 4200;
 const BOOST_ACTIVE_MS = 3000;
 const BOOST_TOTAL_COOLDOWN_MS = 18000;
+const MAZE_LOCK_MS = 10000;
 
 const LOW_GRAPHICS = matchMedia("(max-width: 720px)").matches;
-const MAX_DPR = LOW_GRAPHICS ? 1.2 : 1.5;
+const MAX_DPR = LOW_GRAPHICS ? 1.15 : 1.5;
 
-const PIC_ICON_SIZE = LOW_GRAPHICS ? 32 : 40;
+const PIC_ICON_SIZE = LOW_GRAPHICS ? 64 : 80;
 const ARNOLD_SIZE = LOW_GRAPHICS ? 180 : 220;
 const GAY_SIZE = LOW_GRAPHICS ? 135 : 155;
 const MORPHEUS_SIZE = LOW_GRAPHICS ? 310 : 420;
@@ -346,6 +383,9 @@ const boostLabel = document.getElementById("boostLabel");
 const boostTime = document.getElementById("boostTime");
 const matrixFx = document.getElementById("matrixFx");
 const matrixText = document.getElementById("matrixText");
+const matrixCountdown = document.getElementById("matrixCountdown");
+const matrixCountdownTime = document.getElementById("matrixCountdownTime");
+const morpheusIntro = document.getElementById("morpheusIntro");
 
 let ws = null, previewWs = null, myId = null, state = null;
 let renderPlayers = new Map();
@@ -353,12 +393,15 @@ let running = false, angle = 0, boostPressed = false, musicEnabled = true;
 let lastInput = 0, lastRoar = 0, lastBoostTap = 0;
 let lastHudUpdate = 0, lastFrame = 0;
 let matrixCollapseUntil = 0;
+let matrixCountdownUntil = 0;
+let morpheusIntroUntil = 0;
 let audioQueue = [];
 let audioQueueBusy = false;
+let lastEventKey = "";
+let arnoldPointerBlinkSeed = 0;
 
 const camera = { x: WORLD/2, y: WORLD/2, zoom: 1 };
 const foodImages = new Map();
-const miscImages = new Map();
 
 document.getElementById("playerName").value = localStorage.getItem("tigergames_name") || "";
 document.getElementById("playerNation").value = localStorage.getItem("tigergames_nation") || "BE";
@@ -400,7 +443,7 @@ function getFoodImage(src){
   if(foodImages.has(src)) return foodImages.get(src);
   const img = new Image();
   img.decoding = "async";
-  img.src = src + "?v=31";
+  img.src = src + "?v=41";
   foodImages.set(src, img);
   return img;
 }
@@ -433,6 +476,9 @@ document.getElementById("menuBtn").onclick = () => {
   login.classList.remove("hidden");
   renderPlayers.clear();
   state = null;
+  myId = null;
+  hideMatrixCountdown();
+  morpheusIntro.classList.remove("show");
   preloadLoginStats();
 };
 
@@ -560,8 +606,42 @@ function playMatrixFx(){
   matrixText.classList.add("show");
 }
 
+function startMorpheusIntro(){
+  morpheusIntroUntil = performance.now() + 5000;
+  morpheusIntro.classList.remove("show");
+  void morpheusIntro.offsetWidth;
+  morpheusIntro.classList.add("show");
+}
+
+function startMatrixCountdown(seconds=10){
+  matrixCountdownUntil = performance.now() + Math.max(0, seconds * 1000);
+  matrixCountdown.classList.remove("hidden");
+  matrixCountdown.classList.add("show");
+  updateMatrixCountdown();
+}
+
+function hideMatrixCountdown(){
+  matrixCountdownUntil = 0;
+  matrixCountdown.classList.add("hidden");
+  matrixCountdown.classList.remove("show");
+}
+
+function updateMatrixCountdown(){
+  if(!matrixCountdownUntil){
+    hideMatrixCountdown();
+    return;
+  }
+  const left = Math.max(0, matrixCountdownUntil - performance.now());
+  const sec = Math.ceil(left/1000);
+  matrixCountdownTime.textContent = String(sec);
+  if(left <= 0){
+    hideMatrixCountdown();
+    showToast("MAZE OPEN");
+  }
+}
+
 function startCollapseFx(){
-  matrixCollapseUntil = performance.now() + 2600;
+  matrixCollapseUntil = performance.now() + 5000;
   showToast("THE MATRIX IS COLLAPSING");
 }
 
@@ -618,6 +698,10 @@ function connect(name,nation){
   renderPlayers.clear();
   state = null;
   myId = null;
+  lastEventKey = "";
+  arnoldPointerBlinkSeed = Math.random() * 1000;
+  hideMatrixCountdown();
+  morpheusIntro.classList.remove("show");
 
   setNet("ONLINE");
   showToast("Connecting websocket...");
@@ -650,23 +734,13 @@ function connect(name,nation){
       if(msg.type==="state"){
         state = msg;
         ingestState(msg);
+        readServerEventHints(msg);
         if(msg.countryTop3) drawCountryTop3(msg.countryTop3);
       }
 
       if(msg.type==="event"){
         const txt = String(msg.text || "");
-        showToast(txt);
-
-        if(txt === "Arnold has spawned.") playRandomArnoldSound();
-        if(txt.includes("ate Arnold")) playRandomArnoldSound();
-
-        if(txt === "ENTER THE MATRIX"){
-          playMatrixFx();
-        }
-
-        if(txt === "THE MATRIX IS COLLAPSING"){
-          startCollapseFx();
-        }
+        handleServerEventText(txt, msg);
       }
     }catch{
       setNet("MSG parse error");
@@ -688,6 +762,91 @@ function connect(name,nation){
   };
 
   requestAnimationFrame(loop);
+}
+
+function handleServerEventText(txt, msg){
+  if(!txt) return;
+  showToast(txt);
+
+  if(txt === "Arnold has spawned." || txt.includes("Arnold Pikhaar Shwarzenegger has spawned")){
+    playRandomArnoldSound();
+  }
+  if(txt.includes("ate Arnold") || txt.includes("Arnold Pikhaar Shwarzenegger")){
+    if(txt.includes("ate") || txt.includes("claimed")) playRandomArnoldSound();
+  }
+
+  if(txt === "ENTER THE MATRIX"){
+    playMatrixFx();
+    startMorpheusIntro();
+    startMatrixCountdown(10);
+  }
+
+  if(txt === "THE MATRIX IS COLLAPSING"){
+    startCollapseFx();
+    hideMatrixCountdown();
+  }
+
+  if(txt.includes("ARUGAY2 - Jorrit") || txt.toLowerCase().includes("lil gay fella")){
+    showToast(txt);
+  }
+
+  if(typeof msg.mazeUnlockInMs === "number"){
+    startMatrixCountdown(Math.ceil(msg.mazeUnlockInMs / 1000));
+  }
+}
+
+function readServerEventHints(msg){
+  const serverEventId = msg.eventId || msg.eventKey || "";
+  const serverEventText = String(msg.eventText || "");
+  const serverEventType = String(msg.eventType || "");
+  const eventKey = [serverEventId,serverEventType,serverEventText].filter(Boolean).join("|");
+
+  if(eventKey && eventKey !== lastEventKey){
+    lastEventKey = eventKey;
+
+    if(serverEventType==="morpheusSpawn" || serverEventText==="ENTER THE MATRIX"){
+      playMatrixFx();
+      startMorpheusIntro();
+      startMatrixCountdown(
+        typeof msg.mazeUnlockInMs === "number" ? Math.ceil(msg.mazeUnlockInMs/1000) :
+        typeof msg.matrixMazeOpenInMs === "number" ? Math.ceil(msg.matrixMazeOpenInMs/1000) :
+        10
+      );
+      showToast("ENTER THE MATRIX");
+    }
+
+    if(serverEventType==="matrixCollapse" || serverEventText==="THE MATRIX IS COLLAPSING"){
+      startCollapseFx();
+      hideMatrixCountdown();
+    }
+
+    if(serverEventType==="arnoldSpawn"){
+      playRandomArnoldSound();
+      showToast("Arnold Pikhaar Shwarzenegger has spawned.");
+    }
+
+    if(serverEventType==="arnoldEaten"){
+      playRandomArnoldSound();
+    }
+
+    if(serverEventType==="gayKill"){
+      showToast(serverEventText || "aah lil gay fella i got u");
+    }
+  }
+
+  if(typeof msg.mazeUnlockAt === "number"){
+    matrixCountdownUntil = msg.mazeUnlockAt;
+    matrixCountdown.classList.remove("hidden");
+    matrixCountdown.classList.add("show");
+  }else if(typeof msg.matrixMazeOpenAt === "number"){
+    matrixCountdownUntil = msg.matrixMazeOpenAt;
+    matrixCountdown.classList.remove("hidden");
+    matrixCountdown.classList.add("show");
+  }else if(typeof msg.mazeUnlockInMs === "number"){
+    matrixCountdownUntil = performance.now() + msg.mazeUnlockInMs;
+    matrixCountdown.classList.remove("hidden");
+    matrixCountdown.classList.add("show");
+  }
 }
 
 function ingestState(msg){
@@ -720,6 +879,7 @@ function loop(ts){
   lastFrame = ts || performance.now();
   sendInput();
   smoothPlayers();
+  updateMatrixCountdown();
   draw();
   requestAnimationFrame(loop);
 }
@@ -782,8 +942,8 @@ function draw(){
 
   let shakeX = 0, shakeY = 0;
   if(performance.now() < matrixCollapseUntil){
-    shakeX = (Math.random() - .5) * 14;
-    shakeY = (Math.random() - .5) * 14;
+    shakeX = (Math.random() - .5) * 18;
+    shakeY = (Math.random() - .5) * 18;
   }
 
   ctx.save();
@@ -831,7 +991,7 @@ function drawWorld(){
   ctx.fillRect(0,0,WORLD,WORLD);
 
   const grid = LOW_GRAPHICS ? 360 : 240;
-  ctx.strokeStyle = LOW_GRAPHICS ? "rgba(255,136,0,.03)" : "rgba(255,136,0,.07)";
+  ctx.strokeStyle = LOW_GRAPHICS ? "rgba(255,136,0,.025)" : "rgba(255,136,0,.06)";
   ctx.lineWidth = 1;
 
   for(let x=0;x<WORLD;x+=grid){
@@ -871,6 +1031,12 @@ function drawMazeWalls(walls, view){
 }
 
 function drawFood(f){
+  if(!f || !f.type) return;
+
+  if(f.type!=="snack" && f.type!=="arnold" && f.type!=="morpheus" && f.type!=="redPill" && f.type!=="bluePill"){
+    return;
+  }
+
   ctx.save();
 
   if(f.type==="redPill" || f.type==="bluePill"){
@@ -921,16 +1087,22 @@ function drawFood(f){
       const pulse = 1 + Math.sin(performance.now()/240) * .05;
       ctx.scale(pulse,pulse);
       ctx.drawImage(img,-size/2,-size/2,size,size);
+
+      ctx.rotate(-Math.PI/30);
+      ctx.textAlign = "center";
+      ctx.font = LOW_GRAPHICS ? "900 14px Arial" : "900 16px Arial";
+      ctx.fillStyle = "#111";
+      ctx.fillText("Arnold Pikhaar Shwarzenegger",0,size*.68+1);
+      ctx.fillStyle = "#ffd36a";
+      ctx.fillText("Arnold Pikhaar Shwarzenegger",0,size*.68);
     }else{
       const pulse = LOW_GRAPHICS ? 1 : 1 + Math.sin((performance.now()+f.x+f.y)/260)*.02;
       ctx.scale(pulse,pulse);
       ctx.drawImage(img,-size/2,-size/2,size,size);
     }
   }else{
-    ctx.fillStyle = isMorpheus ? "#2cff77" : isArnold ? "#ffd000" : "#ff8a00";
-    ctx.beginPath();
-    ctx.arc(f.x,f.y,size/2,0,Math.PI*2);
-    ctx.fill();
+    ctx.restore();
+    return;
   }
 
   ctx.restore();
@@ -939,9 +1111,10 @@ function drawFood(f){
 function drawPill(f){
   const red = f.type==="redPill";
   const size = LOW_GRAPHICS ? 24 : 30;
+  const spin = f.spin || ((performance.now()/700) % (Math.PI*2));
 
   ctx.translate(f.x,f.y);
-  ctx.rotate(f.spin || 0);
+  ctx.rotate(spin);
 
   if(!LOW_GRAPHICS){
     ctx.shadowColor = red ? "rgba(255,70,70,.7)" : "rgba(78,161,255,.7)";
@@ -995,46 +1168,71 @@ function drawHazard(hz){
   if(img && img.complete && img.naturalWidth > 0){
     ctx.drawImage(img,-size/2,-size/2,size,size);
   }else{
-    ctx.fillStyle="#ff4ca3";
-    ctx.beginPath();
-    ctx.arc(0,0,size/2,0,Math.PI*2);
-    ctx.fill();
+    ctx.restore();
+    return;
   }
+
+  ctx.textAlign = "center";
+  ctx.font = LOW_GRAPHICS ? "900 12px Arial" : "900 14px Arial";
+  ctx.fillStyle = "rgba(0,0,0,.86)";
+  ctx.fillText("ARUGAY2 - Jorrit",0,size*.67+1);
+  ctx.fillStyle = "#ff89bf";
+  ctx.fillText("ARUGAY2 - Jorrit",0,size*.67);
 
   ctx.restore();
 }
 
 function drawWorldIndicators(w,h){
   drawOffscreenMorpheusPointer(w,h);
+  drawNearestArnoldPointer(w,h);
 }
 
 function drawOffscreenMorpheusPointer(w,h){
   if(!state || !state.food) return;
-  const me = renderPlayers.get(myId);
-  if(!me) return;
-
   const morpheus = (state.food || []).find(f => f.type==="morpheus");
   if(!morpheus) return;
+  drawEdgePointerToTarget(morpheus.x,morpheus.y,w,h,"MORPHEUS","#2cff77",58,34);
+}
 
-  const sx = (morpheus.x - camera.x) * camera.zoom + w/2;
-  const sy = (morpheus.y - camera.y) * camera.zoom + h/2;
-  const margin = 54;
+function drawNearestArnoldPointer(w,h){
+  if(!state || !state.food || !state.food.length) return;
+  const arnolds = state.food.filter(f => f.type==="arnold");
+  if(!arnolds.length) return;
+
+  let closest = null;
+  let best = Infinity;
+  for(const a of arnolds){
+    const dx = a.x - camera.x;
+    const dy = a.y - camera.y;
+    const d2 = dx*dx + dy*dy;
+    if(d2 < best){
+      best = d2;
+      closest = a;
+    }
+  }
+  if(!closest) return;
+
+  drawEdgePointerToTarget(closest.x,closest.y,w,h,"ARNOLD","#ffd000",98,30);
+}
+
+function drawEdgePointerToTarget(tx,ty,w,h,label,color,margin,labelYOffset){
+  const sx = (tx - camera.x) * camera.zoom + w/2;
+  const sy = (ty - camera.y) * camera.zoom + h/2;
   const onScreen = sx>margin && sx<w-margin && sy>margin && sy<h-margin;
-  if(onScreen) return;
 
   const cx = w/2, cy = h/2;
   const ang = Math.atan2(sy-cy,sx-cx);
-  const edgeX = clamp(cx + Math.cos(ang)*w*.45, margin, w-margin);
-  const edgeY = clamp(cy + Math.sin(ang)*h*.45, margin, h-margin);
-  const blink = .38 + Math.abs(Math.sin(performance.now()/145))*.62;
+  const edgeX = onScreen ? sx : clamp(cx + Math.cos(ang)*w*.43, margin, w-margin);
+  const edgeY = onScreen ? sy : clamp(cy + Math.sin(ang)*h*.43, margin, h-margin);
+  const blink = .45 + Math.abs(Math.sin((performance.now()+arnoldPointerBlinkSeed)/145))* .55;
 
   ctx.save();
   ctx.translate(edgeX,edgeY);
   ctx.rotate(ang);
   ctx.globalAlpha = blink;
-  ctx.shadowColor = "#2cff77";
-  ctx.shadowBlur = 20;
-  ctx.fillStyle = "#2cff77";
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = color;
   ctx.beginPath();
   ctx.moveTo(30,0);
   ctx.lineTo(-18,-18);
@@ -1044,11 +1242,11 @@ function drawOffscreenMorpheusPointer(w,h){
   ctx.fill();
   ctx.shadowBlur = 0;
   ctx.rotate(-ang);
-  ctx.fillStyle="#2cff77";
-  ctx.font="900 11px Arial";
-  ctx.textAlign="center";
-  ctx.textBaseline="middle";
-  ctx.fillText("MORPHEUS",0,31);
+  ctx.fillStyle = color;
+  ctx.font = "900 11px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(label,0,labelYOffset);
   ctx.restore();
 }
 
@@ -1319,7 +1517,7 @@ function showToast(t){
   e.textContent = t;
   e.classList.add("show");
   clearTimeout(showToast.t);
-  showToast.t = setTimeout(() => e.classList.remove("show"), 2200);
+  showToast.t = setTimeout(() => e.classList.remove("show"), 2400);
 }
 
 function esc(s){
