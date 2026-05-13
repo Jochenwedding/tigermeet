@@ -23,9 +23,13 @@ const ARNOLD_TARGET = 4;
 
 const GAY_TARGET = 2;
 const GAY2_TARGET = 2;
-const ZEUS_TARGET = 1;
+const ZEUS_TARGET = 2;
 
-const HAZARD_KILL_SCORE = 25;
+const GAY_KILL_SCORE = 80;
+const ZEUS_KILL_SCORE = 100;
+const ARNOLD_SCORE = 50;
+const MORPHEUS_SCORE = 300;
+
 const ARNOLD_SPAWN_MS = 60000;
 
 const MORPHEUS_FIRST_SPAWN_MS = 120000;
@@ -177,6 +181,7 @@ export class TigerRoom {
       score: Math.round(p.score || 0),
       alive: !!p.alive,
       len: p.body ? p.body.length : 0,
+      spectator: !!p.spectator,
       shieldMs: Math.max(0, Number(p.shieldUntil || 0) - now),
       speedMs: Math.max(0, Number(p.speedUntil || 0) - now),
       matrixImmuneMs: Math.max(0, Number(p.matrixImmuneUntil || 0) - now),
@@ -211,11 +216,12 @@ export class TigerRoom {
     if (msg.type === "join") {
       const name = safeName(msg.name || "Tiger");
       const nation = safeNation(msg.nation || "OTHER");
+      const wantsSpectator = !!msg.spectator || name.toLowerCase() === "spectator";
 
       this.logLoginAttempt(name, nation, ws).catch(() => {});
       this.rememberPlayer(name, nation).catch(() => {});
 
-      const p = this.createPlayer(ws.id, name, false, nation);
+      const p = this.createPlayer(ws.id, name, false, nation, wantsSpectator);
 
       this.players.set(ws, p);
       this.inputs.set(ws.id, {
@@ -223,7 +229,12 @@ export class TigerRoom {
         boost: false
       });
 
-      this.emitEvent(`${name} joined Tigergames Online 🐯`, "join");
+      if (wantsSpectator) {
+        this.emitEvent(`${name} joined as spectator 👁️`, "spectatorJoin");
+      } else {
+        this.emitEvent(`${name} joined Tigergames Online 🐯`, "join");
+      }
+
       this.ensureLoop();
       this.broadcastState(true);
       return;
@@ -231,7 +242,7 @@ export class TigerRoom {
 
     if (msg.type === "input") {
       const p = this.players.get(ws);
-      if (!p || !p.alive) return;
+      if (!p || !p.alive || p.spectator) return;
 
       this.inputs.set(p.id, {
         angle: Number(msg.angle) || p.angle,
@@ -242,9 +253,9 @@ export class TigerRoom {
 
     if (msg.type === "respawn") {
       const old = this.players.get(ws);
-      if (!old) return;
+      if (!old || old.spectator) return;
 
-      this.players.set(ws, this.createPlayer(old.id, old.name, false, old.nation || "OTHER"));
+      this.players.set(ws, this.createPlayer(old.id, old.name, false, old.nation || "OTHER", false));
       this.inputs.set(old.id, {
         angle: Math.random() * Math.PI * 2,
         boost: false
@@ -257,7 +268,7 @@ export class TigerRoom {
 
   onClose(ws) {
     const p = this.players.get(ws);
-    if (p) {
+    if (p && !p.spectator) {
       this.saveTop(p.name, Math.round(p.score), p.nation).catch(() => {});
       this.saveCountryScore(p.nation, Math.round(p.score)).catch(() => {});
     }
@@ -266,7 +277,35 @@ export class TigerRoom {
     this.inputs.delete(ws.id);
   }
 
-  createPlayer(id, name, bot = false, nation = "OTHER") {
+  createPlayer(id, name, bot = false, nation = "OTHER", spectator = false) {
+    if (spectator) {
+      return {
+        id,
+        name,
+        nation: safeNation(nation),
+        bot,
+        spectator: true,
+        x: WORLD / 2,
+        y: WORLD / 2,
+        angle: 0,
+        color: "#2cff77",
+        skin: "spectator",
+        score: 0,
+        alive: true,
+        body: [],
+        radius: 0,
+        bornAt: Date.now(),
+        nextBoostAt: 0,
+        boosting: false,
+        boostActiveUntil: 0,
+        boostCooldownUntil: 0,
+        shieldUntil: 0,
+        speedUntil: 0,
+        matrixImmuneUntil: 0,
+        buffCooldownUntil: 0
+      };
+    }
+
     const a = Math.random() * Math.PI * 2;
     const x = rand(300, WORLD - 300);
     const y = rand(300, WORLD - 300);
@@ -276,6 +315,7 @@ export class TigerRoom {
       name,
       nation: safeNation(nation),
       bot,
+      spectator: false,
       x,
       y,
       angle: a,
@@ -315,7 +355,7 @@ export class TigerRoom {
     const name = TOPGUN_NAMES[index];
     const id = "bot-" + crypto.randomUUID();
 
-    const bot = this.createPlayer(id, name, true, BOT_NATIONS[index] || "US");
+    const bot = this.createPlayer(id, name, true, BOT_NATIONS[index] || "US", false);
 
     this.bots.set(id, bot);
     this.inputs.set(id, {
@@ -342,7 +382,9 @@ export class TigerRoom {
   }
 
   tick() {
-    if (this.players.size === 0) {
+    const activeNonSpectators = [...this.players.values()].filter(p => !p.spectator);
+
+    if (activeNonSpectators.length === 0) {
       this.bots.clear();
       this.hazards = [];
       this.projectiles = [];
@@ -353,8 +395,15 @@ export class TigerRoom {
         if (String(id).startsWith("bot-")) this.inputs.delete(id);
       }
 
-      clearInterval(this.tickHandle);
-      this.tickHandle = null;
+      if (this.players.size === 0) {
+        clearInterval(this.tickHandle);
+        this.tickHandle = null;
+      } else {
+        if (Date.now() - this.lastBroadcast >= 500) {
+          this.lastBroadcast = Date.now();
+          this.broadcastState(false);
+        }
+      }
       return;
     }
 
@@ -372,7 +421,7 @@ export class TigerRoom {
     }
 
     for (const p of this.allPlayers()) {
-      if (p.alive) this.updatePlayer(p, dt, now);
+      if (p.alive && !p.spectator) this.updatePlayer(p, dt, now);
     }
 
     this.updateHazards(dt, now);
@@ -422,8 +471,8 @@ export class TigerRoom {
 
   updateBotBrains() {
     const now = Date.now();
-    const humans = this.realPlayers().filter(p => p.alive);
-    const all = this.allPlayers().filter(p => p.alive);
+    const humans = this.realPlayers().filter(p => p.alive && !p.spectator);
+    const all = this.allPlayers().filter(p => p.alive && !p.spectator);
 
     for (const bot of this.bots.values()) {
       if (!bot.alive) continue;
@@ -482,6 +531,8 @@ export class TigerRoom {
   }
 
   updatePlayer(p, dt, now) {
+    if (p.spectator) return;
+
     const input = this.inputs.get(p.id) || {
       angle: p.angle,
       boost: false
@@ -565,16 +616,24 @@ export class TigerRoom {
 
   makeHazard(type) {
     if (type === "zeus") {
+      const startIndex = this.countAliveHazards("zeus") % 4;
+      const edgePath = [
+        { x: 170, y: 170 },
+        { x: WORLD - 170, y: 170 },
+        { x: WORLD - 170, y: WORLD - 170 },
+        { x: 170, y: WORLD - 170 }
+      ];
+
       return {
         id: "zeus-" + crypto.randomUUID(),
         type: "zeus",
         img: "zeus.webp",
-        x: 160,
-        y: 160,
-        r: 106,
+        x: edgePath[startIndex].x,
+        y: edgePath[startIndex].y,
+        r: 130,
         alive: true,
         deadUntil: 0,
-        routeIndex: 0,
+        routeIndex: startIndex,
         lastShotAt: 0
       };
     }
@@ -595,11 +654,18 @@ export class TigerRoom {
 
   respawnHazard(hz) {
     if (hz.type === "zeus") {
+      const edgePath = [
+        { x: 170, y: 170 },
+        { x: WORLD - 170, y: 170 },
+        { x: WORLD - 170, y: WORLD - 170 },
+        { x: 170, y: WORLD - 170 }
+      ];
+
       hz.alive = true;
       hz.deadUntil = 0;
-      hz.x = 160;
-      hz.y = 160;
-      hz.routeIndex = 0;
+      hz.routeIndex = (hz.routeIndex + 1) % edgePath.length;
+      hz.x = edgePath[hz.routeIndex].x;
+      hz.y = edgePath[hz.routeIndex].y;
       hz.lastShotAt = 0;
       return;
     }
@@ -613,7 +679,7 @@ export class TigerRoom {
   }
 
   updateHazards(dt, now) {
-    const alivePlayers = this.allPlayers().filter(p => p.alive);
+    const alivePlayers = this.allPlayers().filter(p => p.alive && !p.spectator);
 
     for (const hz of this.hazards) {
       if (!hz.alive) continue;
@@ -648,24 +714,24 @@ export class TigerRoom {
 
       if (hz.type === "zeus") {
         const path = [
-          { x: 160, y: 160 },
-          { x: WORLD - 160, y: 160 },
-          { x: WORLD - 160, y: WORLD - 160 },
-          { x: 160, y: WORLD - 160 }
+          { x: 170, y: 170 },
+          { x: WORLD - 170, y: 170 },
+          { x: WORLD - 170, y: WORLD - 170 },
+          { x: 170, y: WORLD - 170 }
         ];
 
         const target = path[hz.routeIndex % path.length];
         const dx = target.x - hz.x;
         const dy = target.y - hz.y;
         const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
-        const speed = 110;
+        const speed = 125;
 
         hz.x += (dx / d) * speed * dt;
         hz.y += (dy / d) * speed * dt;
 
         if (d < 30) hz.routeIndex = (hz.routeIndex + 1) % path.length;
 
-        const shotTarget = nearest(hz, alivePlayers, 620);
+        const shotTarget = nearest(hz, alivePlayers, 700);
         if (shotTarget && now - Number(hz.lastShotAt || 0) >= ZEUS_SHOT_MS) {
           hz.lastShotAt = now;
           this.spawnLightning(hz, shotTarget.item);
@@ -679,8 +745,8 @@ export class TigerRoom {
     const dx = target.x - zeus.x;
     const dy = target.y - zeus.y;
     const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
-    const speed = 860;
-    const ttl = Math.min(2200, Math.max(650, (d / speed) * 1000 + 200));
+    const speed = 980;
+    const ttl = Math.min(2400, Math.max(700, (d / speed) * 1000 + 260));
 
     this.projectiles.push({
       id: "bolt-" + crypto.randomUUID(),
@@ -689,7 +755,7 @@ export class TigerRoom {
       y: zeus.y,
       vx: (dx / d) * speed,
       vy: (dy / d) * speed,
-      r: 18,
+      r: 26,
       spawnedAt: Date.now(),
       expiresAt: Date.now() + ttl
     });
@@ -712,12 +778,12 @@ export class TigerRoom {
       }
 
       for (const player of this.allPlayers()) {
-        if (!player.alive) continue;
+        if (!player.alive || player.spectator) continue;
 
         const isImmune = now < Number(player.shieldUntil || 0) || now < Number(player.matrixImmuneUntil || 0);
         if (isImmune) continue;
 
-        const hitRadius = p.r + player.radius * 0.55;
+        const hitRadius = p.r + player.radius * 0.72;
         if (dist2(p.x, p.y, player.x, player.y) < hitRadius ** 2) {
           this.kill(player, null, "zeusLightning");
           this.projectiles.splice(i, 1);
@@ -737,7 +803,7 @@ export class TigerRoom {
 
   handleEating(now) {
     for (const p of this.allPlayers()) {
-      if (!p.alive) continue;
+      if (!p.alive || p.spectator) continue;
 
       for (let i = this.food.length - 1; i >= 0; i--) {
         const f = this.food[i];
@@ -757,7 +823,7 @@ export class TigerRoom {
         }
 
         if (f.type === "arnold") {
-          p.score += 100;
+          p.score += ARNOLD_SCORE;
           this.food.splice(i, 1);
           continue;
         }
@@ -784,7 +850,7 @@ export class TigerRoom {
         }
 
         if (f.type === "morpheus") {
-          p.score += 500;
+          p.score += MORPHEUS_SCORE;
           this.massGrowPlayer(p, 120);
           p.matrixImmuneUntil = now + 5000;
           this.food.splice(i, 1);
@@ -805,7 +871,7 @@ export class TigerRoom {
   }
 
   handleCrashes(now) {
-    const all = this.allPlayers().filter(p => p.alive);
+    const all = this.allPlayers().filter(p => p.alive && !p.spectator);
 
     for (const p of all) {
       if (!p.alive) continue;
@@ -875,7 +941,7 @@ export class TigerRoom {
     const gate = !this.morpheusEvent.gateOpen ? this.morpheusEvent.gate : null;
 
     for (const p of this.allPlayers()) {
-      if (!p.alive) continue;
+      if (!p.alive || p.spectator) continue;
       if (now < Number(p.matrixImmuneUntil || 0)) continue;
 
       for (const w of walls) {
@@ -898,7 +964,7 @@ export class TigerRoom {
       if (!hz.alive) continue;
 
       for (const p of this.allPlayers()) {
-        if (!p.alive) continue;
+        if (!p.alive || p.spectator) continue;
 
         const hitRadius = p.radius + hz.r * 0.46;
         if (dist2(p.x, p.y, hz.x, hz.y) >= hitRadius ** 2) continue;
@@ -911,11 +977,12 @@ export class TigerRoom {
         if (canKillHazard) {
           hz.alive = false;
           hz.deadUntil = now + HAZARD_RESPAWN_MS;
-          p.score += HAZARD_KILL_SCORE;
 
           if (hz.type === "zeus") {
+            p.score += ZEUS_KILL_SCORE;
             this.emitEvent(`${p.name} zapped Zeus out of the sky ⚡`, "zeusDown");
           } else {
+            p.score += GAY_KILL_SCORE;
             this.emitEvent(`${p.name} deleted ${hz.type === "gay2" ? "3CPBROMO" : "ARUGAY2 - Jorrit"} 💥`, "hazardDown");
           }
           continue;
@@ -949,7 +1016,7 @@ export class TigerRoom {
   }
 
   kill(dead, killer, reason) {
-    if (!dead.alive) return;
+    if (!dead.alive || dead.spectator) return;
 
     dead.alive = false;
     dead.boosting = false;
@@ -1006,13 +1073,12 @@ export class TigerRoom {
     const now = Date.now();
 
     const snackCount = this.food.filter(f => f.type === "snack").length;
-    const arnoldCount = this.food.filter(f => f.type === "arnold").length;
 
     if (now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS) {
       this.lastArnoldSpawn = now;
       while (this.food.filter(f => f.type === "arnold").length < ARNOLD_TARGET) {
         const pos = this.findFoodSpot(440);
-        this.food.push(makeFood(pos.x, pos.y, 92, 100, "arnold"));
+        this.food.push(makeFood(pos.x, pos.y, 92, ARNOLD_SCORE, "arnold"));
       }
       this.emitEvent("Arnold has spawned.", "arnoldSpawn");
     }
@@ -1094,7 +1160,7 @@ export class TigerRoom {
     };
 
     this.food = this.food.filter(f => f.type !== "morpheus" && f.type !== "redPill" && f.type !== "bluePill");
-    this.food.push(makeFood(spawn.x, spawn.y, 120, 500, "morpheus"));
+    this.food.push(makeFood(spawn.x, spawn.y, 120, MORPHEUS_SCORE, "morpheus"));
     this.ensureMorpheusPills();
 
     this.emitEvent("ENTER THE MATRIX", "morpheusSpawn", {
@@ -1160,6 +1226,7 @@ export class TigerRoom {
         name: p.name,
         nation: p.nation || "OTHER",
         bot: !!p.bot,
+        spectator: !!p.spectator,
         x: round1(p.x),
         y: round1(p.y),
         angle: round3(p.angle),
@@ -1176,7 +1243,7 @@ export class TigerRoom {
         speedMs,
         matrixImmuneMs,
         buffCooldownMs,
-        body: p.body
+        body: p.spectator ? [] : p.body
           .filter((_, i) => i % stride === 0)
           .map(b => ({
             x: round1(b.x),
@@ -1272,7 +1339,7 @@ export class TigerRoom {
     }
 
     for (const p of this.realPlayers()) {
-      if (!p.alive) continue;
+      if (!p.alive || p.spectator) continue;
 
       const nation = safeNation(p.nation || "OTHER");
       const old = map.get(nation) || {
@@ -1410,7 +1477,7 @@ export class TigerRoom {
 function makeFood(x, y, r, v, type = "snack") {
   if (type === "arnold") {
     return {
-      x, y, r, v: 100,
+      x, y, r, v: ARNOLD_SCORE,
       type: "arnold",
       img: "pic1.webp"
     };
@@ -1418,7 +1485,7 @@ function makeFood(x, y, r, v, type = "snack") {
 
   if (type === "morpheus") {
     return {
-      x, y, r, v: 500,
+      x, y, r, v: MORPHEUS_SCORE,
       type: "morpheus",
       img: "mor1.webp"
     };
@@ -1583,7 +1650,7 @@ function nearest(from, items, maxDist) {
   let bestD2 = maxDist * maxDist;
 
   for (const item of items) {
-    if (!item || item === from || item.alive === false) continue;
+    if (!item || item === from || item.alive === false || item.spectator) continue;
 
     const d2 = dist2(from.x, from.y, item.x, item.y);
     if (d2 < bestD2) {
@@ -1600,7 +1667,7 @@ function nearestDanger(bot, all) {
   let bestD2 = 999999999;
 
   for (const other of all) {
-    if (!other || other === bot || !other.alive) continue;
+    if (!other || other === bot || !other.alive || other.spectator) continue;
 
     const d2 = dist2(bot.x, bot.y, other.x, other.y);
     if (d2 < bestD2) {
