@@ -18,14 +18,17 @@ export default {
 
 const WORLD = 4200;
 
-const FLAG_FOOD_TARGET = 45;
-const PIC_SNACK_TARGET = 45;
-const ARNOLD_TARGET = 4;
+const SNACK_TARGET = 58;
+const ARNOLD_TARGET = 1;
+const GAY_TARGET = 1;
+
 const ARNOLD_SPAWN_MS = 60000;
+const MORPHEUS_SPAWN_MS = 180000;
+const MORPHEUS_PILL_COUNT = 8;
 
 const TICK_MS = 16;
-const BROADCAST_MS = 33;
-const MAX_FOOD_SEND = 105;
+const BROADCAST_MS = 50;
+const MAX_FOOD_SEND = 95;
 
 const BOT_TARGET = 5;
 const BOT_RESPAWN_MS = 5000;
@@ -33,6 +36,8 @@ const BOT_THINK_MS = 260;
 
 const BOOST_ACTIVE_MS = 3000;
 const BOOST_TOTAL_COOLDOWN_MS = 18000;
+const RED_PILL_MS = 4000;
+const BLUE_PILL_MS = 4000;
 
 const TOP_KEY = "top10_v2";
 const PLAYERS_KEY = "known_players_v1";
@@ -40,11 +45,6 @@ const ATTEMPTS_KEY = "login_attempts_v1";
 const COUNTRY_KEY = "country_top_v1";
 
 const COLORS = ["#ff8a00", "#ffb000", "#ff6a00", "#d96b00", "#ff3b30", "#ffe14a"];
-
-const FLAGS = [
-  "🇧🇪","🇺🇸","🇳🇱","🇹🇷","🇵🇹","🇸🇪","🇳🇴","🇩🇰","🇫🇮","🇷🇴","🇧🇬","🇨🇴",
-  "🇨🇿","🇵🇱","🇩🇪","🇭🇺","🇨🇭","🇮🇹","🇬🇧","🇫🇷","🇪🇸","🇬🇷"
-];
 
 const NATION_FLAGS = {
   BE:"🇧🇪", US:"🇺🇸", USA:"🇺🇸", NL:"🇳🇱", TR:"🇹🇷", PT:"🇵🇹",
@@ -56,7 +56,7 @@ const NATION_FLAGS = {
 const TOPGUN_NAMES = ["Maverick", "Iceman", "Goose", "Viper", "Jester"];
 const BOT_NATIONS = ["US", "US", "US", "US", "US"];
 
-const PIC_SNACKS = ["pic2.webp", "pic3.webp", "pic4.webp"];
+const SNACK_IMAGES = ["pic1.webp", "pic2.webp", "pic3.webp", "pic4.webp", "pic5.webp", "pic6.webp", "pic7.webp"];
 
 export class TigerRoom {
   constructor(state, env) {
@@ -66,7 +66,10 @@ export class TigerRoom {
     this.players = new Map();
     this.bots = new Map();
     this.inputs = new Map();
+
     this.food = [];
+    this.hazards = [];
+    this.morpheusEvent = null;
 
     this.lastTick = Date.now();
     this.lastBroadcast = 0;
@@ -79,7 +82,8 @@ export class TigerRoom {
 
     this.lastBotThink = 0;
     this.lastBotRespawn = 0;
-    this.lastArnoldSpawn = Date.now() - ARNOLD_SPAWN_MS + 5000;
+    this.lastArnoldSpawn = Date.now() - ARNOLD_SPAWN_MS + 4000;
+    this.lastMorpheusSpawn = Date.now() - MORPHEUS_SPAWN_MS + 12000;
 
     this.state.blockConcurrencyWhile(async () => {
       this.top10 = normalizeTop10((await this.state.storage.get(TOP_KEY)) || []);
@@ -137,7 +141,9 @@ export class TigerRoom {
       nation: p.nation,
       score: Math.round(p.score || 0),
       alive: !!p.alive,
-      len: p.body ? p.body.length : 0
+      len: p.body ? p.body.length : 0,
+      shieldMs: Math.max(0, Number(p.shieldUntil || 0) - Date.now()),
+      speedMs: Math.max(0, Number(p.speedUntil || 0) - Date.now())
     })).sort((a, b) => b.score - a.score);
 
     return json({
@@ -146,7 +152,9 @@ export class TigerRoom {
       now: Date.now(),
       onlineCount: online.length,
       botCount: this.bots.size,
+      morpheusActive: !!this.morpheusEvent,
       arnoldOnMap: this.food.filter(f => f.type === "arnold").length,
+      gayOnMap: this.hazards.length,
       online,
       top10: this.top10,
       countryTop3: this.countryTop3(),
@@ -190,7 +198,6 @@ export class TigerRoom {
         angle: Number(msg.angle) || p.angle,
         boost: !!msg.boost
       });
-
       return;
     }
 
@@ -240,10 +247,14 @@ export class TigerRoom {
       body: [],
       radius: 13,
       bornAt: Date.now(),
+
       nextBoostAt: Date.now() + rand(5000, 12000),
       boosting: false,
       boostActiveUntil: 0,
-      boostCooldownUntil: 0
+      boostCooldownUntil: 0,
+
+      shieldUntil: 0,
+      speedUntil: 0
     };
 
     const startLen = bot ? Math.floor(rand(20, 38)) : 20;
@@ -281,6 +292,7 @@ export class TigerRoom {
 
     this.seedFood();
     this.ensureBots();
+    this.ensureGayHazard();
 
     this.lastTick = Date.now();
     this.lastBroadcast = 0;
@@ -291,6 +303,9 @@ export class TigerRoom {
   tick() {
     if (this.players.size === 0) {
       this.bots.clear();
+      this.hazards = [];
+      this.morpheusEvent = null;
+      this.food = [];
 
       for (const id of [...this.inputs.keys()]) {
         if (String(id).startsWith("bot-")) this.inputs.delete(id);
@@ -306,6 +321,7 @@ export class TigerRoom {
     this.lastTick = now;
 
     this.seedFood();
+    this.ensureGayHazard();
 
     if (now - this.lastBotThink >= BOT_THINK_MS) {
       this.lastBotThink = now;
@@ -316,8 +332,11 @@ export class TigerRoom {
       if (p.alive) this.updatePlayer(p, dt, now);
     }
 
-    this.handleEating();
-    this.handleCrashes();
+    this.updateHazards(dt);
+    this.handleEating(now);
+    this.handleCrashes(now);
+    this.handleMazeWallCrashes();
+    this.handleHazardHits();
 
     if (now - this.lastBotRespawn >= BOT_RESPAWN_MS) {
       this.lastBotRespawn = now;
@@ -349,8 +368,8 @@ export class TigerRoom {
       let targetAngle = bot.angle + rand(-1.2, 1.2);
       let boost = false;
 
-      const nearestHuman = nearest(bot, humans, 700);
-      const nearestFood = nearest(bot, this.food, 1050);
+      const nearestHuman = nearest(bot, humans, 740);
+      const nearestFood = nearest(bot, this.food.filter(f => f.type !== "morpheus"), 1150);
       const danger = nearestDanger(bot, all);
 
       if (danger && danger.d < bot.radius + danger.other.radius + 75) {
@@ -381,6 +400,8 @@ export class TigerRoom {
         } else if (nearestFood) {
           targetAngle = Math.atan2(nearestFood.item.y - bot.y, nearestFood.item.x - bot.x);
         }
+      } else if (this.morpheusEvent && this.morpheusEvent.active && Math.random() < 0.25) {
+        targetAngle = Math.atan2(this.morpheusEvent.center.y - bot.y, this.morpheusEvent.center.x - bot.x);
       } else if (nearestFood) {
         targetAngle = Math.atan2(nearestFood.item.y - bot.y, nearestFood.item.x - bot.x);
       }
@@ -403,7 +424,7 @@ export class TigerRoom {
       boost: false
     };
 
-    const turnRate = Math.max(2.2, 6.5 - Math.min(4, p.body.length * 0.018));
+    const turnRate = Math.max(2.4, 6.9 - Math.min(3.6, Math.sqrt(p.body.length) * 0.17));
     p.angle += angleDiff(p.angle, input.angle) * Math.min(1, dt * turnRate);
 
     if (input.boost && !p.boosting && p.body.length > 30 && now >= Number(p.boostCooldownUntil || 0)) {
@@ -417,29 +438,29 @@ export class TigerRoom {
     }
 
     const len = p.body.length;
-    const slowdown = Math.min(85, len * 0.085);
+    const slowdown = Math.min(58, Math.sqrt(len) * 1.7);
 
-    const baseSpeed = 280;
-    const minSpeed = 100;
+    const baseSpeed = 282;
+    const minSpeed = 112;
     const normalSpeed = Math.max(minSpeed, baseSpeed - slowdown);
 
     const canBoost = p.boosting && p.body.length > 30;
-    const boostBonus = canBoost ? 115 : 0;
-    const speed = normalSpeed + boostBonus;
+    const boostBonus = canBoost ? 108 : 0;
+    const redPillMultiplier = now < Number(p.speedUntil || 0) ? 2 : 1;
 
-    if (canBoost && Math.random() < 0.18) {
+    const speed = (normalSpeed + boostBonus) * redPillMultiplier;
+
+    if (canBoost && Math.random() < 0.16) {
       const tail = p.body.pop();
-
       if (tail) {
         this.food.push(makeFood(
           tail.x + rand(-8, 8),
           tail.y + rand(-8, 8),
-          rand(5, 8),
+          rand(6, 8),
           1.1,
-          "flag"
+          "snack"
         ));
       }
-
       p.score = Math.max(0, p.score - 0.025);
     }
 
@@ -448,8 +469,8 @@ export class TigerRoom {
 
     p.body.unshift({ x: p.x, y: p.y });
 
-    const growthScore = Math.min(p.score, 2600);
-    const maxLen = Math.floor(20 + growthScore * 1.2);
+    const growthScore = Math.min(p.score, 2800);
+    const maxLen = Math.floor(20 + growthScore * 1.15);
 
     while (p.body.length > maxLen) p.body.pop();
 
@@ -457,31 +478,118 @@ export class TigerRoom {
     p.radius = clamp(11 + Math.sqrt(radiusGrowthLen) * 1.04, 13, 38);
   }
 
-  handleEating() {
+  ensureGayHazard() {
+    while (this.hazards.length < GAY_TARGET) {
+      this.hazards.push({
+        id: "gay-" + crypto.randomUUID(),
+        type: "gay",
+        img: "gay.webp",
+        x: rand(250, WORLD - 250),
+        y: rand(250, WORLD - 250),
+        r: 72,
+        vx: rand(-15, 15),
+        vy: rand(-15, 15)
+      });
+    }
+  }
+
+  updateHazards(dt) {
+    const alivePlayers = this.allPlayers().filter(p => p.alive);
+
+    for (const hz of this.hazards) {
+      if (hz.type !== "gay") continue;
+
+      const near = nearest(hz, alivePlayers, 520);
+      let targetVx = 0;
+      let targetVy = 0;
+
+      if (near) {
+        const dx = near.item.x - hz.x;
+        const dy = near.item.y - hz.y;
+        const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+        const speed = 155;
+        targetVx = (dx / d) * speed;
+        targetVy = (dy / d) * speed;
+      } else {
+        targetVx = (hz.vx || 0) + rand(-10, 10);
+        targetVy = (hz.vy || 0) + rand(-10, 10);
+      }
+
+      hz.vx = lerpNum(hz.vx || 0, clamp(targetVx, -165, 165), 0.05);
+      hz.vy = lerpNum(hz.vy || 0, clamp(targetVy, -165, 165), 0.05);
+
+      hz.x = clamp(hz.x + hz.vx * dt, 45, WORLD - 45);
+      hz.y = clamp(hz.y + hz.vy * dt, 45, WORLD - 45);
+
+      if (hz.x <= 46 || hz.x >= WORLD - 46) hz.vx *= -0.6;
+      if (hz.y <= 46 || hz.y >= WORLD - 46) hz.vy *= -0.6;
+    }
+  }
+
+  handleEating(now) {
     for (const p of this.allPlayers()) {
       if (!p.alive) continue;
 
       for (let i = this.food.length - 1; i >= 0; i--) {
         const f = this.food[i];
-        const eatRadius = p.radius + f.r + (f.type === "arnold" ? 24 : 8);
+        const eatRadius = p.radius + f.r + (
+          f.type === "morpheus" ? 30 :
+          f.type === "arnold" ? 24 :
+          f.type === "redPill" || f.type === "bluePill" ? 10 :
+          7
+        );
 
         if (dist2(p.x, p.y, f.x, f.y) < eatRadius ** 2) {
-          p.score += f.v;
-
-          if (f.type === "arnold") {
-            this.broadcast({
-              type: "event",
-              text: `${p.name} ate Arnold Pikaar Schwarzenegger. Nomnomnom extra protein is on the menu boys.`
-            });
+          if (f.type === "snack") {
+            p.score += f.v;
+            this.food.splice(i, 1);
+            continue;
           }
 
-          this.food.splice(i, 1);
+          if (f.type === "arnold") {
+            p.score += 100;
+            this.food.splice(i, 1);
+            this.broadcast({
+              type: "event",
+              text: `${p.name} ate Arnold Pikaar Schwarzenegger.`
+            });
+            continue;
+          }
+
+          if (f.type === "redPill") {
+            p.speedUntil = now + RED_PILL_MS;
+            this.food.splice(i, 1);
+            continue;
+          }
+
+          if (f.type === "bluePill") {
+            p.shieldUntil = now + BLUE_PILL_MS;
+            this.food.splice(i, 1);
+            continue;
+          }
+
+          if (f.type === "morpheus") {
+            p.score += 500;
+            this.massGrowPlayer(p, 95);
+            this.food.splice(i, 1);
+            this.clearMorpheusEvent();
+            this.broadcast({ type: "event", text: `${p.name} has taken Morpheus.` });
+            this.broadcast({ type: "event", text: "THE MATRIX IS COLLAPSING" });
+            continue;
+          }
         }
       }
     }
   }
 
-  handleCrashes() {
+  massGrowPlayer(p, amount) {
+    const last = p.body[p.body.length - 1] || { x: p.x, y: p.y };
+    for (let i = 0; i < amount; i++) {
+      p.body.push({ x: last.x, y: last.y });
+    }
+  }
+
+  handleCrashes(now) {
     const all = this.allPlayers().filter(p => p.alive);
 
     for (const p of all) {
@@ -509,10 +617,12 @@ export class TigerRoom {
       for (const other of all) {
         if (p === other || !other.alive) continue;
 
+        const eitherShielded = now < Number(p.shieldUntil || 0) || now < Number(other.shieldUntil || 0);
+
         const headDist = Math.sqrt(dist2(p.x, p.y, other.x, other.y));
         const headHitRadius = (p.radius + other.radius) * 0.70;
 
-        if (headDist < headHitRadius) {
+        if (!eitherShielded && headDist < headHitRadius) {
           this.resolveHeadOn(p, other);
           break;
         }
@@ -527,12 +637,49 @@ export class TigerRoom {
           const hitRadius = visualHeadRadius + visualBodyRadius;
 
           if (dist2(p.x, p.y, seg.x, seg.y) < hitRadius ** 2) {
-            this.kill(p, other, "player");
+            if (!eitherShielded) {
+              this.kill(p, other, "player");
+            }
             break;
           }
         }
 
         if (!p.alive) break;
+      }
+    }
+  }
+
+  handleMazeWallCrashes() {
+    if (!this.morpheusEvent || !this.morpheusEvent.active) return;
+
+    const walls = this.morpheusEvent.walls || [];
+    if (!walls.length) return;
+
+    for (const p of this.allPlayers()) {
+      if (!p.alive) continue;
+
+      for (const w of walls) {
+        if (circleRectHit(p.x, p.y, p.radius * 0.75, w)) {
+          this.kill(p, null, "matrixwall");
+          break;
+        }
+      }
+    }
+  }
+
+  handleHazardHits() {
+    if (!this.hazards.length) return;
+
+    for (const hz of this.hazards) {
+      if (hz.type !== "gay") continue;
+
+      for (const p of this.allPlayers()) {
+        if (!p.alive) continue;
+
+        const hitRadius = p.radius + hz.r * 0.42;
+        if (dist2(p.x, p.y, hz.x, hz.y) < hitRadius ** 2) {
+          this.kill(p, null, "gay");
+        }
       }
     }
   }
@@ -566,19 +713,18 @@ export class TigerRoom {
     }
 
     if (!dead.bot) {
-     this.saveTop(dead.name, Math.round(dead.score), dead.nation).catch(() => {});
+      this.saveTop(dead.name, Math.round(dead.score), dead.nation).catch(() => {});
       this.saveCountryScore(dead.nation, Math.round(dead.score)).catch(() => {});
     }
 
     for (let i = 0; i < dead.body.length; i += 4) {
       const b = dead.body[i];
-
       this.food.push(makeFood(
         b.x + rand(-18, 18),
         b.y + rand(-18, 18),
-        rand(5, 9),
+        rand(6, 9),
         rand(1.2, 3.1),
-        Math.random() < 0.42 ? "picSnack" : "flag"
+        "snack"
       ));
     }
 
@@ -586,6 +732,8 @@ export class TigerRoom {
 
     if (reason === "self") text = `${dead.name} ate his own tiger tail 🐯`;
     else if (reason === "border") text = `${dead.name} left the Tiger zone 💀`;
+    else if (reason === "matrixwall") text = `${dead.name} got deleted by the Matrix wall 💀`;
+    else if (reason === "gay") text = `${dead.name} got caught by gay.webp 💀`;
     else if (reason === "headon" && killer && killer !== dead) text = `${killer.name} won the head-on against ${dead.name} 💥`;
     else if (killer && killer !== dead) text = `${killer.name} destroyed ${dead.name} 🐯`;
 
@@ -603,73 +751,75 @@ export class TigerRoom {
         this.inputs.delete(id);
       }
     }
-
     this.ensureBots();
   }
 
   seedFood() {
     const now = Date.now();
 
+    const snackCount = this.food.filter(f => f.type === "snack").length;
     const arnoldCount = this.food.filter(f => f.type === "arnold").length;
-    const picSnackCount = this.food.filter(f => f.type === "picSnack").length;
-    const flagCount = this.food.filter(f => f.type === "flag").length;
+    const morpheusCount = this.food.filter(f => f.type === "morpheus").length;
 
     if (arnoldCount < ARNOLD_TARGET && now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS) {
       this.lastArnoldSpawn = now;
+      const pos = this.findFoodSpot(440);
 
-      for (let i = arnoldCount; i < ARNOLD_TARGET; i++) {
-        const pos = this.findFoodSpot(420);
-
-        this.food.push(makeFood(
-          pos.x,
-          pos.y,
-          95,
-          100,
-          "arnold"
-        ));
-      }
-
-      this.broadcast({
-        type: "event",
-        text: "Arnold Pikaar Schwarzenegger has spawned."
-      });
+      this.food.push(makeFood(pos.x, pos.y, 92, 100, "arnold"));
+      this.broadcast({ type: "event", text: "Arnold has spawned." });
     }
 
-    for (let i = picSnackCount; i < PIC_SNACK_TARGET; i++) {
-      const pos = this.findFoodSpot(95);
-
-      this.food.push(makeFood(
-        pos.x,
-        pos.y,
-        rand(7, 10),
-        5,
-        "picSnack"
-      ));
+    if (!this.morpheusEvent && morpheusCount < 1 && now - this.lastMorpheusSpawn >= MORPHEUS_SPAWN_MS) {
+      this.spawnMorpheusEvent(now);
     }
 
-    for (let i = flagCount; i < FLAG_FOOD_TARGET; i++) {
-      const pos = this.findFoodSpot(75);
-
-      this.food.push(makeFood(
-        pos.x,
-        pos.y,
-        rand(5, 8),
-        rand(0.8, 2.2),
-        "flag"
-      ));
+    for (let i = snackCount; i < SNACK_TARGET; i++) {
+      const pos = this.findFoodSpot(92);
+      this.food.push(makeFood(pos.x, pos.y, rand(8, 10), rand(1.3, 5.4), "snack"));
     }
 
-    const maxFood = FLAG_FOOD_TARGET + PIC_SNACK_TARGET + ARNOLD_TARGET + 80;
-
+    const maxFood = SNACK_TARGET + ARNOLD_TARGET + 1 + MORPHEUS_PILL_COUNT * 2 + 70;
     if (this.food.length > maxFood) {
       this.food.splice(0, this.food.length - maxFood);
     }
   }
 
+  spawnMorpheusEvent(now) {
+    const center = this.findFoodSpot(800);
+
+    const walls = buildMatrixMaze(center.x, center.y);
+    this.morpheusEvent = {
+      active: true,
+      spawnedAt: now,
+      center,
+      walls
+    };
+
+    this.lastMorpheusSpawn = now;
+
+    this.food = this.food.filter(f => f.type !== "morpheus" && f.type !== "redPill" && f.type !== "bluePill");
+    this.food.push(makeFood(center.x, center.y, 120, 500, "morpheus"));
+
+    for (let i = 0; i < MORPHEUS_PILL_COUNT; i++) {
+      const red = randomMazePillSpot(center.x, center.y, walls, this.food);
+      this.food.push(makeFood(red.x, red.y, 18, 0, "redPill"));
+
+      const blue = randomMazePillSpot(center.x, center.y, walls, this.food);
+      this.food.push(makeFood(blue.x, blue.y, 18, 0, "bluePill"));
+    }
+
+    this.broadcast({ type: "event", text: "ENTER THE MATRIX" });
+  }
+
+  clearMorpheusEvent() {
+    this.morpheusEvent = null;
+    this.food = this.food.filter(f => f.type !== "morpheus" && f.type !== "redPill" && f.type !== "bluePill");
+  }
+
   findFoodSpot(minDistance = 70) {
     for (let tries = 0; tries < 18; tries++) {
-      const x = rand(50, WORLD - 50);
-      const y = rand(50, WORLD - 50);
+      const x = rand(80, WORLD - 80);
+      const y = rand(80, WORLD - 80);
 
       let ok = true;
 
@@ -680,21 +830,26 @@ export class TigerRoom {
         }
       }
 
-      if (ok) return { x, y };
+      if (ok && (!this.morpheusEvent || !pointInAnyRect(x, y, this.morpheusEvent.walls))) {
+        return { x, y };
+      }
     }
 
     return {
-      x: rand(50, WORLD - 50),
-      y: rand(50, WORLD - 50)
+      x: rand(80, WORLD - 80),
+      y: rand(80, WORLD - 80)
     };
   }
 
-   broadcastState(force = false) {
+  broadcastState(force = false) {
     const now = Date.now();
     const all = this.allPlayers();
 
     const players = all.map(p => {
-      const stride = p.body.length > 900 ? 7 : p.body.length > 450 ? 6 : p.body.length > 160 ? 4 : 3;
+      const stride =
+        p.body.length > 900 ? 7 :
+        p.body.length > 450 ? 6 :
+        p.body.length > 160 ? 4 : 3;
 
       const boostActiveMs = p.boosting
         ? Math.max(0, Number(p.boostActiveUntil || 0) - now)
@@ -704,48 +859,71 @@ export class TigerRoom {
         ? Math.max(0, Number(p.boostCooldownUntil || 0) - now)
         : 0;
 
+      const shieldMs = Math.max(0, Number(p.shieldUntil || 0) - now);
+      const speedMs = Math.max(0, Number(p.speedUntil || 0) - now);
+
       return {
         id: p.id,
         name: p.name,
         nation: p.nation || "OTHER",
         bot: !!p.bot,
-        x: Math.round(p.x * 10) / 10,
-        y: Math.round(p.y * 10) / 10,
-        angle: Math.round(p.angle * 1000) / 1000,
+        x: round1(p.x),
+        y: round1(p.y),
+        angle: round3(p.angle),
         color: p.color,
         skin: p.skin,
-        score: Math.round(p.score * 10) / 10,
+        score: round1(p.score),
         alive: p.alive,
-        radius: Math.round(p.radius * 10) / 10,
+        radius: round1(p.radius),
         len: p.body.length,
         boosting: !!p.boosting,
         boostActiveMs,
         boostCooldownMs,
+        shieldMs,
+        speedMs,
         body: p.body
           .filter((_, i) => i % stride === 0)
           .map(b => ({
-            x: Math.round(b.x * 10) / 10,
-            y: Math.round(b.y * 10) / 10
+            x: round1(b.x),
+            y: round1(b.y)
           }))
       };
     });
 
     const food = [...this.food]
       .sort((a, b) => {
-        if (a.type === "arnold" && b.type !== "arnold") return -1;
-        if (a.type !== "arnold" && b.type === "arnold") return 1;
-        return 0;
+        const pa = foodPriority(a.type);
+        const pb = foodPriority(b.type);
+        return pa - pb;
       })
       .slice(0, MAX_FOOD_SEND)
       .map(f => ({
         x: Math.round(f.x),
         y: Math.round(f.y),
         r: Math.round(f.r),
-        v: Math.round(f.v * 10) / 10,
-        flag: f.flag,
-        type: f.type || "flag",
-        img: f.img || null
+        v: round1(f.v),
+        type: f.type || "snack",
+        img: f.img || null,
+        spin: round3(f.spin || 0)
       }));
+
+    const hazards = this.hazards.map(h => ({
+      id: h.id,
+      type: h.type,
+      img: h.img || null,
+      x: Math.round(h.x),
+      y: Math.round(h.y),
+      r: Math.round(h.r)
+    }));
+
+    const mazeWalls = this.morpheusEvent?.active
+      ? this.morpheusEvent.walls.map(w => ({
+          x: Math.round(w.x),
+          y: Math.round(w.y),
+          w: Math.round(w.w),
+          h: Math.round(w.h)
+        }))
+      : [];
 
     this.broadcastRaw(JSON.stringify({
       type: "state",
@@ -753,6 +931,8 @@ export class TigerRoom {
       world: WORLD,
       players,
       food,
+      hazards,
+      mazeWalls,
       top10: this.top10,
       countryTop3: this.countryTop3(),
       force
@@ -807,7 +987,7 @@ export class TigerRoom {
     }
   }
 
-    async saveTop(name, score, nation = "OTHER") {
+  async saveTop(name, score, nation = "OTHER") {
     name = safeName(name);
     score = Math.round(score);
     nation = safeNation(nation);
@@ -840,6 +1020,7 @@ export class TigerRoom {
     this.top10 = normalizeTop10(this.top10);
     await this.state.storage.put(TOP_KEY, this.top10);
   }
+
   async saveCountryScore(nation, score) {
     nation = safeNation(nation);
     score = Math.round(Number(score || 0));
@@ -907,40 +1088,120 @@ export class TigerRoom {
   }
 }
 
-function makeFood(x, y, r, v, type = "flag") {
+function makeFood(x, y, r, v, type = "snack") {
   if (type === "arnold") {
     return {
-      x,
-      y,
-      r,
-      v: 100,
+      x, y, r, v: 100,
       type: "arnold",
-      img: "pic1.webp",
-      flag: null
+      img: "pic.webp"
     };
   }
 
-  if (type === "picSnack") {
+  if (type === "morpheus") {
     return {
-      x,
-      y,
-      r,
-      v: 5,
-      type: "picSnack",
-      img: PIC_SNACKS[Math.floor(Math.random() * PIC_SNACKS.length)],
-      flag: null
+      x, y, r, v: 500,
+      type: "morpheus",
+      img: "mor1.webp"
+    };
+  }
+
+  if (type === "redPill") {
+    return {
+      x, y, r, v: 0,
+      type: "redPill",
+      img: null,
+      spin: rand(0, Math.PI * 2)
+    };
+  }
+
+  if (type === "bluePill") {
+    return {
+      x, y, r, v: 0,
+      type: "bluePill",
+      img: null,
+      spin: rand(0, Math.PI * 2)
     };
   }
 
   return {
-    x,
-    y,
-    r,
-    v,
-    type: "flag",
-    img: null,
-    flag: FLAGS[Math.floor(Math.random() * FLAGS.length)]
+    x, y, r, v,
+    type: "snack",
+    img: SNACK_IMAGES[Math.floor(Math.random() * SNACK_IMAGES.length)]
   };
+}
+
+function foodPriority(type) {
+  if (type === "morpheus") return 0;
+  if (type === "arnold") return 1;
+  if (type === "redPill" || type === "bluePill") return 2;
+  return 9;
+}
+
+function buildMatrixMaze(cx, cy) {
+  const walls = [];
+  const t = 56;
+  const half = 460;
+  const gapOuter = 180;
+  const inner = 210;
+  const midGap = 150;
+
+  walls.push({ x: cx - half, y: cy - half, w: half * 2, h: t });
+  walls.push({ x: cx - half, y: cy - half, w: t, h: half * 2 });
+  walls.push({ x: cx + half - t, y: cy - half, w: t, h: half * 2 });
+  walls.push({ x: cx - half, y: cy + half - t, w: half - gapOuter, h: t });
+  walls.push({ x: cx + gapOuter, y: cy + half - t, w: half - gapOuter, h: t });
+
+  walls.push({ x: cx - inner, y: cy - inner, w: inner * 2, h: t });
+  walls.push({ x: cx - inner, y: cy - inner, w: t, h: inner * 2 - 90 });
+  walls.push({ x: cx + inner - t, y: cy - inner + 90, w: t, h: inner * 2 - 90 });
+  walls.push({ x: cx - inner, y: cy + inner - t, w: inner - midGap, h: t });
+  walls.push({ x: cx + midGap, y: cy + inner - t, w: inner - midGap, h: t });
+
+  walls.push({ x: cx - 60, y: cy - 340, w: t, h: 210 });
+  walls.push({ x: cx + 120, y: cy - 40, w: t, h: 220 });
+  walls.push({ x: cx - 240, y: cy + 70, w: 180, h: t });
+
+  return walls.map(w => ({
+    x: clamp(w.x, 40, WORLD - 40),
+    y: clamp(w.y, 40, WORLD - 40),
+    w: w.w,
+    h: w.h
+  }));
+}
+
+function randomMazePillSpot(cx, cy, walls, existing) {
+  for (let tries = 0; tries < 30; tries++) {
+    const x = rand(cx - 340, cx + 340);
+    const y = rand(cy - 340, cy + 340);
+
+    if (pointInAnyRect(x, y, walls)) continue;
+
+    let nearOther = false;
+    for (const f of existing) {
+      if (dist2(x, y, f.x, f.y) < 90 * 90) {
+        nearOther = true;
+        break;
+      }
+    }
+    if (!nearOther) return { x, y };
+  }
+
+  return { x: cx + rand(-180, 180), y: cy + rand(-180, 180) };
+}
+
+function pointInAnyRect(x, y, rects) {
+  for (const r of rects || []) {
+    if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) return true;
+  }
+  return false;
+}
+
+function circleRectHit(cx, cy, cr, rect) {
+  const nearestX = clamp(cx, rect.x, rect.x + rect.w);
+  const nearestY = clamp(cy, rect.y, rect.y + rect.h);
+  const dx = cx - nearestX;
+  const dy = cy - nearestY;
+  return (dx * dx + dy * dy) < cr * cr;
 }
 
 function nearest(from, items, maxDist) {
@@ -999,11 +1260,11 @@ function normalizeTop10(list) {
 
     if (!old || score > old.score) {
       byName.set(key, {
-  name,
-  score,
-  nation: safeNation(item.nation || "OTHER"),
-  at: Number(item.at || Date.now())
-});
+        name,
+        score,
+        nation: safeNation(item.nation || "OTHER"),
+        at: Number(item.at || Date.now())
+      });
     }
   }
 
@@ -1066,6 +1327,10 @@ function dist2(x1, y1, x2, y2) {
 function angleDiff(a, b) {
   return Math.atan2(Math.sin(b - a), Math.cos(b - a));
 }
+
+function round1(v) { return Math.round(v * 10) / 10; }
+function round3(v) { return Math.round(v * 1000) / 1000; }
+function lerpNum(a, b, t) { return a + (b - a) * t; }
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data, null, 2), {
