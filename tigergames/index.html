@@ -1,1602 +1,1521 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Tigergames Online</title>
-<style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{
-  margin:0;width:100%;height:100%;overflow:hidden;background:#050505;color:white;
-  font-family:Arial,Helvetica,"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
-  touch-action:none;user-select:none
-}
-body{
-  background:
-    radial-gradient(circle at top,rgba(255,136,0,.18),transparent 38%),
-    linear-gradient(135deg,#050505,#111,#000)
-}
-.hidden{display:none!important}
-.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;z-index:20;overflow-y:auto}
-.card{
-  width:min(430px,100%);
-  background:rgba(15,15,15,.94);
-  border:2px solid rgba(255,136,0,.7);
-  border-radius:24px;
-  padding:22px;
-  box-shadow:0 0 35px rgba(255,136,0,.25);
-  text-align:center
-}
-.logo{font-size:56px}
-h1{margin:6px 0;color:#ff8a00;font-size:30px}
-.versionBadge{
-  display:inline-block;background:#ff8a00;color:#111;font-weight:900;border-radius:999px;
-  padding:6px 12px;margin:6px 0 12px
-}
-.tag{color:#ddd;font-size:14px;line-height:1.35}
-input,.nationSelect{
-  width:100%;padding:14px;margin:8px 0;border-radius:14px;border:1px solid #444;
-  background:#050505;color:white;font-size:16px;outline:none
-}
-button{
-  border:0;border-radius:14px;padding:12px 14px;background:#ff8a00;color:#111;
-  font-weight:900;cursor:pointer;box-shadow:0 0 16px rgba(255,136,0,.35)
-}
-button.big{width:100%;font-size:17px;margin:8px 0 12px;padding:15px}
-.small{font-size:12px;color:#aaa;line-height:1.35}
-.loginTop{
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:16px;padding:10px;margin-top:10px
-}
-.loginTopTitle{font-weight:900;color:#ffb14a;margin-bottom:6px}
-.loginRow{
-  display:grid;grid-template-columns:28px 1fr 65px;gap:6px;align-items:center;text-align:left;
-  padding:5px 0;border-bottom:1px solid rgba(255,255,255,.08)
-}
-.loginRow:last-child{border-bottom:0}
-.loginRow.king{color:#ffd36a;font-weight:900}
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
 
-#gameScreen{position:fixed;inset:0;background:#050505}
-canvas{position:absolute;inset:0;width:100%;height:100%}
+    if (url.pathname === "/admin" || url.pathname === "/admin/") {
+      const id = env.TIGER_ROOM.idFromName("main-arena");
+      return env.TIGER_ROOM.get(id).fetch(request);
+    }
 
-.net{
-  position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:12;
-  background:rgba(0,0,0,.7);padding:6px 12px;border-radius:999px;font-size:12px;color:#9cff9c
-}
-.hud{
-  position:fixed;top:14px;left:12px;right:12px;display:flex;justify-content:space-between;gap:10px;
-  z-index:11;pointer-events:none
-}
-.box{
-  background:rgba(0,0,0,.62);
-  border:1px solid rgba(255,136,0,.45);
-  border-radius:16px;
-  padding:10px;
-  backdrop-filter:blur(4px)
-}
-.mine{width:170px}
-.board{width:190px}
-.name,.title{font-weight:900;font-size:13px;color:#ffb14a}
-.score{font-size:28px;font-weight:900}
-.meta{font-size:11px;color:#bbb}
-.boostLine{display:flex;justify-content:space-between;font-size:10px;color:#ddd;margin-top:5px}
-.boostBar{height:7px;background:#222;border-radius:99px;overflow:hidden;margin-top:4px}
-.boostFill{height:100%;width:100%;background:#00ffd5}
-.boostFill.cooldown{background:#ff3d3d}
-.boostFill.active{background:#ffd000}
-.boostFill.speed{background:#ff3d3d}
-.boostFill.shield{background:#4ea1ff}
+    if (request.headers.get("Upgrade") !== "websocket") {
+      return new Response("Expected websocket", { status: 426 });
+    }
 
-.row{
-  display:grid;grid-template-columns:14px 1fr 48px;gap:5px;align-items:center;font-size:12px;margin-top:5px
-}
-.dot{width:9px;height:9px;border-radius:50%}
-.rname{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.rscore{text-align:right;font-weight:900}
+    const id = env.TIGER_ROOM.idFromName("main-arena");
+    return env.TIGER_ROOM.get(id).fetch(request);
+  }
+};
 
-.buttons{position:fixed;right:12px;bottom:130px;display:flex;gap:7px;z-index:12}
-.buttons button{font-size:11px;padding:9px 10px}
-.controls{
-  position:fixed;left:0;right:0;bottom:18px;display:flex;justify-content:space-between;align-items:end;
-  padding:0 22px;z-index:12;pointer-events:none
-}
-.joy,.boost{pointer-events:auto}
-.joy{
-  width:112px;height:112px;border-radius:50%;background:rgba(255,255,255,.08);
-  border:2px solid rgba(255,136,0,.5);position:relative
-}
-.stick{
-  position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px;border-radius:50%;
-  background:#ff8a00;box-shadow:0 0 18px #ff8a00
-}
-.boost{
-  width:112px;height:112px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-weight:900;background:conic-gradient(#00ffd5 var(--boost-fill,100%),rgba(255,255,255,.12) 0);color:#111;border:3px solid white
-}
-.boost.cooldown{background:conic-gradient(#ff3d3d var(--boost-fill,0%),rgba(255,255,255,.12) 0);color:white}
-.boost.active{background:conic-gradient(#ffd000 var(--boost-fill,100%),rgba(255,255,255,.12) 0);color:#111}
-.boost small{font-size:11px}
-
-.toast{
-  position:fixed;left:50%;bottom:255px;transform:translateX(-50%) scale(.9);
-  background:rgba(0,0,0,.86);border:1px solid #ff8a00;border-radius:999px;padding:10px 16px;
-  opacity:0;transition:.2s;z-index:18;font-weight:900;max-width:min(92vw,640px);text-align:center
-}
-.toast.show{opacity:1;transform:translateX(-50%) scale(1)}
-
-.matrixFx{
-  position:fixed;inset:0;z-index:15;pointer-events:none;opacity:0;
-  background:
-    linear-gradient(rgba(0,255,120,.14),rgba(0,255,120,.03)),
-    repeating-linear-gradient(
-      180deg,
-      rgba(0,255,120,.16) 0px,
-      rgba(0,255,120,.16) 1px,
-      transparent 2px,
-      transparent 6px
-    );
-  mix-blend-mode:screen;
-}
-.matrixFx.active{animation:matrixFlash 5s linear forwards}
-@keyframes matrixFlash{
-  0%{opacity:0}
-  5%{opacity:.95}
-  45%{opacity:.55}
-  75%{opacity:.35}
-  100%{opacity:0}
-}
-
-.matrixText{
-  position:fixed;left:50%;top:18%;transform:translateX(-50%) scale(.92);
-  z-index:17;pointer-events:none;opacity:0;
-  font-size:clamp(28px,5vw,58px);font-weight:900;letter-spacing:.08em;color:#2cff77;
-  text-shadow:0 0 12px rgba(44,255,119,.7),0 0 34px rgba(44,255,119,.22)
-}
-.matrixText.show{animation:matrixTextIn 2.2s ease forwards}
-@keyframes matrixTextIn{
-  0%{opacity:0;transform:translateX(-50%) scale(.82)}
-  20%{opacity:1;transform:translateX(-50%) scale(1)}
-  75%{opacity:1}
-  100%{opacity:0;transform:translateX(-50%) scale(1.04)}
-}
-
-.matrixCountdown{
-  position:fixed;left:50%;top:29%;transform:translateX(-50%);
-  z-index:17;pointer-events:none;opacity:0;text-align:center;
-  color:#7affab;font-weight:900;letter-spacing:.08em;
-  text-shadow:0 0 10px rgba(44,255,119,.6),0 0 26px rgba(44,255,119,.28)
-}
-.matrixCountdown.show{opacity:1}
-.matrixCountdown .label{font-size:clamp(12px,2vw,18px);opacity:.8}
-.matrixCountdown .time{font-size:clamp(30px,7vw,74px);line-height:1}
-
-.morpheusIntro{
-  position:fixed;inset:0;z-index:14;pointer-events:none;opacity:0;
-  display:flex;align-items:center;justify-content:center;
-  mix-blend-mode:screen;
-}
-.morpheusIntro img{
-  width:min(90vw,900px);height:auto;opacity:.22;filter:drop-shadow(0 0 40px rgba(44,255,119,.25));
-}
-.morpheusIntro.show{animation:morpheusIntroAnim 5s ease forwards}
-@keyframes morpheusIntroAnim{
-  0%{opacity:0;transform:scale(.92)}
-  15%{opacity:1;transform:scale(1)}
-  48%{opacity:.78}
-  100%{opacity:0;transform:scale(1.06)}
-}
-
-.buffBadge{
-  display:inline-block;
-  margin-top:6px;
-  font-size:10px;
-  font-weight:900;
-  padding:4px 8px;
-  border-radius:999px;
-  background:rgba(255,255,255,.1);
-  border:1px solid rgba(255,255,255,.12);
-  color:#ddd
-}
-.buffBadge.speed{color:#ff8f8f;border-color:rgba(255,80,80,.4)}
-.buffBadge.shield{color:#8ec8ff;border-color:rgba(78,161,255,.4)}
-
-@media(max-width:720px){
-  .hud{top:38px}
-  .mine{width:150px}
-  .board{width:168px}
-  .score{font-size:24px}
-  .buttons{bottom:145px}
-  .morpheusIntro img{width:min(96vw,620px)}
-}
-</style>
-</head>
-<body>
-
-<section id="maintenance" class="screen hidden">
-  <div class="card">
-    <div class="logo">🐯</div>
-    <h1>Updates in Progress</h1>
-    <div class="versionBadge">Maintenance Mode</div>
-    <p class="tag">Tigergames is momenteel tijdelijk offline voor updates.</p>
-    <p class="small">Try again later.</p>
-    <button class="big" onclick="showAdminLogin()">ADMIN LOGIN</button>
-    <div id="adminBox" class="hidden">
-      <input id="adminUser" placeholder="Username" autocomplete="off" />
-      <input id="adminPass" placeholder="Password" type="password" autocomplete="off" />
-      <button class="big" onclick="adminLogin()">ENTER ADMIN MODE</button>
-      <p id="adminError" class="small" style="color:#ff5b5b"></p>
-    </div>
-  </div>
-</section>
-
-<section id="login" class="screen hidden">
-  <div class="card">
-    <div class="logo">🐯</div>
-    <h1>Tigergames Online</h1>
-    <div class="versionBadge">Matrix Event Build · Jo Chen</div>
-    <p class="tag">Feed, survive, dodge the danger and enter the Matrix.</p>
-
-    <input id="playerName" maxlength="16" placeholder="Naam / callsign" autocomplete="off" />
-
-    <select id="playerNation" class="nationSelect">
-      <option value="BE">Belgium</option><option value="US">USA</option><option value="NL">Netherlands</option><option value="TR">Turkey</option>
-      <option value="PT">Portugal</option><option value="SE">Sweden</option><option value="NO">Norway</option><option value="DK">Denmark</option>
-      <option value="FI">Finland</option><option value="RO">Romania</option><option value="BG">Bulgaria</option><option value="CO">Colombia</option>
-      <option value="CZ">Czech Republic</option><option value="HU">Hungary</option><option value="CH">Switzerland</option><option value="IT">Italy</option>
-      <option value="ES">Spain</option><option value="DE">Germany</option><option value="GR">Greece</option><option value="PL">Poland</option>
-      <option value="UK">UK</option><option value="FR">France</option><option value="OTHER">Other</option>
-    </select>
-
-    <button class="big" id="playBtn">ENTER TIGER ARENA</button>
-
-    <div class="loginTop">
-      <div class="loginTopTitle">🏆 TOP 5 ALL-TIME</div>
-      <div id="loginTopRows"><div class="small" style="text-align:center">Highscores laden...</div></div>
-    </div>
-
-    <div class="loginTop countryTopBox">
-      <div class="loginTopTitle">🌍 TOP 3 NATIONS</div>
-      <div id="countryTopRows"><div class="small" style="text-align:center">Nation stats laden...</div></div>
-    </div>
-
-    <p class="small">Mobile: joystick links, boost rechts. PC: muis = sturen, SPACE of boostknop = boost.</p>
-  </div>
-</section>
-
-<section id="gameScreen" class="hidden">
-  <canvas id="game"></canvas>
-  <div class="net" id="net">connecting...</div>
-
-  <div class="hud">
-    <div class="box mine">
-      <div class="name" id="meName">Tiger</div>
-      <div class="score" id="meScore">0</div>
-      <div class="meta" id="meMeta">Lengte 0</div>
-      <div id="meBuffs"></div>
-      <div class="boostHud">
-        <div class="boostLine">
-          <span id="boostLabel">BOOST READY</span>
-          <span id="boostTime">LOCAL</span>
-        </div>
-        <div class="boostBar"><div id="boostFill" class="boostFill"></div></div>
-      </div>
-    </div>
-
-    <div class="box board">
-      <div class="title">🏆 LIVE</div>
-      <div id="liveRows"></div>
-    </div>
-  </div>
-
-  <div class="buttons">
-    <button id="respawnBtn">RESPAWN</button>
-    <button id="menuBtn">MENU</button>
-    <button id="musicBtn">MUSIC ON</button>
-  </div>
-
-  <div class="controls">
-    <div id="joy" class="joy"><div id="stick" class="stick"></div></div>
-    <div id="boost" class="boost ready"><span>BOOST</span><small>READY</small></div>
-  </div>
-
-  <div id="toast" class="toast">RAWR</div>
-  <div id="matrixFx" class="matrixFx"></div>
-  <div id="matrixText" class="matrixText">ENTER THE MATRIX</div>
-
-  <div id="matrixCountdown" class="matrixCountdown hidden">
-    <div class="label">MAZE OPENS IN</div>
-    <div class="time" id="matrixCountdownTime">10</div>
-  </div>
-
-  <div id="morpheusIntro" class="morpheusIntro">
-    <img id="morpheusIntroImg" src="mor1.webp" alt="Morpheus">
-  </div>
-
-  <audio id="music" src="Araxos%20Baby.mp3" preload="auto" loop></audio>
-  <audio id="roar" src="roar.mp3" preload="auto"></audio>
-  <audio id="matrixAudio" src="matrix.ogg" preload="auto"></audio>
-</section>
-
-<script>
-(() => {
-const MAINTENANCE_MODE = false;
 const WORLD = 4200;
-const BOOST_ACTIVE_MS = 3000;
-const BOOST_TOTAL_COOLDOWN_MS = 18000;
+
+const SNACK_TARGET = 58;
+const ARNOLD_EVENT_COUNT = 4;
+const GAY_TARGET = 4;
+
+const ARNOLD_SPAWN_MS = 60000;
+const FIRST_MORPHEUS_SPAWN_MS = 120000;
+const MORPHEUS_SPAWN_MS = 180000;
+const MORPHEUS_PILL_COUNT_PER_COLOR = 8;
 const MAZE_LOCK_MS = 10000;
 
-const LOW_GRAPHICS = matchMedia("(max-width: 720px)").matches;
-const MAX_DPR = LOW_GRAPHICS ? 1.15 : 1.5;
+const TICK_MS = 16;
+const BROADCAST_MS = 50;
+const MAX_FOOD_SEND = 120;
 
-const PIC_ICON_SIZE = LOW_GRAPHICS ? 64 : 80;
-const ARNOLD_SIZE = LOW_GRAPHICS ? 180 : 220;
-const GAY_SIZE = LOW_GRAPHICS ? 135 : 155;
-const MORPHEUS_SIZE = LOW_GRAPHICS ? 310 : 420;
+const BOT_TARGET = 5;
+const BOT_RESPAWN_MS = 5000;
+const BOT_THINK_MS = 260;
 
-const SNACK_IMAGES = ["pic1.webp","pic2.webp","pic3.webp","pic4.webp","pic5.webp","pic6.webp","pic7.webp"];
-const ARNOLD_SOUNDS = ["pic.ogg","pic2.ogg","pic3.ogg","pic4.ogg","pic5.ogg","pic11.ogg","pic12.ogg","pic13.ogg","pic14.ogg","pic15.ogg"];
+const BOOST_ACTIVE_MS = 3000;
+const BOOST_TOTAL_COOLDOWN_MS = 18000;
+const RED_PILL_MS = 4000;
+const BLUE_PILL_MS = 4000;
 
-window.showAdminLogin = function(){
-  document.getElementById("adminBox").classList.remove("hidden");
+const TOP_KEY = "top10_v2";
+const PLAYERS_KEY = "known_players_v1";
+const ATTEMPTS_KEY = "login_attempts_v1";
+const COUNTRY_KEY = "country_top_v1";
+
+const COLORS = ["#ff8a00", "#ffb000", "#ff6a00", "#d96b00", "#ff3b30", "#ffe14a"];
+
+const NATION_FLAGS = {
+  BE:"🇧🇪", US:"🇺🇸", USA:"🇺🇸", NL:"🇳🇱", TR:"🇹🇷", PT:"🇵🇹",
+  SE:"🇸🇪", NO:"🇳🇴", DK:"🇩🇰", FI:"🇫🇮", RO:"🇷🇴", BG:"🇧🇬", CO:"🇨🇴",
+  CZ:"🇨🇿", PL:"🇵🇱", DE:"🇩🇪", HU:"🇭🇺", CH:"🇨🇭", IT:"🇮🇹",
+  GB:"🇬🇧", UK:"🇬🇧", FR:"🇫🇷", ES:"🇪🇸", GR:"🇬🇷", OTHER:"🏳️"
 };
 
-window.adminLogin = function(){
-  const user = document.getElementById("adminUser").value.trim();
-  const pass = document.getElementById("adminPass").value.trim();
-  if(user==="cis" && pass==="cis"){
-    sessionStorage.setItem("tigergames_admin","true");
-    document.getElementById("maintenance").classList.add("hidden");
-    document.getElementById("login").classList.remove("hidden");
-    preloadLoginStats();
-  }else{
-    document.getElementById("adminError").textContent="Wrong credentials, tiger.";
-  }
-};
+const TOPGUN_NAMES = ["Maverick", "Iceman", "Goose", "Viper", "Jester"];
+const BOT_NATIONS = ["US", "US", "US", "US", "US"];
 
-function initMaintenance(){
-  const isAdmin = sessionStorage.getItem("tigergames_admin")==="true";
-  if(MAINTENANCE_MODE && !isAdmin){
-    document.getElementById("maintenance").classList.remove("hidden");
-    document.getElementById("login").classList.add("hidden");
-    document.getElementById("gameScreen").classList.add("hidden");
-    return false;
-  }
-  document.getElementById("maintenance").classList.add("hidden");
-  document.getElementById("login").classList.remove("hidden");
-  return true;
-}
+const SNACK_IMAGES = ["pic1.webp", "pic2.webp", "pic3.webp", "pic4.webp", "pic5.webp", "pic6.webp", "pic7.webp"];
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d",{alpha:false});
+const MORPHEUS_SPAWN_POINTS = [
+  { x: 980,  y: 980,  variant: 0 },
+  { x: 3220, y: 980,  variant: 1 },
+  { x: 980,  y: 3220, variant: 2 },
+  { x: 3220, y: 3220, variant: 3 }
+];
 
-const login = document.getElementById("login");
-const gameScreen = document.getElementById("gameScreen");
+export class TigerRoom {
+  constructor(state, env) {
+    this.state = state;
+    this.env = env;
 
-const music = document.getElementById("music");
-const roar = document.getElementById("roar");
-const matrixAudio = document.getElementById("matrixAudio");
-const musicBtn = document.getElementById("musicBtn");
-const boostBtn = document.getElementById("boost");
-const boostFill = document.getElementById("boostFill");
-const boostLabel = document.getElementById("boostLabel");
-const boostTime = document.getElementById("boostTime");
-const matrixFx = document.getElementById("matrixFx");
-const matrixText = document.getElementById("matrixText");
-const matrixCountdown = document.getElementById("matrixCountdown");
-const matrixCountdownTime = document.getElementById("matrixCountdownTime");
-const morpheusIntro = document.getElementById("morpheusIntro");
+    this.players = new Map();
+    this.bots = new Map();
+    this.inputs = new Map();
 
-let ws = null, previewWs = null, myId = null, state = null;
-let renderPlayers = new Map();
-let running = false, angle = 0, boostPressed = false, musicEnabled = true;
-let lastInput = 0, lastRoar = 0, lastBoostTap = 0;
-let lastHudUpdate = 0, lastFrame = 0;
-let matrixCollapseUntil = 0;
-let matrixCountdownUntil = 0;
-let morpheusIntroUntil = 0;
-let audioQueue = [];
-let audioQueueBusy = false;
-let lastEventKey = "";
-let arnoldPointerBlinkSeed = 0;
+    this.food = [];
+    this.hazards = [];
+    this.morpheusEvent = null;
 
-const camera = { x: WORLD/2, y: WORLD/2, zoom: 1 };
-const foodImages = new Map();
+    this.lastTick = Date.now();
+    this.lastBroadcast = 0;
+    this.tickHandle = null;
 
-document.getElementById("playerName").value = localStorage.getItem("tigergames_name") || "";
-document.getElementById("playerNation").value = localStorage.getItem("tigergames_nation") || "BE";
+    this.top10 = [];
+    this.knownPlayers = [];
+    this.loginAttempts = [];
+    this.countryScores = [];
 
-function wsUrl(){
-  return "wss://tigermeet-game.jochenmichels.workers.dev";
-}
+    this.lastBotThink = 0;
+    this.lastBotRespawn = 0;
+    this.lastArnoldSpawn = Date.now() - ARNOLD_SPAWN_MS + 5000;
+    this.lastMorpheusSpawn = null;
+    this.nextMorpheusSpawnAt = Date.now() + FIRST_MORPHEUS_SPAWN_MS;
+    this.nextMorpheusSpawnIndex = 0;
 
-function assetPath(src){
-  if(!src) return null;
-  src = String(src);
-  if(src.startsWith("http")) return src;
-  return src.replace(/^\/+/,"");
-}
+    this.eventCounter = 0;
+    this.currentEvent = null;
 
-function resize(){
-  const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
-  canvas.width = Math.floor(innerWidth * dpr);
-  canvas.height = Math.floor(innerHeight * dpr);
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-}
-addEventListener("resize", resize);
-resize();
-
-const allowedLogin = initMaintenance();
-preloadFoodImages();
-if(allowedLogin) preloadLoginStats();
-
-function preloadFoodImages(){
-  [
-    "pic.webp","mor1.webp","gay.webp",
-    ...SNACK_IMAGES
-  ].forEach(src => getFoodImage(src));
-}
-
-function getFoodImage(src){
-  src = assetPath(src);
-  if(!src) return null;
-  if(foodImages.has(src)) return foodImages.get(src);
-  const img = new Image();
-  img.decoding = "async";
-  img.src = src + "?v=41";
-  foodImages.set(src, img);
-  return img;
-}
-
-document.getElementById("playBtn").onclick = () => {
-  if(MAINTENANCE_MODE && sessionStorage.getItem("tigergames_admin")!=="true"){
-    initMaintenance();
-    return;
-  }
-  const name = (document.getElementById("playerName").value.trim() || "Unknown Tiger").slice(0,16);
-  const nation = document.getElementById("playerNation").value || "OTHER";
-  localStorage.setItem("tigergames_name", name);
-  localStorage.setItem("tigergames_nation", nation);
-
-  if(previewWs){
-    try{previewWs.close()}catch{}
-    previewWs = null;
+    this.state.blockConcurrencyWhile(async () => {
+      this.top10 = normalizeTop10((await this.state.storage.get(TOP_KEY)) || []);
+      this.knownPlayers = (await this.state.storage.get(PLAYERS_KEY)) || [];
+      this.loginAttempts = (await this.state.storage.get(ATTEMPTS_KEY)) || [];
+      this.countryScores = normalizeCountryScores((await this.state.storage.get(COUNTRY_KEY)) || []);
+    });
   }
 
-  login.classList.add("hidden");
-  gameScreen.classList.remove("hidden");
-  if(musicEnabled) startAudio();
-  connect(name, nation);
-};
+  async fetch(request) {
+    const url = new URL(request.url);
 
-document.getElementById("menuBtn").onclick = () => {
-  running = false;
-  if(ws) ws.close();
-  gameScreen.classList.add("hidden");
-  login.classList.remove("hidden");
-  renderPlayers.clear();
-  state = null;
-  myId = null;
-  hideMatrixCountdown();
-  morpheusIntro.classList.remove("show");
-  preloadLoginStats();
-};
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders() });
+    }
 
-document.getElementById("respawnBtn").onclick = () => {
-  if(ws && ws.readyState===1) ws.send(JSON.stringify({type:"respawn"}));
-};
+    if (url.pathname === "/admin" || url.pathname === "/admin/") {
+      return this.adminResponse(request);
+    }
 
-musicBtn.onclick = () => {
-  musicEnabled = !musicEnabled;
-  musicBtn.textContent = musicEnabled ? "MUSIC ON" : "MUSIC OFF";
-  if(musicEnabled) startAudio();
-  else music.pause();
-};
+    const pair = new WebSocketPair();
+    const [client, server] = Object.values(pair);
 
-function preloadLoginStats(){
-  try{
-    previewWs = new WebSocket(wsUrl());
-    previewWs.onmessage = e => {
-      try{
-        const msg = JSON.parse(e.data);
-        if(msg.type === "welcome"){
-          if(msg.top10) drawLoginTop5(msg.top10);
-          if(msg.countryTop3) drawCountryTop3(msg.countryTop3);
-          else drawCountryTop3(null);
-          previewWs.close();
+    server.accept();
+    server.id = crypto.randomUUID();
+    server.ip = request.headers.get("CF-Connecting-IP") || "unknown";
+    server.ua = request.headers.get("User-Agent") || "unknown";
+
+    server.addEventListener("message", evt => this.onMessage(server, evt.data));
+    server.addEventListener("close", () => this.onClose(server));
+    server.addEventListener("error", () => this.onClose(server));
+
+    server.send(JSON.stringify({
+      type: "welcome",
+      id: server.id,
+      game: "Tigergames Online",
+      world: WORLD,
+      top10: this.top10,
+      countryTop3: this.countryTop3()
+    }));
+
+    return new Response(null, { status: 101, webSocket: client });
+  }
+
+  adminResponse(request) {
+    const url = new URL(request.url);
+    const token = url.searchParams.get("token") || "";
+
+    if (!this.env.ADMIN_TOKEN || token !== this.env.ADMIN_TOKEN) {
+      return json({ ok: false, error: "Unauthorized tiger move" }, 401);
+    }
+
+    const online = [...this.players.values()].map(p => ({
+      name: p.name,
+      nation: p.nation,
+      score: Math.round(p.score || 0),
+      alive: !!p.alive,
+      len: p.body ? p.body.length : 0,
+      shieldMs: Math.max(0, Number(p.shieldUntil || 0) - Date.now()),
+      speedMs: Math.max(0, Number(p.speedUntil || 0) - Date.now())
+    })).sort((a, b) => b.score - a.score);
+
+    return json({
+      ok: true,
+      game: "Tigergames Online",
+      now: Date.now(),
+      onlineCount: online.length,
+      botCount: this.bots.size,
+      morpheusActive: !!this.morpheusEvent,
+      arnoldOnMap: this.food.filter(f => f.type === "arnold").length,
+      gayOnMap: this.hazards.length,
+      matrixGateLocked: !!(this.morpheusEvent?.active && Date.now() < this.morpheusEvent.unlockAt),
+      online,
+      top10: this.top10,
+      countryTop3: this.countryTop3(),
+      countryScores: this.countryScores,
+      knownPlayers: this.knownPlayers.slice(0, 200),
+      loginAttempts: this.loginAttempts.slice(0, 200)
+    });
+  }
+
+  async onMessage(ws, raw) {
+    let msg;
+    try { msg = JSON.parse(raw); } catch { return; }
+
+    if (msg.type === "join") {
+      const name = safeName(msg.name || "Tiger");
+      const nation = safeNation(msg.nation || "OTHER");
+
+      this.logLoginAttempt(name, nation, ws).catch(() => {});
+      this.rememberPlayer(name, nation).catch(() => {});
+
+      const p = this.createPlayer(ws.id, name, false, nation);
+
+      this.players.set(ws, p);
+      this.inputs.set(ws.id, {
+        angle: Math.random() * Math.PI * 2,
+        boost: false
+      });
+
+      this.broadcastEvent("join", `${name} joined Tigergames Online 🐯`);
+
+      this.ensureLoop();
+      this.broadcastState(true);
+      return;
+    }
+
+    if (msg.type === "input") {
+      const p = this.players.get(ws);
+      if (!p || !p.alive) return;
+
+      this.inputs.set(p.id, {
+        angle: Number(msg.angle) || p.angle,
+        boost: !!msg.boost
+      });
+      return;
+    }
+
+    if (msg.type === "respawn") {
+      const old = this.players.get(ws);
+      if (!old) return;
+
+      this.players.set(ws, this.createPlayer(old.id, old.name, false, old.nation || "OTHER"));
+      this.inputs.set(old.id, {
+        angle: Math.random() * Math.PI * 2,
+        boost: false
+      });
+
+      this.ensureLoop();
+      this.broadcastState(true);
+    }
+  }
+
+  onClose(ws) {
+    const p = this.players.get(ws);
+    if (p) {
+      this.saveTop(p.name, Math.round(p.score), p.nation).catch(() => {});
+      this.saveCountryScore(p.nation, Math.round(p.score)).catch(() => {});
+    }
+
+    this.players.delete(ws);
+    this.inputs.delete(ws.id);
+  }
+
+  createPlayer(id, name, bot = false, nation = "OTHER") {
+    const a = Math.random() * Math.PI * 2;
+    const x = rand(300, WORLD - 300);
+    const y = rand(300, WORLD - 300);
+
+    const p = {
+      id,
+      name,
+      nation: safeNation(nation),
+      bot,
+      x,
+      y,
+      angle: a,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      skin: "tigerDragon",
+      score: bot ? rand(5, 24) : 0,
+      alive: true,
+      body: [],
+      radius: 13,
+      bornAt: Date.now(),
+
+      nextBoostAt: Date.now() + rand(5000, 12000),
+      boosting: false,
+      boostActiveUntil: 0,
+      boostCooldownUntil: 0,
+
+      shieldUntil: 0,
+      speedUntil: 0
+    };
+
+    const startLen = bot ? Math.floor(rand(20, 38)) : 20;
+
+    for (let i = 0; i < startLen; i++) {
+      p.body.push({
+        x: x - Math.cos(a) * i * 12,
+        y: y - Math.sin(a) * i * 12
+      });
+    }
+
+    return p;
+  }
+
+  createBot() {
+    const index = this.bots.size % TOPGUN_NAMES.length;
+    const name = TOPGUN_NAMES[index];
+    const id = "bot-" + crypto.randomUUID();
+
+    const bot = this.createPlayer(id, name, true, BOT_NATIONS[index] || "US");
+
+    this.bots.set(id, bot);
+    this.inputs.set(id, {
+      angle: bot.angle,
+      boost: false
+    });
+  }
+
+  ensureBots() {
+    while (this.bots.size < BOT_TARGET) this.createBot();
+  }
+
+  ensureLoop() {
+    if (this.tickHandle) return;
+
+    this.seedFood();
+    this.ensureBots();
+    this.ensureGayHazard();
+
+    this.lastTick = Date.now();
+    this.lastBroadcast = 0;
+
+    this.tickHandle = setInterval(() => this.tick(), TICK_MS);
+  }
+
+  tick() {
+    if (this.players.size === 0) {
+      this.bots.clear();
+      this.hazards = [];
+      this.morpheusEvent = null;
+      this.food = [];
+      this.currentEvent = null;
+      this.lastMorpheusSpawn = null;
+      this.nextMorpheusSpawnAt = Date.now() + FIRST_MORPHEUS_SPAWN_MS;
+      this.nextMorpheusSpawnIndex = 0;
+
+      for (const id of [...this.inputs.keys()]) {
+        if (String(id).startsWith("bot-")) this.inputs.delete(id);
+      }
+
+      clearInterval(this.tickHandle);
+      this.tickHandle = null;
+      return;
+    }
+
+    const now = Date.now();
+    const dt = Math.min((now - this.lastTick) / 1000, 0.04);
+    this.lastTick = now;
+
+    this.seedFood();
+    this.ensureGayHazard();
+    this.updateMorpheusGate(now);
+
+    if (now - this.lastBotThink >= BOT_THINK_MS) {
+      this.lastBotThink = now;
+      this.updateBotBrains();
+    }
+
+    for (const p of this.allPlayers()) {
+      if (p.alive) this.updatePlayer(p, dt, now);
+    }
+
+    this.updateHazards(dt);
+    this.handleEating(now);
+    this.handleCrashes(now);
+    this.handleMazeWallCrashes(now);
+    this.handleHazardHits();
+
+    if (now - this.lastBotRespawn >= BOT_RESPAWN_MS) {
+      this.lastBotRespawn = now;
+      this.cleanupAndRespawnBots();
+    }
+
+    if (now - this.lastBroadcast >= BROADCAST_MS) {
+      this.lastBroadcast = now;
+      this.broadcastState(false);
+    }
+  }
+
+  allPlayers() {
+    return [...this.players.values(), ...this.bots.values()];
+  }
+
+  realPlayers() {
+    return [...this.players.values()];
+  }
+
+  updateBotBrains() {
+    const now = Date.now();
+    const humans = this.realPlayers().filter(p => p.alive);
+    const all = this.allPlayers().filter(p => p.alive);
+
+    for (const bot of this.bots.values()) {
+      if (!bot.alive) continue;
+
+      let targetAngle = bot.angle + rand(-0.9, 0.9);
+      let boost = false;
+
+      const nearestHuman = nearest(bot, humans, 740);
+      const nearestFood = nearest(bot, this.food.filter(f => f.type !== "morpheus"), 1150);
+      const danger = nearestDanger(bot, all);
+
+      if (danger && danger.d < bot.radius + danger.other.radius + 75) {
+        targetAngle = Math.atan2(bot.y - danger.y, bot.x - danger.x);
+
+        if (now > bot.nextBoostAt && bot.body.length > 45 && Math.random() < 0.16) {
+          boost = true;
+          bot.nextBoostAt = now + rand(9000, 18000);
         }
-      }catch{}
-    };
-    previewWs.onerror = () => {
-      document.getElementById("loginTopRows").innerHTML = `<div class="small" style="text-align:center">Top 5 niet bereikbaar</div>`;
-      document.getElementById("countryTopRows").innerHTML = `<div class="small" style="text-align:center">Nation stats niet bereikbaar</div>`;
-    };
-  }catch{}
-}
+      } else if (nearestHuman && bot.body.length > 34) {
+        const h = nearestHuman.item;
+        const clearlyBigger = bot.body.length > h.body.length * 1.35;
+        const closeEnough = nearestHuman.d < 390;
 
-function drawLoginTop5(top10){
-  const rows = document.getElementById("loginTopRows");
-  if(!top10 || !top10.length){
-    rows.innerHTML = `<div class="small" style="text-align:center">Nog geen highscores.</div>`;
-    return;
+        if (clearlyBigger && closeEnough && Math.random() < 0.72) {
+          const lead = 0.16;
+          const hx = h.x + Math.cos(h.angle || 0) * nearestHuman.d * lead;
+          const hy = h.y + Math.sin(h.angle || 0) * nearestHuman.d * lead;
+
+          targetAngle = Math.atan2(hy - bot.y, hx - bot.x);
+
+          boost = nearestHuman.d < 320 &&
+            Math.random() < 0.25 &&
+            bot.body.length > 45 &&
+            now > bot.nextBoostAt;
+
+          if (boost) bot.nextBoostAt = now + rand(10000, 20000);
+        } else if (nearestFood) {
+          targetAngle = Math.atan2(nearestFood.item.y - bot.y, nearestFood.item.x - bot.x);
+        }
+      } else if (this.morpheusEvent && this.morpheusEvent.active && now >= this.morpheusEvent.unlockAt && Math.random() < 0.28) {
+        targetAngle = Math.atan2(this.morpheusEvent.center.y - bot.y, this.morpheusEvent.center.x - bot.x);
+      } else if (nearestFood) {
+        targetAngle = Math.atan2(nearestFood.item.y - bot.y, nearestFood.item.x - bot.x);
+      }
+
+      if (bot.x < 260) targetAngle = 0;
+      if (bot.x > WORLD - 260) targetAngle = Math.PI;
+      if (bot.y < 260) targetAngle = Math.PI / 2;
+      if (bot.y > WORLD - 260) targetAngle = -Math.PI / 2;
+
+      this.inputs.set(bot.id, {
+        angle: targetAngle,
+        boost
+      });
+    }
   }
-  rows.innerHTML = top10.slice(0,5).map((p,i) => {
-    return `<div class="loginRow ${i===0?"king":""}"><span>${i+1}</span><span>${i===0?"🐯 ":""}${esc(p.name)}</span><b>${Math.round(p.score||0)}</b></div>`;
-  }).join("");
-}
 
-function drawCountryTop3(list){
-  const rows = document.getElementById("countryTopRows");
-  if(!rows) return;
-  if(!list || !list.length){
-    rows.innerHTML = `<div class="small" style="text-align:center">Nog geen nation scores.</div>`;
-    return;
+  updatePlayer(p, dt, now) {
+    const input = this.inputs.get(p.id) || {
+      angle: p.angle,
+      boost: false
+    };
+
+    const turnRate = Math.max(2.6, 6.6 - Math.min(3.1, Math.sqrt(p.body.length) * 0.15));
+    p.angle += angleDiff(p.angle, input.angle) * Math.min(1, dt * turnRate);
+
+    if (input.boost && !p.boosting && p.body.length > 30 && now >= Number(p.boostCooldownUntil || 0)) {
+      p.boosting = true;
+      p.boostActiveUntil = now + BOOST_ACTIVE_MS;
+    }
+
+    if (p.boosting && now >= p.boostActiveUntil) {
+      p.boosting = false;
+      p.boostCooldownUntil = now + BOOST_TOTAL_COOLDOWN_MS;
+    }
+
+    const len = p.body.length;
+    const slowdown = Math.min(58, Math.sqrt(len) * 1.7);
+
+    const baseSpeed = 282;
+    const minSpeed = 112;
+    const normalSpeed = Math.max(minSpeed, baseSpeed - slowdown);
+
+    const canBoost = p.boosting && p.body.length > 30;
+    const boostBonus = canBoost ? 108 : 0;
+    const redPillMultiplier = now < Number(p.speedUntil || 0) ? 2 : 1;
+
+    const speed = (normalSpeed + boostBonus) * redPillMultiplier;
+
+    if (canBoost && Math.random() < 0.16) {
+      const tail = p.body.pop();
+      if (tail) {
+        this.food.push(makeFood(
+          tail.x + rand(-8, 8),
+          tail.y + rand(-8, 8),
+          rand(8, 10),
+          1.1,
+          "snack"
+        ));
+      }
+      p.score = Math.max(0, p.score - 0.025);
+    }
+
+    p.x = clamp(p.x + Math.cos(p.angle) * speed * dt, 20, WORLD - 20);
+    p.y = clamp(p.y + Math.sin(p.angle) * speed * dt, 20, WORLD - 20);
+
+    p.body.unshift({ x: p.x, y: p.y });
+
+    const growthScore = Math.min(p.score, 2800);
+    const maxLen = Math.floor(20 + growthScore * 1.15);
+
+    while (p.body.length > maxLen) p.body.pop();
+
+    const radiusGrowthLen = Math.min(p.body.length, 1300);
+    p.radius = clamp(11 + Math.sqrt(radiusGrowthLen) * 1.04, 13, 38);
   }
-  rows.innerHTML = list.slice(0,3).map((c,i) => {
-    return `<div class="loginRow"><span>${i+1}</span><span>${esc(c.nation || c.name || "OTHER")}</span><b>${Math.round(c.score||0)}</b></div>`;
-  }).join("");
+
+  ensureGayHazard() {
+    while (this.hazards.length < GAY_TARGET) {
+      this.hazards.push({
+        id: "gay-" + crypto.randomUUID(),
+        type: "gay",
+        img: "gay.webp",
+        x: rand(250, WORLD - 250),
+        y: rand(250, WORLD - 250),
+        r: 72,
+        vx: rand(-20, 20),
+        vy: rand(-20, 20)
+      });
+    }
+
+    if (this.hazards.length > GAY_TARGET) {
+      this.hazards.length = GAY_TARGET;
+    }
+  }
+
+  updateHazards(dt) {
+    const alivePlayers = this.allPlayers().filter(p => p.alive);
+
+    for (const hz of this.hazards) {
+      if (hz.type !== "gay") continue;
+
+      const near = nearest(hz, alivePlayers, 900);
+      let targetVx = 0;
+      let targetVy = 0;
+
+      if (near) {
+        const dx = near.item.x - hz.x;
+        const dy = near.item.y - hz.y;
+        const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+        const speed = near.d < 320 ? 205 : 175;
+        targetVx = (dx / d) * speed;
+        targetVy = (dy / d) * speed;
+      } else {
+        targetVx = (hz.vx || 0) + rand(-12, 12);
+        targetVy = (hz.vy || 0) + rand(-12, 12);
+      }
+
+      hz.vx = lerpNum(hz.vx || 0, clamp(targetVx, -215, 215), 0.085);
+      hz.vy = lerpNum(hz.vy || 0, clamp(targetVy, -215, 215), 0.085);
+
+      hz.x = clamp(hz.x + hz.vx * dt, 45, WORLD - 45);
+      hz.y = clamp(hz.y + hz.vy * dt, 45, WORLD - 45);
+
+      if (hz.x <= 46 || hz.x >= WORLD - 46) hz.vx *= -0.7;
+      if (hz.y <= 46 || hz.y >= WORLD - 46) hz.vy *= -0.7;
+    }
+  }
+
+  handleEating(now) {
+    for (const p of this.allPlayers()) {
+      if (!p.alive) continue;
+
+      for (let i = this.food.length - 1; i >= 0; i--) {
+        const f = this.food[i];
+        const eatRadius = p.radius + f.r + (
+          f.type === "morpheus" ? 30 :
+          f.type === "arnold" ? 24 :
+          f.type === "redPill" || f.type === "bluePill" ? 10 :
+          7
+        );
+
+        if (dist2(p.x, p.y, f.x, f.y) < eatRadius ** 2) {
+          if (f.type === "snack") {
+            p.score += f.v;
+            this.food.splice(i, 1);
+            continue;
+          }
+
+          if (f.type === "arnold") {
+            p.score += 100;
+            this.food.splice(i, 1);
+            this.broadcastEvent("arnoldEaten", `${p.name} ate Arnold Pikhaar Shwarzenegger.`);
+            continue;
+          }
+
+          if (f.type === "redPill") {
+            p.speedUntil = now + RED_PILL_MS;
+            this.food.splice(i, 1);
+            continue;
+          }
+
+          if (f.type === "bluePill") {
+            p.shieldUntil = now + BLUE_PILL_MS;
+            this.food.splice(i, 1);
+            continue;
+          }
+
+          if (f.type === "morpheus") {
+            p.score += 500;
+            this.massGrowPlayer(p, 95);
+            this.food.splice(i, 1);
+            this.clearMorpheusEvent();
+            this.broadcastEvent("morpheusTaken", `${p.name} has taken Morpheus.`);
+            this.broadcastEvent("matrixCollapse", "THE MATRIX IS COLLAPSING");
+            continue;
+          }
+        }
+      }
+    }
+  }
+
+  massGrowPlayer(p, amount) {
+    const last = p.body[p.body.length - 1] || { x: p.x, y: p.y };
+    for (let i = 0; i < amount; i++) {
+      p.body.push({ x: last.x, y: last.y });
+    }
+  }
+
+  handleCrashes(now) {
+    const all = this.allPlayers().filter(p => p.alive);
+
+    for (const p of all) {
+      if (!p.alive) continue;
+
+      if (p.x <= 22 || p.x >= WORLD - 22 || p.y <= 22 || p.y >= WORLD - 22) {
+        this.kill(p, null, "border");
+        continue;
+      }
+
+      const selfStart = Math.max(32, Math.floor(p.radius * 1.35));
+
+      for (let i = selfStart; i < p.body.length; i += 7) {
+        const seg = p.body[i];
+        const selfHitRadius = p.radius * 0.62 + 5;
+
+        if (dist2(p.x, p.y, seg.x, seg.y) < selfHitRadius ** 2) {
+          this.kill(p, p, "self");
+          break;
+        }
+      }
+
+      if (!p.alive) continue;
+
+      for (const other of all) {
+        if (p === other || !other.alive) continue;
+
+        const eitherShielded = now < Number(p.shieldUntil || 0) || now < Number(other.shieldUntil || 0);
+
+        const headDist = Math.sqrt(dist2(p.x, p.y, other.x, other.y));
+        const headHitRadius = (p.radius + other.radius) * 0.70;
+
+        if (!eitherShielded && headDist < headHitRadius) {
+          this.resolveHeadOn(p, other);
+          break;
+        }
+
+        const startIndex = Math.max(11, Math.floor(other.radius * 0.95));
+
+        for (let i = startIndex; i < other.body.length; i += 6) {
+          const seg = other.body[i];
+
+          const visualBodyRadius = other.radius * 0.70;
+          const visualHeadRadius = p.radius * 0.58;
+          const hitRadius = visualHeadRadius + visualBodyRadius;
+
+          if (dist2(p.x, p.y, seg.x, seg.y) < hitRadius ** 2) {
+            if (!eitherShielded) {
+              this.kill(p, other, "player");
+            }
+            break;
+          }
+        }
+
+        if (!p.alive) break;
+      }
+    }
+  }
+
+  handleMazeWallCrashes(now) {
+    if (!this.morpheusEvent || !this.morpheusEvent.active) return;
+
+    const walls = this.getActiveMazeWalls(now);
+    if (!walls.length) return;
+
+    for (const p of this.allPlayers()) {
+      if (!p.alive) continue;
+
+      for (const w of walls) {
+        if (circleRectHit(p.x, p.y, p.radius * 0.75, w)) {
+          this.kill(p, null, "matrixwall");
+          break;
+        }
+      }
+    }
+  }
+
+  handleHazardHits() {
+    if (!this.hazards.length) return;
+
+    for (const hz of this.hazards) {
+      if (hz.type !== "gay") continue;
+
+      for (const p of this.allPlayers()) {
+        if (!p.alive) continue;
+
+        const hitRadius = p.radius + hz.r * 0.28;
+        if (dist2(p.x, p.y, hz.x, hz.y) < hitRadius ** 2) {
+          this.kill(p, null, "gay");
+        }
+      }
+    }
+  }
+
+  resolveHeadOn(a, b) {
+    if (!a.alive || !b.alive) return;
+
+    const aPower = a.body.length + a.score * 0.22;
+    const bPower = b.body.length + b.score * 0.22;
+    const diff = Math.abs(aPower - bPower);
+    const tieZone = Math.max(12, Math.min(a.radius, b.radius) * 0.8);
+
+    if (diff < tieZone) {
+      this.kill(a, b, "headon");
+      this.kill(b, a, "headon");
+      return;
+    }
+
+    if (aPower > bPower) this.kill(b, a, "headon");
+    else this.kill(a, b, "headon");
+  }
+
+  kill(dead, killer, reason) {
+    if (!dead.alive) return;
+
+    dead.alive = false;
+    dead.boosting = false;
+
+    if (killer && killer !== dead && killer.alive) {
+      killer.score += dead.bot ? 20 : 50;
+    }
+
+    if (!dead.bot) {
+      this.saveTop(dead.name, Math.round(dead.score), dead.nation).catch(() => {});
+      this.saveCountryScore(dead.nation, Math.round(dead.score)).catch(() => {});
+    }
+
+    for (let i = 0; i < dead.body.length; i += 4) {
+      const b = dead.body[i];
+      this.food.push(makeFood(
+        b.x + rand(-18, 18),
+        b.y + rand(-18, 18),
+        rand(8, 10),
+        rand(1.2, 3.1),
+        "snack"
+      ));
+    }
+
+    let text = `${dead.name} died 💀`;
+    let eventType = "death";
+
+    if (reason === "self") text = `${dead.name} ate his own tiger tail 🐯`;
+    else if (reason === "border") text = `${dead.name} left the Tiger zone 💀`;
+    else if (reason === "matrixwall") text = `${dead.name} got deleted by the Matrix wall 💀`;
+    else if (reason === "gay") {
+      text = `aah lil gay fella i got u — ${dead.name} got caught by ARUGAY2 - Jorrit 💀`;
+      eventType = "gayKill";
+    } else if (reason === "headon" && killer && killer !== dead) {
+      text = `${killer.name} won the head-on against ${dead.name} 💥`;
+    } else if (killer && killer !== dead) {
+      text = `${killer.name} destroyed ${dead.name} 🐯`;
+    }
+
+    if (!dead.bot || !killer?.bot) {
+      this.broadcastEvent(eventType, text);
+    }
+
+    this.broadcastState(true);
+  }
+
+  cleanupAndRespawnBots() {
+    for (const [id, bot] of this.bots.entries()) {
+      if (!bot.alive) {
+        this.bots.delete(id);
+        this.inputs.delete(id);
+      }
+    }
+    this.ensureBots();
+  }
+
+  seedFood() {
+    const now = Date.now();
+
+    this.food = this.food.filter(f => {
+      return f && (
+        f.type === "snack" ||
+        f.type === "arnold" ||
+        f.type === "morpheus" ||
+        f.type === "redPill" ||
+        f.type === "bluePill"
+      );
+    });
+
+    const snackCount = this.food.filter(f => f.type === "snack").length;
+
+    if (now - this.lastArnoldSpawn >= ARNOLD_SPAWN_MS) {
+      this.lastArnoldSpawn = now;
+      this.spawnArnoldWave();
+    }
+
+    if (!this.morpheusEvent && now >= this.nextMorpheusSpawnAt) {
+      this.spawnMorpheusEvent(now);
+    }
+
+    for (let i = snackCount; i < SNACK_TARGET; i++) {
+      const pos = this.findFoodSpot(110);
+      this.food.push(makeFood(pos.x, pos.y, rand(10, 12), rand(1.3, 5.4), "snack"));
+    }
+
+    const maxFood = SNACK_TARGET + 20 + 1 + MORPHEUS_PILL_COUNT_PER_COLOR * 2 + 90;
+    if (this.food.length > maxFood) {
+      this.food.splice(0, this.food.length - maxFood);
+    }
+  }
+
+  spawnArnoldWave() {
+    let spawned = 0;
+    const existing = this.food.filter(f => f.type === "arnold").length;
+    const needed = Math.max(ARNOLD_EVENT_COUNT, existing < ARNOLD_EVENT_COUNT ? ARNOLD_EVENT_COUNT - existing : ARNOLD_EVENT_COUNT);
+
+    for (let i = 0; i < needed; i++) {
+      const pos = this.findFoodSpot(420);
+      this.food.push(makeFood(pos.x, pos.y, 92, 100, "arnold"));
+      spawned++;
+    }
+
+    if (spawned > 0) {
+      this.broadcastEvent("arnoldSpawn", "Arnold Pikhaar Shwarzenegger has spawned.");
+    }
+  }
+
+  spawnMorpheusEvent(now) {
+    const point = MORPHEUS_SPAWN_POINTS[this.nextMorpheusSpawnIndex % MORPHEUS_SPAWN_POINTS.length];
+    this.nextMorpheusSpawnIndex++;
+
+    const center = {
+      x: clamp(point.x, 640, WORLD - 640),
+      y: clamp(point.y, 640, WORLD - 640)
+    };
+
+    const maze = buildMatrixMazeVariant(center.x, center.y, point.variant);
+    const unlockAt = now + MAZE_LOCK_MS;
+
+    this.morpheusEvent = {
+      active: true,
+      spawnedAt: now,
+      center,
+      variant: point.variant,
+      baseWalls: maze.baseWalls,
+      gateWall: maze.gateWall,
+      unlockAt
+    };
+
+    this.lastMorpheusSpawn = now;
+    this.nextMorpheusSpawnAt = now + MORPHEUS_SPAWN_MS;
+
+    this.food = this.food.filter(f => f.type !== "morpheus" && f.type !== "redPill" && f.type !== "bluePill");
+    this.food.push(makeFood(center.x, center.y, 120, 500, "morpheus"));
+
+    for (let i = 0; i < MORPHEUS_PILL_COUNT_PER_COLOR; i++) {
+      const red = this.findPillSpot(90);
+      this.food.push(makeFood(red.x, red.y, 18, 0, "redPill"));
+
+      const blue = this.findPillSpot(90);
+      this.food.push(makeFood(blue.x, blue.y, 18, 0, "bluePill"));
+    }
+
+    this.broadcastEvent("morpheusSpawn", "ENTER THE MATRIX");
+  }
+
+  updateMorpheusGate(now) {
+    if (!this.morpheusEvent || !this.morpheusEvent.active) return;
+    if (!this.morpheusEvent.unlockAt) return;
+
+    if (!this.morpheusEvent.opened && now >= this.morpheusEvent.unlockAt) {
+      this.morpheusEvent.opened = true;
+      this.broadcastEvent("matrixGateOpen", "MAZE OPEN");
+    }
+  }
+
+  clearMorpheusEvent() {
+    this.morpheusEvent = null;
+    this.food = this.food.filter(f => f.type !== "morpheus" && f.type !== "redPill" && f.type !== "bluePill");
+  }
+
+  getActiveMazeWalls(now = Date.now()) {
+    if (!this.morpheusEvent || !this.morpheusEvent.active) return [];
+    if (now < this.morpheusEvent.unlockAt) {
+      return [...this.morpheusEvent.baseWalls, this.morpheusEvent.gateWall];
+    }
+    return [...this.morpheusEvent.baseWalls];
+  }
+
+  findFoodSpot(minDistance = 70) {
+    for (let tries = 0; tries < 24; tries++) {
+      const x = rand(80, WORLD - 80);
+      const y = rand(80, WORLD - 80);
+
+      let ok = true;
+
+      for (const f of this.food) {
+        if (dist2(x, y, f.x, f.y) < minDistance * minDistance) {
+          ok = false;
+          break;
+        }
+      }
+
+      if (!ok) continue;
+
+      const mazeWalls = this.morpheusEvent ? this.getActiveMazeWalls(Date.now()) : [];
+      if (!pointInAnyRect(x, y, mazeWalls)) {
+        return { x, y };
+      }
+    }
+
+    return {
+      x: rand(80, WORLD - 80),
+      y: rand(80, WORLD - 80)
+    };
+  }
+
+  findPillSpot(minDistance = 90) {
+    for (let tries = 0; tries < 32; tries++) {
+      const x = rand(90, WORLD - 90);
+      const y = rand(90, WORLD - 90);
+
+      const walls = this.morpheusEvent ? this.getActiveMazeWalls(Date.now()) : [];
+      if (pointInAnyRect(x, y, walls)) continue;
+
+      let nearOther = false;
+      for (const f of this.food) {
+        if (dist2(x, y, f.x, f.y) < minDistance * minDistance) {
+          nearOther = true;
+          break;
+        }
+      }
+      if (!nearOther) return { x, y };
+    }
+
+    return this.findFoodSpot(minDistance);
+  }
+
+  broadcastState(force = false) {
+    const now = Date.now();
+    const all = this.allPlayers();
+
+    const players = all.map(p => {
+      const stride =
+        p.body.length > 900 ? 7 :
+        p.body.length > 450 ? 6 :
+        p.body.length > 160 ? 4 : 3;
+
+      const boostActiveMs = p.boosting
+        ? Math.max(0, Number(p.boostActiveUntil || 0) - now)
+        : 0;
+
+      const boostCooldownMs = !p.boosting
+        ? Math.max(0, Number(p.boostCooldownUntil || 0) - now)
+        : 0;
+
+      const shieldMs = Math.max(0, Number(p.shieldUntil || 0) - now);
+      const speedMs = Math.max(0, Number(p.speedUntil || 0) - now);
+
+      return {
+        id: p.id,
+        name: p.name,
+        nation: p.nation || "OTHER",
+        bot: !!p.bot,
+        x: round1(p.x),
+        y: round1(p.y),
+        angle: round3(p.angle),
+        color: p.color,
+        skin: p.skin,
+        score: round1(p.score),
+        alive: p.alive,
+        radius: round1(p.radius),
+        len: p.body.length,
+        boosting: !!p.boosting,
+        boostActiveMs,
+        boostCooldownMs,
+        shieldMs,
+        speedMs,
+        body: p.body
+          .filter((_, i) => i % stride === 0)
+          .map(b => ({
+            x: round1(b.x),
+            y: round1(b.y)
+          }))
+      };
+    });
+
+    const food = [...this.food]
+      .sort((a, b) => {
+        const pa = foodPriority(a.type);
+        const pb = foodPriority(b.type);
+        return pa - pb;
+      })
+      .slice(0, MAX_FOOD_SEND)
+      .map(f => ({
+        x: Math.round(f.x),
+        y: Math.round(f.y),
+        r: Math.round(f.r),
+        v: round1(f.v),
+        type: f.type || "snack",
+        img: f.img || null,
+        spin: round3(f.spin || 0)
+      }));
+
+    const hazards = this.hazards.map(h => ({
+      id: h.id,
+      type: h.type,
+      img: h.img || null,
+      x: Math.round(h.x),
+      y: Math.round(h.y),
+      r: Math.round(h.r)
+    }));
+
+    const mazeWalls = this.getActiveMazeWalls(now).map(w => ({
+      x: Math.round(w.x),
+      y: Math.round(w.y),
+      w: Math.round(w.w),
+      h: Math.round(w.h)
+    }));
+
+    const eventPayload = this.currentEvent ? {
+      eventId: this.currentEvent.id,
+      eventType: this.currentEvent.eventType,
+      eventText: this.currentEvent.text
+    } : {};
+
+    const mazeUnlockInMs = this.morpheusEvent?.active
+      ? Math.max(0, Number(this.morpheusEvent.unlockAt || 0) - now)
+      : 0;
+
+    this.broadcastRaw(JSON.stringify({
+      type: "state",
+      game: "Tigergames Online",
+      world: WORLD,
+      players,
+      food,
+      hazards,
+      mazeWalls,
+      top10: this.top10,
+      countryTop3: this.countryTop3(),
+      force,
+      ...eventPayload,
+      morpheusActive: !!this.morpheusEvent?.active,
+      matrixMazeOpenInMs: mazeUnlockInMs,
+      mazeUnlockInMs,
+      mazeUnlockAt: this.morpheusEvent?.active ? Number(this.morpheusEvent.unlockAt || 0) : 0
+    }));
+  }
+
+  countryTop3() {
+    const map = new Map();
+
+    for (const c of this.countryScores) {
+      const nation = safeNation(c.nation || "OTHER");
+      map.set(nation, {
+        nation,
+        name: nation,
+        flag: NATION_FLAGS[nation] || "🏳️",
+        score: Number(c.score || 0)
+      });
+    }
+
+    for (const p of this.realPlayers()) {
+      if (!p.alive) continue;
+
+      const nation = safeNation(p.nation || "OTHER");
+      const old = map.get(nation) || {
+        nation,
+        name: nation,
+        flag: NATION_FLAGS[nation] || "🏳️",
+        score: 0
+      };
+
+      old.score = Math.max(old.score, Number(p.score || 0));
+      map.set(nation, old);
+    }
+
+    return [...map.values()]
+      .filter(x => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+  }
+
+  broadcast(obj) {
+    this.broadcastRaw(JSON.stringify(obj));
+  }
+
+  broadcastEvent(eventType, text) {
+    const id = `evt-${++this.eventCounter}`;
+    this.currentEvent = { id, eventType, text, at: Date.now() };
+
+    const payload = {
+      type: "event",
+      eventType,
+      eventId: id,
+      text
+    };
+
+    if (this.morpheusEvent?.active) {
+      payload.mazeUnlockInMs = Math.max(0, Number(this.morpheusEvent.unlockAt || 0) - Date.now());
+      payload.mazeUnlockAt = Number(this.morpheusEvent.unlockAt || 0);
+    }
+
+    this.broadcast(payload);
+  }
+
+  broadcastRaw(msg) {
+    for (const ws of this.players.keys()) {
+      try {
+        ws.send(msg);
+      } catch {
+        this.onClose(ws);
+      }
+    }
+  }
+
+  async saveTop(name, score, nation = "OTHER") {
+    name = safeName(name);
+    score = Math.round(score);
+    nation = safeNation(nation);
+
+    if (!score || score < 1) return;
+
+    const existing = this.top10.find(
+      x => safeName(x.name).toLowerCase() === name.toLowerCase()
+    );
+
+    let changed = false;
+
+    if (existing) {
+      if (score > existing.score) {
+        existing.score = score;
+        existing.nation = nation;
+        existing.at = Date.now();
+        changed = true;
+      } else if (!existing.nation || existing.nation === "OTHER") {
+        existing.nation = nation;
+        changed = true;
+      }
+    } else {
+      this.top10.push({ name, score, nation, at: Date.now() });
+      changed = true;
+    }
+
+    if (!changed) return;
+
+    this.top10 = normalizeTop10(this.top10);
+    await this.state.storage.put(TOP_KEY, this.top10);
+  }
+
+  async saveCountryScore(nation, score) {
+    nation = safeNation(nation);
+    score = Math.round(Number(score || 0));
+
+    if (!score || score < 1) return;
+
+    const existing = this.countryScores.find(x => safeNation(x.nation) === nation);
+
+    if (existing) {
+      if (score > Number(existing.score || 0)) {
+        existing.score = score;
+        existing.at = Date.now();
+      }
+    } else {
+      this.countryScores.push({
+        nation,
+        score,
+        at: Date.now()
+      });
+    }
+
+    this.countryScores = normalizeCountryScores(this.countryScores);
+    await this.state.storage.put(COUNTRY_KEY, this.countryScores);
+  }
+
+  async rememberPlayer(name, nation = "OTHER") {
+    name = safeName(name);
+    nation = safeNation(nation);
+
+    const existing = this.knownPlayers.find(
+      x => x.name.toLowerCase() === name.toLowerCase()
+    );
+
+    if (existing) {
+      existing.nation = nation;
+      existing.lastSeen = Date.now();
+      existing.times = Number(existing.times || 0) + 1;
+    } else {
+      this.knownPlayers.push({
+        name,
+        nation,
+        firstSeen: Date.now(),
+        lastSeen: Date.now(),
+        times: 1
+      });
+    }
+
+    this.knownPlayers.sort((a, b) => b.lastSeen - a.lastSeen);
+    this.knownPlayers = this.knownPlayers.slice(0, 200);
+
+    await this.state.storage.put(PLAYERS_KEY, this.knownPlayers);
+  }
+
+  async logLoginAttempt(name, nation, ws) {
+    this.loginAttempts.unshift({
+      name: safeName(name),
+      nation: safeNation(nation),
+      at: Date.now(),
+      ip: ws.ip || "unknown",
+      ua: String(ws.ua || "unknown").slice(0, 160)
+    });
+
+    this.loginAttempts = this.loginAttempts.slice(0, 200);
+    await this.state.storage.put(ATTEMPTS_KEY, this.loginAttempts);
+  }
 }
 
-async function startAudio(){
-  try{
-    music.volume = .42;
-    if(music.paused) await music.play();
-    musicBtn.textContent = "MUSIC ON";
-  }catch{}
-}
+function makeFood(x, y, r, v, type = "snack") {
+  if (type === "arnold") {
+    return {
+      x, y, r, v: 100,
+      type: "arnold",
+      img: "pic.webp"
+    };
+  }
 
-function playRoar(){
-  const now = performance.now();
-  if(now - lastRoar < 650) return;
-  lastRoar = now;
-  try{
-    const r = roar.cloneNode(true);
-    r.volume = .75;
-    r.currentTime = 0;
-    r.play().catch(()=>{});
-  }catch{}
-}
+  if (type === "morpheus") {
+    return {
+      x, y, r, v: 500,
+      type: "morpheus",
+      img: "mor1.webp"
+    };
+  }
 
-function queueSound(src, volume=.95){
-  audioQueue.push({src,volume});
-  playNextQueuedSound();
-}
+  if (type === "redPill") {
+    return {
+      x, y, r, v: 0,
+      type: "redPill",
+      img: null,
+      spin: rand(0, Math.PI * 2)
+    };
+  }
 
-function playNextQueuedSound(){
-  if(audioQueueBusy) return;
-  const next = audioQueue.shift();
-  if(!next) return;
-  audioQueueBusy = true;
+  if (type === "bluePill") {
+    return {
+      x, y, r, v: 0,
+      type: "bluePill",
+      img: null,
+      spin: rand(0, Math.PI * 2)
+    };
+  }
 
-  const snd = new Audio(next.src);
-  snd.volume = next.volume;
-  snd.preload = "auto";
-
-  snd.onended = () => {
-    audioQueueBusy = false;
-    playNextQueuedSound();
+  return {
+    x, y, r, v,
+    type: "snack",
+    img: SNACK_IMAGES[Math.floor(Math.random() * SNACK_IMAGES.length)]
   };
-  snd.onerror = () => {
-    audioQueueBusy = false;
-    playNextQueuedSound();
+}
+
+function foodPriority(type) {
+  if (type === "morpheus") return 0;
+  if (type === "arnold") return 1;
+  if (type === "redPill" || type === "bluePill") return 2;
+  return 9;
+}
+
+function buildMatrixMazeVariant(cx, cy, variant = 0) {
+  const t = 56;
+  const half = 460;
+  const inner = 210;
+  const gateSize = 185;
+
+  const clampWall = w => ({
+    x: clamp(w.x, 40, WORLD - 40),
+    y: clamp(w.y, 40, WORLD - 40),
+    w: w.w,
+    h: w.h
+  });
+
+  const baseWalls = [];
+  let gateWall;
+
+  if (variant === 0) {
+    baseWalls.push({ x: cx - half, y: cy - half, w: half * 2, h: t });
+    baseWalls.push({ x: cx - half, y: cy - half, w: t, h: half * 2 });
+    baseWalls.push({ x: cx + half - t, y: cy - half, w: t, h: half * 2 });
+    baseWalls.push({ x: cx - half, y: cy + half - t, w: half * 2, h: t });
+
+    baseWalls.push({ x: cx - inner, y: cy - inner, w: inner * 2, h: t });
+    baseWalls.push({ x: cx - inner, y: cy - inner, w: t, h: inner * 2 });
+    baseWalls.push({ x: cx + inner - t, y: cy - inner, w: t, h: inner * 2 });
+    baseWalls.push({ x: cx - inner, y: cy + inner - t, w: inner * 2, h: t });
+
+    baseWalls.push({ x: cx - 300, y: cy - 120, w: 220, h: t });
+    baseWalls.push({ x: cx + 80, y: cy + 70, w: 220, h: t });
+    baseWalls.push({ x: cx - 50, y: cy - 350, w: t, h: 170 });
+
+    gateWall = { x: cx - gateSize / 2, y: cy + half - t, w: gateSize, h: t };
+  } else if (variant === 1) {
+    baseWalls.push({ x: cx - half, y: cy - half, w: half * 2, h: t });
+    baseWalls.push({ x: cx - half, y: cy - half, w: t, h: half * 2 });
+    baseWalls.push({ x: cx + half - t, y: cy - half, w: t, h: half * 2 });
+    baseWalls.push({ x: cx - half, y: cy + half - t, w: half * 2, h: t });
+
+    baseWalls.push({ x: cx - inner, y: cy - inner, w: inner * 2, h: t });
+    baseWalls.push({ x: cx - inner, y: cy - inner, w: t, h: inner * 2 });
+    baseWalls.push({ x: cx + inner - t, y: cy - inner, w: t, h: inner * 2 });
+    baseWalls.push({ x: cx - inner, y: cy + inner - t, w: inner * 2, h: t });
+
+    baseWalls.push({ x: cx - 140, y: cy - 300, w: t, h: 220 });
+    baseWalls.push({ x: cx + 70, y: cy + 80, w: t, h: 220 });
+    baseWalls.push({ x: cx - 280, y: cy + 30, w: 180, h: t });
+
+    gateWall = { x: cx - half, y: cy - gateSize / 2, w: t, h: gateSize };
+  } else if (variant === 2) {
+    baseWalls.push({ x: cx - half, y: cy - half, w: half * 2, h: t });
+    baseWalls.push({ x: cx - half, y: cy - half, w: t, h: half * 2 });
+    baseWalls.push({ x: cx + half - t, y: cy - half, w: t, h: half * 2 });
+    baseWalls.push({ x: cx - half, y: cy + half - t, w: half * 2, h: t });
+
+    baseWalls.push({ x: cx - inner, y: cy - inner, w: inner * 2, h: t });
+    baseWalls.push({ x: cx - inner, y: cy - inner, w: t, h: inner * 2 });
+    baseWalls.push({ x: cx + inner - t, y: cy - inner, w: t, h: inner * 2 });
+    baseWalls.push({ x: cx - inner, y: cy + inner - t, w: inner * 2, h: t });
+
+    baseWalls.push({ x: cx - 280, y: cy - 50, w: 180, h: t });
+    baseWalls.push({ x: cx + 80, y: cy - 110, w: 220, h: t });
+    baseWalls.push({ x: cx + 30, y: cy + 130, w: t, h: 200 });
+
+    gateWall = { x: cx + half - t, y: cy - gateSize / 2, w: t, h: gateSize };
+  } else {
+    baseWalls.push({ x: cx - half, y: cy - half, w: half * 2, h: t });
+    baseWalls.push({ x: cx - half, y: cy - half, w: t, h: half * 2 });
+    baseWalls.push({ x: cx + half - t, y: cy - half, w: t, h: half * 2 });
+    baseWalls.push({ x: cx - half, y: cy + half - t, w: half * 2, h: t });
+
+    baseWalls.push({ x: cx - inner, y: cy - inner, w: inner * 2, h: t });
+    baseWalls.push({ x: cx - inner, y: cy - inner, w: t, h: inner * 2 });
+    baseWalls.push({ x: cx + inner - t, y: cy - inner, w: t, h: inner * 2 });
+    baseWalls.push({ x: cx - inner, y: cy + inner - t, w: inner * 2, h: t });
+
+    baseWalls.push({ x: cx - 60, y: cy - 340, w: t, h: 210 });
+    baseWalls.push({ x: cx + 120, y: cy - 40, w: t, h: 220 });
+    baseWalls.push({ x: cx - 240, y: cy + 70, w: 180, h: t });
+
+    gateWall = { x: cx - gateSize / 2, y: cy - half, w: gateSize, h: t };
+  }
+
+  return {
+    baseWalls: baseWalls.map(clampWall),
+    gateWall: clampWall(gateWall)
   };
-  snd.play().catch(() => {
-    audioQueueBusy = false;
-    playNextQueuedSound();
+}
+
+function pointInAnyRect(x, y, rects) {
+  for (const r of rects || []) {
+    if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) return true;
+  }
+  return false;
+}
+
+function circleRectHit(cx, cy, cr, rect) {
+  const nearestX = clamp(cx, rect.x, rect.x + rect.w);
+  const nearestY = clamp(cy, rect.y, rect.y + rect.h);
+  const dx = cx - nearestX;
+  const dy = cy - nearestY;
+  return (dx * dx + dy * dy) < cr * cr;
+}
+
+function nearest(from, items, maxDist) {
+  let best = null;
+  let bestD2 = maxDist * maxDist;
+
+  for (const item of items) {
+    if (!item || item === from || item.alive === false) continue;
+
+    const d2 = dist2(from.x, from.y, item.x, item.y);
+    if (d2 < bestD2) {
+      bestD2 = d2;
+      best = item;
+    }
+  }
+
+  return best ? { item: best, d: Math.sqrt(bestD2) } : null;
+}
+
+function nearestDanger(bot, all) {
+  let best = null;
+  let bestD2 = 999999999;
+
+  for (const other of all) {
+    if (!other || other === bot || !other.alive) continue;
+
+    const d2 = dist2(bot.x, bot.y, other.x, other.y);
+    if (d2 < bestD2) {
+      bestD2 = d2;
+      best = other;
+    }
+  }
+
+  if (!best) return null;
+
+  return {
+    other: best,
+    x: best.x,
+    y: best.y,
+    d: Math.sqrt(bestD2)
+  };
+}
+
+function normalizeTop10(list) {
+  const clean = Array.isArray(list) ? list : [];
+  const byName = new Map();
+
+  for (const item of clean) {
+    const name = safeName(item.name || "Tiger");
+    const score = Math.round(Number(item.score || 0));
+
+    if (!score) continue;
+
+    const key = name.toLowerCase();
+    const old = byName.get(key);
+
+    if (!old || score > old.score) {
+      byName.set(key, {
+        name,
+        score,
+        nation: safeNation(item.nation || "OTHER"),
+        at: Number(item.at || Date.now())
+      });
+    }
+  }
+
+  return [...byName.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
+}
+
+function normalizeCountryScores(list) {
+  const clean = Array.isArray(list) ? list : [];
+  const byNation = new Map();
+
+  for (const item of clean) {
+    const nation = safeNation(item.nation || "OTHER");
+    const score = Math.round(Number(item.score || 0));
+
+    if (!score) continue;
+
+    const old = byNation.get(nation);
+
+    if (!old || score > old.score) {
+      byNation.set(nation, {
+        nation,
+        score,
+        at: Number(item.at || Date.now())
+      });
+    }
+  }
+
+  return [...byNation.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 20);
+}
+
+function safeName(v) {
+  return String(v).replace(/[<>"&]/g, "").trim().slice(0, 16) || "Tiger";
+}
+
+function safeNation(v) {
+  const key = String(v || "OTHER").replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 5);
+  if (key === "GB") return "UK";
+  if (key === "USA") return "US";
+  return NATION_FLAGS[key] ? key : "OTHER";
+}
+
+function rand(a, b) {
+  return a + Math.random() * (b - a);
+}
+
+function clamp(v, a, b) {
+  return Math.max(a, Math.min(b, v));
+}
+
+function dist2(x1, y1, x2, y2) {
+  const dx = x1 - x2;
+  const dy = y1 - y2;
+  return dx * dx + dy * dy;
+}
+
+function angleDiff(a, b) {
+  return Math.atan2(Math.sin(b - a), Math.cos(b - a));
+}
+
+function round1(v) { return Math.round(v * 10) / 10; }
+function round3(v) { return Math.round(v * 1000) / 1000; }
+function lerpNum(a, b, t) { return a + (b - a) * t; }
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data, null, 2), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      ...corsHeaders()
+    }
   });
 }
 
-function playRandomArnoldSound(){
-  const src = ARNOLD_SOUNDS[Math.floor(Math.random()*ARNOLD_SOUNDS.length)];
-  queueSound(src,.95);
-}
-
-function playMatrixFx(){
-  try{
-    const m = matrixAudio.cloneNode(true);
-    m.volume = .95;
-    m.currentTime = 0;
-    m.play().catch(()=>{});
-  }catch{}
-  matrixFx.classList.remove("active");
-  matrixText.classList.remove("show");
-  void matrixFx.offsetWidth;
-  void matrixText.offsetWidth;
-  matrixFx.classList.add("active");
-  matrixText.classList.add("show");
-}
-
-function startMorpheusIntro(){
-  morpheusIntroUntil = performance.now() + 5000;
-  morpheusIntro.classList.remove("show");
-  void morpheusIntro.offsetWidth;
-  morpheusIntro.classList.add("show");
-}
-
-function startMatrixCountdown(seconds=10){
-  matrixCountdownUntil = performance.now() + Math.max(0, seconds * 1000);
-  matrixCountdown.classList.remove("hidden");
-  matrixCountdown.classList.add("show");
-  updateMatrixCountdown();
-}
-
-function hideMatrixCountdown(){
-  matrixCountdownUntil = 0;
-  matrixCountdown.classList.add("hidden");
-  matrixCountdown.classList.remove("show");
-}
-
-function updateMatrixCountdown(){
-  if(!matrixCountdownUntil){
-    hideMatrixCountdown();
-    return;
-  }
-  const left = Math.max(0, matrixCountdownUntil - performance.now());
-  const sec = Math.ceil(left/1000);
-  matrixCountdownTime.textContent = String(sec);
-  if(left <= 0){
-    hideMatrixCountdown();
-    showToast("MAZE OPEN");
-  }
-}
-
-function startCollapseFx(){
-  matrixCollapseUntil = performance.now() + 5000;
-  showToast("THE MATRIX IS COLLAPSING");
-}
-
-function setBoostPressed(v){
-  boostPressed = !!v;
-  boostBtn.classList.toggle("active", boostPressed);
-  updateLocalBoostUi();
-}
-
-function triggerBoostTap(){
-  const now = performance.now();
-  if(now - lastBoostTap < 250) return;
-  lastBoostTap = now;
-
-  setBoostPressed(true);
-  playRoar();
-  if(musicEnabled && music.paused) startAudio();
-
-  sendInput(true);
-  clearTimeout(triggerBoostTap.t);
-  triggerBoostTap.t = setTimeout(() => {
-    setBoostPressed(false);
-    sendInput(true);
-  }, 260);
-}
-
-function updateLocalBoostUi(){
-  if(boostPressed){
-    boostBtn.classList.remove("ready","cooldown");
-    boostBtn.classList.add("active");
-    boostBtn.style.setProperty("--boost-fill","100%");
-    boostFill.classList.remove("cooldown","speed","shield");
-    boostFill.classList.add("active");
-    boostFill.style.width="100%";
-    boostLabel.textContent="BOOSTING";
-    boostTime.textContent="LOCAL";
-    boostBtn.innerHTML=`<span>BOOST</span><small>ACTIVE</small>`;
-  }else{
-    boostBtn.classList.remove("active","cooldown");
-    boostBtn.classList.add("ready");
-    boostBtn.style.setProperty("--boost-fill","100%");
-    boostFill.classList.remove("active","cooldown","speed","shield");
-    boostFill.style.width="100%";
-    boostLabel.textContent="BOOST READY";
-    boostTime.textContent="LOCAL";
-    boostBtn.innerHTML=`<span>BOOST</span><small>READY</small>`;
-  }
-}
-
-function connect(name,nation){
-  running = true;
-  audioQueue = [];
-  audioQueueBusy = false;
-  renderPlayers.clear();
-  state = null;
-  myId = null;
-  lastEventKey = "";
-  arnoldPointerBlinkSeed = Math.random() * 1000;
-  hideMatrixCountdown();
-  morpheusIntro.classList.remove("show");
-
-  setNet("ONLINE");
-  showToast("Connecting websocket...");
-
-  try{
-    ws = new WebSocket(wsUrl());
-  }catch{
-    setNet("WS ERROR");
-    showToast("WS create error");
-    return;
-  }
-
-  ws.onopen = () => {
-    setNet("ONLINE ✅");
-    showToast("ONLINE ✅");
-    ws.send(JSON.stringify({type:"join",name,nation}));
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
   };
-
-  ws.onmessage = e => {
-    try{
-      const msg = JSON.parse(e.data);
-
-      if(msg.type==="welcome"){
-        myId = msg.id;
-        if(msg.top10) drawLoginTop5(msg.top10);
-        if(msg.countryTop3) drawCountryTop3(msg.countryTop3);
-        else drawCountryTop3(null);
-      }
-
-      if(msg.type==="state"){
-        state = msg;
-        ingestState(msg);
-        readServerEventHints(msg);
-        if(msg.countryTop3) drawCountryTop3(msg.countryTop3);
-      }
-
-      if(msg.type==="event"){
-        const txt = String(msg.text || "");
-        handleServerEventText(txt, msg);
-      }
-    }catch{
-      setNet("MSG parse error");
-    }
-  };
-
-  ws.onerror = () => {
-    setNet("WS ERROR");
-    showToast("WebSocket error");
-  };
-
-  ws.onclose = e => {
-    setNet("OFFLINE " + e.code);
-    if(running){
-      setTimeout(() => {
-        if(running && (!ws || ws.readyState > 1)) connect(name,nation);
-      }, 2500);
-    }
-  };
-
-  requestAnimationFrame(loop);
 }
-
-function handleServerEventText(txt, msg){
-  if(!txt) return;
-  showToast(txt);
-
-  if(txt === "Arnold has spawned." || txt.includes("Arnold Pikhaar Shwarzenegger has spawned")){
-    playRandomArnoldSound();
-  }
-  if(txt.includes("ate Arnold") || txt.includes("Arnold Pikhaar Shwarzenegger")){
-    if(txt.includes("ate") || txt.includes("claimed")) playRandomArnoldSound();
-  }
-
-  if(txt === "ENTER THE MATRIX"){
-    playMatrixFx();
-    startMorpheusIntro();
-    startMatrixCountdown(10);
-  }
-
-  if(txt === "THE MATRIX IS COLLAPSING"){
-    startCollapseFx();
-    hideMatrixCountdown();
-  }
-
-  if(txt.includes("ARUGAY2 - Jorrit") || txt.toLowerCase().includes("lil gay fella")){
-    showToast(txt);
-  }
-
-  if(typeof msg.mazeUnlockInMs === "number"){
-    startMatrixCountdown(Math.ceil(msg.mazeUnlockInMs / 1000));
-  }
-}
-
-function readServerEventHints(msg){
-  const serverEventId = msg.eventId || msg.eventKey || "";
-  const serverEventText = String(msg.eventText || "");
-  const serverEventType = String(msg.eventType || "");
-  const eventKey = [serverEventId,serverEventType,serverEventText].filter(Boolean).join("|");
-
-  if(eventKey && eventKey !== lastEventKey){
-    lastEventKey = eventKey;
-
-    if(serverEventType==="morpheusSpawn" || serverEventText==="ENTER THE MATRIX"){
-      playMatrixFx();
-      startMorpheusIntro();
-      startMatrixCountdown(
-        typeof msg.mazeUnlockInMs === "number" ? Math.ceil(msg.mazeUnlockInMs/1000) :
-        typeof msg.matrixMazeOpenInMs === "number" ? Math.ceil(msg.matrixMazeOpenInMs/1000) :
-        10
-      );
-      showToast("ENTER THE MATRIX");
-    }
-
-    if(serverEventType==="matrixCollapse" || serverEventText==="THE MATRIX IS COLLAPSING"){
-      startCollapseFx();
-      hideMatrixCountdown();
-    }
-
-    if(serverEventType==="arnoldSpawn"){
-      playRandomArnoldSound();
-      showToast("Arnold Pikhaar Shwarzenegger has spawned.");
-    }
-
-    if(serverEventType==="arnoldEaten"){
-      playRandomArnoldSound();
-    }
-
-    if(serverEventType==="gayKill"){
-      showToast(serverEventText || "aah lil gay fella i got u");
-    }
-  }
-
-  if(typeof msg.mazeUnlockAt === "number"){
-    matrixCountdownUntil = msg.mazeUnlockAt;
-    matrixCountdown.classList.remove("hidden");
-    matrixCountdown.classList.add("show");
-  }else if(typeof msg.matrixMazeOpenAt === "number"){
-    matrixCountdownUntil = msg.matrixMazeOpenAt;
-    matrixCountdown.classList.remove("hidden");
-    matrixCountdown.classList.add("show");
-  }else if(typeof msg.mazeUnlockInMs === "number"){
-    matrixCountdownUntil = performance.now() + msg.mazeUnlockInMs;
-    matrixCountdown.classList.remove("hidden");
-    matrixCountdown.classList.add("show");
-  }
-}
-
-function ingestState(msg){
-  const seen = new Set();
-  for(const p of msg.players || []){
-    seen.add(p.id);
-    let r = renderPlayers.get(p.id);
-    if(!r){
-      r = JSON.parse(JSON.stringify(p));
-      r.target = p;
-      renderPlayers.set(p.id, r);
-    }
-    r.target = p;
-  }
-  for(const id of [...renderPlayers.keys()]){
-    if(!seen.has(id)) renderPlayers.delete(id);
-  }
-}
-
-function sendInput(force=false){
-  if(!ws || ws.readyState !== 1) return;
-  const now = performance.now();
-  if(!force && now - lastInput < 33) return;
-  lastInput = now;
-  ws.send(JSON.stringify({type:"input",angle,boost:boostPressed===true}));
-}
-
-function loop(ts){
-  if(!running) return;
-  lastFrame = ts || performance.now();
-  sendInput();
-  smoothPlayers();
-  updateMatrixCountdown();
-  draw();
-  requestAnimationFrame(loop);
-}
-
-function smoothPlayers(){
-  for(const r of renderPlayers.values()){
-    const t = r.target || r;
-    r.x = lerp(r.x ?? t.x, t.x, .50);
-    r.y = lerp(r.y ?? t.y, t.y, .50);
-    r.angle = lerpAngle(r.angle ?? t.angle, t.angle || 0, .45);
-
-    Object.assign(r,{
-      score:t.score,
-      name:t.name,
-      nation:t.nation||"OTHER",
-      color:t.color,
-      alive:t.alive,
-      radius:lerp(r.radius ?? t.radius, t.radius, .35),
-      len:t.len,
-      bot:!!t.bot,
-      boosting:!!t.boosting,
-      boostCooldownMs:Number(t.boostCooldownMs||0),
-      boostActiveMs:Number(t.boostActiveMs||0),
-      shieldMs:Number(t.shieldMs||0),
-      speedMs:Number(t.speedMs||0)
-    });
-
-    const tb = t.body || [];
-    if(!r.body) r.body = tb.map(b => ({x:b.x,y:b.y}));
-
-    const max = Math.min(r.body.length, tb.length);
-    for(let i=0;i<max;i++){
-      r.body[i].x = lerp(r.body[i].x, tb[i].x, .50);
-      r.body[i].y = lerp(r.body[i].y, tb[i].y, .50);
-    }
-    if(tb.length > r.body.length){
-      for(let i=r.body.length;i<tb.length;i++){
-        r.body.push({x:tb[i].x,y:tb[i].y});
-      }
-    }
-    if(r.body.length > tb.length) r.body.length = tb.length;
-  }
-}
-
-function draw(){
-  const w = innerWidth, h = innerHeight;
-  ctx.clearRect(0,0,w,h);
-
-  if(!state){
-    drawText("Waiting for Tiger server...");
-    return;
-  }
-
-  const me = renderPlayers.get(myId);
-  if(me){
-    camera.x += (me.x - camera.x) * .18;
-    camera.y += (me.y - camera.y) * .18;
-    camera.zoom += (Math.max(.62,1.06-(me.len||20)/520) - camera.zoom) * .08;
-  }
-
-  let shakeX = 0, shakeY = 0;
-  if(performance.now() < matrixCollapseUntil){
-    shakeX = (Math.random() - .5) * 18;
-    shakeY = (Math.random() - .5) * 18;
-  }
-
-  ctx.save();
-  ctx.translate(w/2 + shakeX, h/2 + shakeY);
-  ctx.scale(camera.zoom,camera.zoom);
-  ctx.translate(-camera.x,-camera.y);
-
-  drawWorld();
-
-  const view = {
-    x1:camera.x - w/camera.zoom/2 - 340,
-    y1:camera.y - h/camera.zoom/2 - 340,
-    x2:camera.x + w/camera.zoom/2 + 340,
-    y2:camera.y + h/camera.zoom/2 + 340
-  };
-
-  drawMazeWalls(state.mazeWalls || [], view);
-
-  for(const f of state.food || []){
-    if(inView(f.x,f.y,view)) drawFood(f);
-  }
-
-  for(const hz of state.hazards || []){
-    if(inView(hz.x,hz.y,view)) drawHazard(hz);
-  }
-
-  [...renderPlayers.values()]
-    .sort((a,b)=>(a.len||0)-(b.len||0))
-    .forEach(p => drawTigerDragonSnake(p,view));
-
-  ctx.restore();
-
-  drawWorldIndicators(w,h);
-  drawVignette(w,h);
-
-  const now = performance.now();
-  if(now - lastHudUpdate > 120){
-    lastHudUpdate = now;
-    updateHud();
-  }
-}
-
-function drawWorld(){
-  ctx.fillStyle = LOW_GRAPHICS ? "#050505" : "#101010";
-  ctx.fillRect(0,0,WORLD,WORLD);
-
-  const grid = LOW_GRAPHICS ? 360 : 240;
-  ctx.strokeStyle = LOW_GRAPHICS ? "rgba(255,136,0,.025)" : "rgba(255,136,0,.06)";
-  ctx.lineWidth = 1;
-
-  for(let x=0;x<WORLD;x+=grid){
-    ctx.beginPath();
-    ctx.moveTo(x,0);
-    ctx.lineTo(x,WORLD);
-    ctx.stroke();
-  }
-  for(let y=0;y<WORLD;y+=grid){
-    ctx.beginPath();
-    ctx.moveTo(0,y);
-    ctx.lineTo(WORLD,y);
-    ctx.stroke();
-  }
-
-  ctx.strokeStyle = "rgba(255,136,0,.72)";
-  ctx.lineWidth = 8;
-  ctx.strokeRect(0,0,WORLD,WORLD);
-}
-
-function drawMazeWalls(walls, view){
-  if(!walls || !walls.length) return;
-  for(const w of walls){
-    if(!rectInView(w, view)) continue;
-    ctx.save();
-    ctx.fillStyle = "rgba(30,255,120,.18)";
-    ctx.strokeStyle = "rgba(30,255,120,.72)";
-    ctx.lineWidth = 3;
-    if(!LOW_GRAPHICS){
-      ctx.shadowColor = "rgba(30,255,120,.55)";
-      ctx.shadowBlur = 14;
-    }
-    ctx.fillRect(w.x,w.y,w.w,w.h);
-    ctx.strokeRect(w.x,w.y,w.w,w.h);
-    ctx.restore();
-  }
-}
-
-function drawFood(f){
-  if(!f || !f.type) return;
-
-  if(f.type!=="snack" && f.type!=="arnold" && f.type!=="morpheus" && f.type!=="redPill" && f.type!=="bluePill"){
-    return;
-  }
-
-  ctx.save();
-
-  if(f.type==="redPill" || f.type==="bluePill"){
-    drawPill(f);
-    ctx.restore();
-    return;
-  }
-
-  const img = getFoodImage(f.img);
-  const isArnold = f.type === "arnold";
-  const isMorpheus = f.type === "morpheus";
-
-  let size = PIC_ICON_SIZE;
-  if(isArnold) size = ARNOLD_SIZE;
-  if(isMorpheus) size = MORPHEUS_SIZE;
-
-  const doShadow = !LOW_GRAPHICS;
-  if(isMorpheus && doShadow){
-    ctx.shadowColor = "#2cff77";
-    ctx.shadowBlur = 28;
-  }else if(isArnold && doShadow){
-    ctx.shadowColor = "#ffd000";
-    ctx.shadowBlur = 20;
-  }
-
-  if(img && img.complete && img.naturalWidth > 0){
-    ctx.translate(f.x,f.y);
-
-    if(isMorpheus){
-      const pulse = 1 + Math.sin(performance.now()/160) * .08;
-      ctx.scale(pulse,pulse);
-      ctx.beginPath();
-      ctx.strokeStyle = "rgba(44,255,119,.95)";
-      ctx.lineWidth = 10;
-      ctx.arc(0,0,size*.56,0,Math.PI*2);
-      ctx.stroke();
-
-      if(!LOW_GRAPHICS){
-        ctx.beginPath();
-        ctx.strokeStyle = "rgba(44,255,119,.35)";
-        ctx.lineWidth = 22;
-        ctx.arc(0,0,size*.69,0,Math.PI*2);
-        ctx.stroke();
-      }
-
-      ctx.drawImage(img,-size/2,-size/2,size,size);
-    }else if(isArnold){
-      const pulse = 1 + Math.sin(performance.now()/240) * .05;
-      ctx.scale(pulse,pulse);
-      ctx.drawImage(img,-size/2,-size/2,size,size);
-
-      ctx.rotate(-Math.PI/30);
-      ctx.textAlign = "center";
-      ctx.font = LOW_GRAPHICS ? "900 14px Arial" : "900 16px Arial";
-      ctx.fillStyle = "#111";
-      ctx.fillText("Arnold Pikhaar Shwarzenegger",0,size*.68+1);
-      ctx.fillStyle = "#ffd36a";
-      ctx.fillText("Arnold Pikhaar Shwarzenegger",0,size*.68);
-    }else{
-      const pulse = LOW_GRAPHICS ? 1 : 1 + Math.sin((performance.now()+f.x+f.y)/260)*.02;
-      ctx.scale(pulse,pulse);
-      ctx.drawImage(img,-size/2,-size/2,size,size);
-    }
-  }else{
-    ctx.restore();
-    return;
-  }
-
-  ctx.restore();
-}
-
-function drawPill(f){
-  const red = f.type==="redPill";
-  const size = LOW_GRAPHICS ? 24 : 30;
-  const spin = f.spin || ((performance.now()/700) % (Math.PI*2));
-
-  ctx.translate(f.x,f.y);
-  ctx.rotate(spin);
-
-  if(!LOW_GRAPHICS){
-    ctx.shadowColor = red ? "rgba(255,70,70,.7)" : "rgba(78,161,255,.7)";
-    ctx.shadowBlur = 12;
-  }
-
-  ctx.save();
-  ctx.scale(1.05,1);
-  capsulePath(ctx,-size/2,-size*.28,size,size*.56,size*.28);
-  ctx.fillStyle = red ? "#ff4242" : "#4ea1ff";
-  ctx.fill();
-  ctx.restore();
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(-size/2, -size*.28, size/2, size*.56);
-  ctx.clip();
-  ctx.save();
-  ctx.scale(1.05,1);
-  capsulePath(ctx,-size/2,-size*.28,size,size*.56,size*.28);
-  ctx.fillStyle = red ? "#ffb0b0" : "#b8dbff";
-  ctx.fill();
-  ctx.restore();
-  ctx.restore();
-
-  ctx.strokeStyle = "rgba(255,255,255,.82)";
-  ctx.lineWidth = 2;
-  ctx.save();
-  ctx.scale(1.05,1);
-  capsulePath(ctx,-size/2,-size*.28,size,size*.56,size*.28);
-  ctx.stroke();
-  ctx.restore();
-}
-
-function drawHazard(hz){
-  if(hz.type !== "gay") return;
-  const img = getFoodImage(hz.img || "gay.webp");
-  const size = GAY_SIZE;
-
-  ctx.save();
-  ctx.translate(hz.x,hz.y);
-
-  if(!LOW_GRAPHICS){
-    ctx.shadowColor = "rgba(255,60,140,.75)";
-    ctx.shadowBlur = 18;
-  }
-
-  const pulse = 1 + Math.sin((performance.now()+hz.x)/190)*.04;
-  ctx.scale(pulse,pulse);
-
-  if(img && img.complete && img.naturalWidth > 0){
-    ctx.drawImage(img,-size/2,-size/2,size,size);
-  }else{
-    ctx.restore();
-    return;
-  }
-
-  ctx.textAlign = "center";
-  ctx.font = LOW_GRAPHICS ? "900 12px Arial" : "900 14px Arial";
-  ctx.fillStyle = "rgba(0,0,0,.86)";
-  ctx.fillText("ARUGAY2 - Jorrit",0,size*.67+1);
-  ctx.fillStyle = "#ff89bf";
-  ctx.fillText("ARUGAY2 - Jorrit",0,size*.67);
-
-  ctx.restore();
-}
-
-function drawWorldIndicators(w,h){
-  drawOffscreenMorpheusPointer(w,h);
-  drawNearestArnoldPointer(w,h);
-}
-
-function drawOffscreenMorpheusPointer(w,h){
-  if(!state || !state.food) return;
-  const morpheus = (state.food || []).find(f => f.type==="morpheus");
-  if(!morpheus) return;
-  drawEdgePointerToTarget(morpheus.x,morpheus.y,w,h,"MORPHEUS","#2cff77",58,34);
-}
-
-function drawNearestArnoldPointer(w,h){
-  if(!state || !state.food || !state.food.length) return;
-  const arnolds = state.food.filter(f => f.type==="arnold");
-  if(!arnolds.length) return;
-
-  let closest = null;
-  let best = Infinity;
-  for(const a of arnolds){
-    const dx = a.x - camera.x;
-    const dy = a.y - camera.y;
-    const d2 = dx*dx + dy*dy;
-    if(d2 < best){
-      best = d2;
-      closest = a;
-    }
-  }
-  if(!closest) return;
-
-  drawEdgePointerToTarget(closest.x,closest.y,w,h,"ARNOLD","#ffd000",98,30);
-}
-
-function drawEdgePointerToTarget(tx,ty,w,h,label,color,margin,labelYOffset){
-  const sx = (tx - camera.x) * camera.zoom + w/2;
-  const sy = (ty - camera.y) * camera.zoom + h/2;
-  const onScreen = sx>margin && sx<w-margin && sy>margin && sy<h-margin;
-
-  const cx = w/2, cy = h/2;
-  const ang = Math.atan2(sy-cy,sx-cx);
-  const edgeX = onScreen ? sx : clamp(cx + Math.cos(ang)*w*.43, margin, w-margin);
-  const edgeY = onScreen ? sy : clamp(cy + Math.sin(ang)*h*.43, margin, h-margin);
-  const blink = .45 + Math.abs(Math.sin((performance.now()+arnoldPointerBlinkSeed)/145))* .55;
-
-  ctx.save();
-  ctx.translate(edgeX,edgeY);
-  ctx.rotate(ang);
-  ctx.globalAlpha = blink;
-  ctx.shadowColor = color;
-  ctx.shadowBlur = 18;
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.moveTo(30,0);
-  ctx.lineTo(-18,-18);
-  ctx.lineTo(-10,0);
-  ctx.lineTo(-18,18);
-  ctx.closePath();
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.rotate(-ang);
-  ctx.fillStyle = color;
-  ctx.font = "900 11px Arial";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(label,0,labelYOffset);
-  ctx.restore();
-}
-
-function drawTigerDragonSnake(p,view){
-  if(!p.alive) return;
-
-  const body = p.body || [];
-  const mainColor = playerColor(p);
-  const stripeColor = "rgba(0,0,0,.88)";
-  const doShadow = !LOW_GRAPHICS;
-
-  ctx.save();
-
-  if(body.length > 1){
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = mainColor;
-    ctx.lineWidth = Math.max(16,p.radius*1.35);
-    ctx.beginPath();
-    ctx.moveTo(p.x,p.y);
-    for(const b of body){
-      if(inView(b.x,b.y,view)) ctx.lineTo(b.x,b.y);
-    }
-    ctx.stroke();
-
-    if(!LOW_GRAPHICS){
-      ctx.strokeStyle = "rgba(10,10,10,.8)";
-      ctx.lineWidth = Math.max(4,p.radius*.26);
-      ctx.setLineDash([14,14]);
-      ctx.beginPath();
-      ctx.moveTo(p.x,p.y);
-      for(const b of body){
-        if(inView(b.x,b.y,view)) ctx.lineTo(b.x,b.y);
-      }
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-  }
-
-  const segmentStep = LOW_GRAPHICS ? 2 : 1;
-  for(let i=body.length-1;i>=0;i-=segmentStep){
-    const b = body[i];
-    if(!inView(b.x,b.y,view)) continue;
-
-    const t = 1 - i/Math.max(1,body.length);
-    const size = Math.max(9,p.radius*(.76+t*.62));
-    const segColor = p.bot ? rainbowColor(i*7) : mainColor;
-
-    ctx.beginPath();
-    ctx.fillStyle = segColor;
-    if(doShadow && p.bot){
-      ctx.shadowColor = segColor;
-      ctx.shadowBlur = 6;
-    }else{
-      ctx.shadowBlur = 0;
-    }
-    ctx.arc(b.x,b.y,size,0,Math.PI*2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    if(!LOW_GRAPHICS && i%3===0){
-      ctx.save();
-      ctx.translate(b.x,b.y);
-      ctx.rotate((i*.75)+(p.angle||0));
-      ctx.fillStyle = "#070707";
-      ctx.fillRect(-size*.82,-size*.18,size*1.64,size*.28);
-      ctx.fillStyle = stripeColor;
-      ctx.fillRect(-size*.36,size*.22,size*.72,size*.12);
-      ctx.restore();
-    }
-  }
-
-  drawTigerHead(p);
-  drawShieldAura(p);
-  drawName(p);
-  ctx.restore();
-}
-
-function drawShieldAura(p){
-  if(!p.shieldMs || p.shieldMs<=0) return;
-  ctx.save();
-  ctx.strokeStyle = "rgba(78,161,255,.92)";
-  ctx.lineWidth = 4;
-  if(!LOW_GRAPHICS){
-    ctx.shadowColor = "rgba(78,161,255,.65)";
-    ctx.shadowBlur = 16;
-  }
-  ctx.beginPath();
-  ctx.arc(p.x,p.y,p.radius*1.95,0,Math.PI*2);
-  ctx.stroke();
-  ctx.restore();
-}
-
-function drawTigerHead(p){
-  ctx.save();
-  ctx.translate(p.x,p.y);
-  ctx.rotate(p.angle||0);
-
-  const r = p.radius*1.08;
-  const mainColor = playerColor(p);
-  const glowColor = p.bot ? rainbowColor(80) : mainColor;
-
-  if(!LOW_GRAPHICS){
-    ctx.shadowColor = glowColor;
-    ctx.shadowBlur = p.bot ? 14 : 8;
-  }
-
-  ctx.fillStyle = mainColor;
-  ctx.beginPath();
-  ctx.ellipse(0,0,r*1.72,r*1.14,0,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.shadowBlur = 0;
-  ctx.fillStyle="#050505";
-  ctx.fillRect(-r*.65,-r*.82,r*.24,r*1.64);
-  ctx.fillRect(-r*.12,-r*.95,r*.23,r*1.9);
-  ctx.fillRect(r*.42,-r*.78,r*.18,r*1.56);
-
-  ctx.fillStyle="#fff0c2";
-  ctx.beginPath();
-  ctx.ellipse(r*.95,0,r*.55,r*.42,0,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.fillStyle="#00ffd5";
-  if(!LOW_GRAPHICS){
-    ctx.shadowColor="#00ffd5";
-    ctx.shadowBlur=7;
-  }
-  ctx.beginPath();
-  ctx.arc(r*.58,-r*.38,3.4,0,Math.PI*2);
-  ctx.arc(r*.58,r*.38,3.4,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.shadowBlur=0;
-  ctx.fillStyle="#111";
-  ctx.beginPath();
-  ctx.arc(r*1.34,0,3.2,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.restore();
-}
-
-function drawName(p){
-  ctx.font = 'bold 13px Arial,sans-serif';
-  ctx.textAlign = "center";
-  const y = p.y - p.radius - 18;
-  const nameText = (p.bot ? "🤖 " : "") + p.name;
-  ctx.fillStyle = "rgba(0,0,0,.84)";
-  ctx.fillText(nameText,p.x,y);
-  ctx.fillStyle = p.bot ? "#ffd36a" : "#fff";
-  ctx.fillText(nameText,p.x,y-1);
-
-  if(p.speedMs > 0){
-    ctx.fillStyle="#ff7272";
-    ctx.font='900 10px Arial';
-    ctx.fillText("RED PILL",p.x,p.y-p.radius-32);
-  }else if(p.shieldMs > 0){
-    ctx.fillStyle="#87c8ff";
-    ctx.font='900 10px Arial';
-    ctx.fillText("BLUE PILL",p.x,p.y-p.radius-32);
-  }
-}
-
-function updateHud(){
-  if(!state) return;
-
-  const players = [...renderPlayers.values()]
-    .filter(p => p.alive && !p.bot)
-    .sort((a,b)=>b.score-a.score);
-
-  const me = renderPlayers.get(myId);
-  if(me){
-    document.getElementById("meName").textContent = me.name;
-    document.getElementById("meScore").textContent = Math.round(me.score || 0);
-    const rank = players.findIndex(p => p.id === myId) + 1;
-    document.getElementById("meMeta").textContent = `Lengte ${me.len||0} · Rank #${rank>0?rank:"-"}`;
-
-    const buffs = [];
-    if(me.speedMs > 0) buffs.push(`<span class="buffBadge speed">RED PILL ${Math.ceil(me.speedMs/1000)}s</span>`);
-    if(me.shieldMs > 0) buffs.push(`<span class="buffBadge shield">BLUE PILL ${Math.ceil(me.shieldMs/1000)}s</span>`);
-    document.getElementById("meBuffs").innerHTML = buffs.join(" ");
-
-    updateBoostUi(me);
-  }
-
-  document.getElementById("liveRows").innerHTML = players.slice(0,5).map((p,i) => row(i,p,p.score,playerColor(p))).join("");
-}
-
-function updateBoostUi(me){
-  const active = !!me.boosting;
-  const activeMs = Number(me.boostActiveMs || 0);
-  const cdMs = Number(me.boostCooldownMs || 0);
-
-  boostBtn.classList.remove("ready","active","cooldown");
-  boostFill.classList.remove("active","cooldown","speed","shield");
-
-  if(active){
-    const pct = clamp(activeMs/BOOST_ACTIVE_MS,0,1)*100 || 100;
-    boostBtn.classList.add("active");
-    boostFill.classList.add("active");
-    boostBtn.style.setProperty("--boost-fill", pct+"%");
-    boostFill.style.width = pct+"%";
-    boostLabel.textContent = "BOOSTING";
-    boostTime.textContent = activeMs ? (activeMs/1000).toFixed(1)+"s" : "ACTIVE";
-    boostBtn.innerHTML = `<span>BOOST</span><small>${activeMs?(activeMs/1000).toFixed(1)+"s":"ACTIVE"}</small>`;
-  }else if(cdMs > 0){
-    const pct = clamp(1 - (cdMs/BOOST_TOTAL_COOLDOWN_MS),0,1)*100;
-    boostBtn.classList.add("cooldown");
-    boostFill.classList.add("cooldown");
-    boostBtn.style.setProperty("--boost-fill", pct+"%");
-    boostFill.style.width = pct+"%";
-    boostLabel.textContent = "COOLDOWN";
-    boostTime.textContent = Math.ceil(cdMs/1000)+"s";
-    boostBtn.innerHTML = `<span>WAIT</span><small>${Math.ceil(cdMs/1000)}s</small>`;
-  }else{
-    boostBtn.classList.add("ready");
-    boostBtn.style.setProperty("--boost-fill","100%");
-    boostFill.style.width="100%";
-    boostLabel.textContent="BOOST READY";
-    boostTime.textContent="TAP";
-    boostBtn.innerHTML=`<span>BOOST</span><small>TAP</small>`;
-  }
-}
-
-function playerColor(p){
-  if(p.bot) return rainbowColor(hashCode(p.id||p.name)%360);
-  return p.color || "#ff8a00";
-}
-
-function rainbowColor(offset=0){
-  const hue = (performance.now()/35 + offset) % 360;
-  return `hsl(${hue},95%,55%)`;
-}
-
-function row(i,p,s,c){
-  return `<div class="row"><span class="dot" style="background:${c};box-shadow:0 0 12px ${c}"></span><span class="rname">#${i+1} ${esc(p.name)}</span><span class="rscore">${Math.round(s||0)}</span></div>`;
-}
-
-function drawVignette(w,h){
-  const g = ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.25,w/2,h/2,Math.max(w,h)*.72);
-  g.addColorStop(0,"rgba(0,0,0,0)");
-  g.addColorStop(1,LOW_GRAPHICS?"rgba(0,0,0,.56)":"rgba(0,0,0,.34)");
-  ctx.fillStyle = g;
-  ctx.fillRect(0,0,w,h);
-}
-
-function drawText(t){
-  ctx.fillStyle="#ff8a00";
-  ctx.font="bold 28px Arial";
-  ctx.textAlign="center";
-  ctx.fillText(t,innerWidth/2,innerHeight/2);
-}
-
-function inView(x,y,v){
-  return x>=v.x1 && x<=v.x2 && y>=v.y1 && y<=v.y2;
-}
-
-function rectInView(r,v){
-  return !(r.x+r.w < v.x1 || r.x > v.x2 || r.y+r.h < v.y1 || r.y > v.y2);
-}
-
-function setNet(t){
-  document.getElementById("net").textContent = t;
-}
-
-function showToast(t){
-  const e = document.getElementById("toast");
-  e.textContent = t;
-  e.classList.add("show");
-  clearTimeout(showToast.t);
-  showToast.t = setTimeout(() => e.classList.remove("show"), 2400);
-}
-
-function esc(s){
-  return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
-}
-
-function capsulePath(ctx,x,y,w,h,r){
-  ctx.beginPath();
-  ctx.moveTo(x+r,y);
-  ctx.lineTo(x+w-r,y);
-  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-  ctx.lineTo(x+w,y+h-r);
-  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-  ctx.lineTo(x+r,y+h);
-  ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-  ctx.lineTo(x,y+r);
-  ctx.quadraticCurveTo(x,y,x+r,y);
-  ctx.closePath();
-}
-
-function lerp(a,b,t){return a+(b-a)*t}
-function lerpAngle(a,b,t){return a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t}
-function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
-function hashCode(str){let h=0;str=String(str||"");for(let i=0;i<str.length;i++){h=((h<<5)-h)+str.charCodeAt(i);h|=0}return Math.abs(h)}
-function setDirFromScreen(x,y){const dx=x-innerWidth/2,dy=y-innerHeight/2;angle=Math.atan2(dy,dx)}
-
-addEventListener("mousemove",e=>setDirFromScreen(e.clientX,e.clientY));
-
-addEventListener("keydown",e=>{
-  const k=e.key.toLowerCase();
-  if([" ","spacebar","arrowup","arrowdown","arrowleft","arrowright"].includes(k)) e.preventDefault();
-  if(k==="w"||k==="arrowup") angle=-Math.PI/2;
-  if(k==="s"||k==="arrowdown") angle=Math.PI/2;
-  if(k==="a"||k==="arrowleft") angle=Math.PI;
-  if(k==="d"||k==="arrowright") angle=0;
-  if(k===" "||k==="spacebar") triggerBoostTap();
-});
-
-addEventListener("keyup",e=>{
-  const k=e.key.toLowerCase();
-  if(k===" "||k==="spacebar") e.preventDefault();
-});
-
-const joy=document.getElementById("joy");
-const stick=document.getElementById("stick");
-const boost=document.getElementById("boost");
-
-joy.addEventListener("touchstart",joyMove,{passive:false});
-joy.addEventListener("touchmove",joyMove,{passive:false});
-joy.addEventListener("touchend",e=>{
-  e.preventDefault();
-  stick.style.transform="translate(0,0)";
-},{passive:false});
-
-boost.addEventListener("pointerdown",e=>{
-  e.preventDefault();
-  boost.setPointerCapture?.(e.pointerId);
-  triggerBoostTap();
-});
-boost.addEventListener("pointerup",e=>e.preventDefault());
-boost.addEventListener("pointercancel",e=>e.preventDefault());
-boost.addEventListener("click",e=>{
-  e.preventDefault();
-  triggerBoostTap();
-});
-
-document.body.addEventListener("touchstart",()=>{if(musicEnabled)startAudio()},{passive:true,once:true});
-
-function joyMove(e){
-  e.preventDefault();
-  const t=e.changedTouches[0], r=joy.getBoundingClientRect();
-  const cx=r.left+r.width/2, cy=r.top+r.height/2;
-  let dx=t.clientX-cx, dy=t.clientY-cy;
-  const l=Math.hypot(dx,dy)||1, max=47;
-  if(l>max){dx=dx/l*max;dy=dy/l*max}
-  stick.style.transform=`translate(${dx}px,${dy}px)`;
-  angle=Math.atan2(dy,dx);
-}
-})();
-</script>
-</body>
-</html>
