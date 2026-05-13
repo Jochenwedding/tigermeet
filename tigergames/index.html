@@ -290,6 +290,62 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
   line-height:1.45
 }
 
+.modal{
+  position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.72);padding:14px
+}
+.modal.show{display:flex}
+.modalCard{
+  width:min(760px,100%);
+  max-height:min(88vh,900px);
+  overflow:auto;
+  background:rgba(12,12,12,.98);
+  border:2px solid rgba(255,136,0,.75);
+  border-radius:24px;
+  padding:22px;
+  box-shadow:0 0 34px rgba(255,136,0,.22)
+}
+.modalTop{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px
+}
+.modalTitle{
+  font-size:26px;font-weight:900;color:#ff8a00
+}
+.modalClose{
+  background:#2a2a2a;color:#fff;border:1px solid rgba(255,255,255,.1);box-shadow:none
+}
+.rulesGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:12px
+}
+.ruleBox{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  padding:14px;
+  text-align:left
+}
+.ruleBox h3{
+  margin:0 0 8px 0;
+  font-size:15px;
+  color:#ffcf7f
+}
+.ruleBox p{
+  margin:0;
+  font-size:13px;
+  color:#ddd;
+  line-height:1.5
+}
+.ruleBox ul{
+  margin:0;
+  padding-left:18px;
+  color:#ddd;
+  font-size:13px;
+  line-height:1.55
+}
+
 @media(max-width:720px){
   .hud{top:38px}
   .mine{width:178px}
@@ -297,6 +353,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
   .score{font-size:24px}
   .buttons{bottom:145px}
   .morpheusIntro img{width:min(96vw,620px)}
+  .rulesGrid{grid-template-columns:1fr}
+  .modalTitle{font-size:22px}
 }
 </style>
 </head>
@@ -338,6 +396,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
     </select>
 
     <button class="big" id="playBtn">ENTER TIGER ARENA</button>
+    <button class="big" id="instructionsBtn" style="background:#1c1c1c;color:#fff;border:1px solid rgba(255,136,0,.45)">INSTRUCTIONS</button>
 
     <div class="loginTop">
       <div class="loginTopTitle">🏆 TOP 5 ALL-TIME</div>
@@ -428,9 +487,101 @@ canvas{position:absolute;inset:0;width:100%;height:100%}
   <div id="enterText" class="enterText">ENTER THE MATRIX</div>
 </div>
 
+<div id="instructionsModal" class="modal">
+  <div class="modalCard">
+    <div class="modalTop">
+      <div class="modalTitle">Tigergames Instructions</div>
+      <button class="modalClose" id="closeInstructionsBtn">CLOSE</button>
+    </div>
+
+    <div class="rulesGrid">
+      <div class="ruleBox">
+        <h3>🎯 Goal</h3>
+        <p>Eat snacks, grow bigger, survive longer, kill enemies and climb the live leaderboard.</p>
+      </div>
+
+      <div class="ruleBox">
+        <h3>🕹️ Controls</h3>
+        <ul>
+          <li>Mobile: joystick left, boost right</li>
+          <li>PC: mouse to steer</li>
+          <li>SPACE = boost</li>
+          <li>Spectator name = ghost overview mode</li>
+        </ul>
+      </div>
+
+      <div class="ruleBox">
+        <h3>💥 Scoring</h3>
+        <ul>
+          <li>Arnold = <b>50</b></li>
+          <li>Gayboys = <b>80</b></li>
+          <li>Zeus = <b>100</b></li>
+          <li>Morpheus = <b>300</b></li>
+          <li>Player kill = big score swing</li>
+        </ul>
+      </div>
+
+      <div class="ruleBox">
+        <h3>⚡ Zeus Event</h3>
+        <ul>
+          <li>2 Zeus units patrol the outside edges of the map</li>
+          <li>They fire lightning very fast</li>
+          <li><b>Blue pill lets you reflect lightning</b></li>
+          <li>Reflected lightning can kill Zeus</li>
+          <li><b>Morpheus power</b> also makes you fully safe</li>
+        </ul>
+      </div>
+
+      <div class="ruleBox">
+        <h3>💊 Pills</h3>
+        <ul>
+          <li><b>Red pill</b> = 20s speed boost</li>
+          <li><b>Blue pill</b> = 20s shield + Zeus reflect</li>
+          <li>Only one buff at a time</li>
+          <li>After a buff there is a cooldown</li>
+          <li>Extra pills can spawn during the match</li>
+        </ul>
+      </div>
+
+      <div class="ruleBox">
+        <h3>🟢 Morpheus / Matrix Event</h3>
+        <ul>
+          <li>Morpheus spawns in a special matrix maze</li>
+          <li>Gate opens after countdown</li>
+          <li>Touching matrix walls kills you</li>
+          <li>Whoever reaches Morpheus first gets <b>300</b> points</li>
+          <li>You also get temporary full immunity</li>
+        </ul>
+      </div>
+
+      <div class="ruleBox">
+        <h3>☠️ You die when</h3>
+        <ul>
+          <li>You hit another player badly</li>
+          <li>You hit a body segment</li>
+          <li>You leave the map</li>
+          <li>You hit Matrix walls</li>
+          <li>You get fried by Zeus</li>
+        </ul>
+      </div>
+
+      <div class="ruleBox">
+        <h3>👁️ Spectator Mode</h3>
+        <ul>
+          <li>Join with name <b>spectator</b></li>
+          <li>No snake, no deaths, no score</li>
+          <li>Mouse wheel = zoom</li>
+          <li>Right drag = pan</li>
+          <li>WASD / arrows = camera move</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 (() => {
-const MAINTENANCE_MODE = false;
+const MAINTENANCE_MODE = true;
 const WORLD = 4200;
 const BOOST_ACTIVE_MS = 3000;
 const BOOST_TOTAL_COOLDOWN_MS = 18000;
@@ -507,6 +658,9 @@ const enterText = document.getElementById("enterText");
 const spectatorBanner = document.getElementById("spectatorBanner");
 const controlsWrap = document.getElementById("controlsWrap");
 const respawnBtn = document.getElementById("respawnBtn");
+const instructionsBtn = document.getElementById("instructionsBtn");
+const instructionsModal = document.getElementById("instructionsModal");
+const closeInstructionsBtn = document.getElementById("closeInstructionsBtn");
 
 let ws = null, previewWs = null, myId = null, state = null;
 let renderPlayers = new Map();
@@ -532,6 +686,20 @@ const foodImages = new Map();
 
 document.getElementById("playerName").value = localStorage.getItem("tigergames_name") || "";
 document.getElementById("playerNation").value = localStorage.getItem("tigergames_nation") || "BE";
+
+instructionsBtn.onclick = () => {
+  instructionsModal.classList.add("show");
+};
+
+closeInstructionsBtn.onclick = () => {
+  instructionsModal.classList.remove("show");
+};
+
+instructionsModal.addEventListener("click", e => {
+  if(e.target === instructionsModal){
+    instructionsModal.classList.remove("show");
+  }
+});
 
 function wsUrl(){
   return "wss://tigermeet-game.jochenmichels.workers.dev";
@@ -567,7 +735,7 @@ function getFoodImage(src){
   if(foodImages.has(src)) return foodImages.get(src);
   const img = new Image();
   img.decoding = "async";
-  img.src = src + "?v=71";
+  img.src = src + "?v=81";
   foodImages.set(src, img);
   return img;
 }
@@ -1030,6 +1198,10 @@ function handleServerEvent(msg){
   if(type === "zeusShot"){
     playZeusSound();
   }
+
+  if(type === "zeusReflect"){
+    showToast(txt || "LIGHTNING REFLECTED ⚡");
+  }
 }
 
 function readEventHints(msg){
@@ -1077,10 +1249,10 @@ function checkLocalBuffToasts(){
   const matrixActive = Number(me.matrixImmuneMs || 0) > 0;
 
   if(speedActive && !lastMySpeedActive){
-    showToast("RED PILL ACTIVE — 10s SPEED + hazards killable");
+    showToast("RED PILL ACTIVE — 20s SPEED");
   }
   if(shieldActive && !lastMyShieldActive){
-    showToast("BLUE PILL ACTIVE — 10s PHASE + hazards killable");
+    showToast("BLUE PILL ACTIVE — 20s SHIELD / REFLECT");
   }
   if(matrixActive && !lastMyMatrixActive){
     showToast("MORPHEUS POWER — 5s IMMUNE TO EVERYTHING");
@@ -1138,6 +1310,7 @@ function smoothPlayers(){
       nation:t.nation||"OTHER",
       color:t.color,
       alive:t.alive,
+      spectator:!!t.spectator,
       radius:lerp(r.radius ?? t.radius, t.radius, .35),
       len:t.len,
       bot:!!t.bot,
@@ -1442,22 +1615,6 @@ function drawHazard(hz){
   const pulse = 1 + Math.sin((performance.now()+hz.x)/190)*.05;
   ctx.scale(pulse,pulse);
 
-  if(hz.type === "zeus"){
-    ctx.beginPath();
-    ctx.strokeStyle = "rgba(255,245,120,.95)";
-    ctx.lineWidth = 12;
-    ctx.arc(0,0,size*.52,0,Math.PI*2);
-    ctx.stroke();
-
-    if(!LOW_GRAPHICS){
-      ctx.beginPath();
-      ctx.strokeStyle = "rgba(255,245,120,.28)";
-      ctx.lineWidth = 24;
-      ctx.arc(0,0,size*.67,0,Math.PI*2);
-      ctx.stroke();
-    }
-  }
-
   if(img.complete && img.naturalWidth > 0){
     ctx.drawImage(img,-size/2,-size/2,size,size);
   }
@@ -1492,11 +1649,11 @@ function drawProjectiles(list, view){
     ctx.rotate(ang);
 
     if(!LOW_GRAPHICS){
-      ctx.shadowColor = "rgba(255,255,140,.95)";
+      ctx.shadowColor = p.reflected ? "rgba(120,210,255,.95)" : "rgba(255,255,140,.95)";
       ctx.shadowBlur = 24;
     }
 
-    ctx.fillStyle = "#fff59b";
+    ctx.fillStyle = p.reflected ? "#8dd8ff" : "#fff59b";
     ctx.beginPath();
     ctx.moveTo(44,0);
     ctx.lineTo(10,-12);
@@ -1587,6 +1744,7 @@ function drawEdgePointerToTarget(tx,ty,w,h,label,color,margin,labelYOffset){
 
 function drawTigerDragonSnake(p,view){
   if(!p.alive) return;
+  if(p.spectator) return;
   if(spectatorMode && p.name && String(p.name).toLowerCase() === "spectator") return;
 
   const body = p.body || [];
@@ -1754,7 +1912,7 @@ function updateHud(){
   if(!state) return;
 
   const players = [...renderPlayers.values()]
-    .filter(p => p.alive && !p.bot && (!spectatorMode || String(p.name).toLowerCase() !== "spectator"))
+    .filter(p => p.alive && !p.bot && !p.spectator && (!spectatorMode || String(p.name).toLowerCase() !== "spectator"))
     .sort((a,b)=>b.score-a.score);
 
   if(spectatorMode){
@@ -1773,7 +1931,7 @@ function updateHud(){
 
       const buffs = [];
       if(me.speedMs > 0) buffs.push(`<span class="buffBadge speed">RED PILL ${Math.ceil(me.speedMs/1000)}s</span>`);
-      if(me.shieldMs > 0) buffs.push(`<span class="buffBadge shield">BLUE PILL ${Math.ceil(me.shieldMs/1000)}s</span>`);
+      if(me.shieldMs > 0) buffs.push(`<span class="buffBadge shield">BLUE PILL / REFLECT ${Math.ceil(me.shieldMs/1000)}s</span>`);
       if(me.matrixImmuneMs > 0) buffs.push(`<span class="buffBadge matrix">MATRIX IMMUNE ${Math.ceil(me.matrixImmuneMs/1000)}s</span>`);
       if(me.buffCooldownMs > 0 && me.speedMs <= 0 && me.shieldMs <= 0) buffs.push(`<span class="buffBadge cooldown">BUFF CD ${Math.ceil(me.buffCooldownMs/1000)}s</span>`);
       document.getElementById("meBuffs").innerHTML = buffs.join(" ");
