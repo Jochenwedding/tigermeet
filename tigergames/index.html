@@ -723,7 +723,18 @@ resize();
 
 const allowedLogin = initMaintenance();
 preloadFoodImages();
-if(allowedLogin) preloadLoginStats();
+
+// Tijdelijk uitgeschakeld:
+// deze WebSocket preview/highscore call kan de site laten crashen als de game-worker moeilijk doet.
+// if(allowedLogin) preloadLoginStats();
+
+if(allowedLogin){
+  document.getElementById("loginTopRows").innerHTML =
+    `<div class="small" style="text-align:center">Highscores tijdelijk offline</div>`;
+
+  document.getElementById("countryTopRows").innerHTML =
+    `<div class="small" style="text-align:center">Nation stats tijdelijk offline</div>`;
+}
 
 function preloadFoodImages(){
   ["mor1.webp","gay.webp","gay2.webp","zeus.webp",ARNOLD_IMAGE,...SNACK_IMAGES].forEach(src => getFoodImage(src));
@@ -843,7 +854,15 @@ document.getElementById("menuBtn").onclick = () => {
   spectatorName = "";
   hideMatrixCountdown();
   morpheusIntro.classList.remove("show");
-  preloadLoginStats();
+
+  // Tijdelijk uitgeschakeld om crashes/500 door preview WebSocket te vermijden.
+  // preloadLoginStats();
+
+  document.getElementById("loginTopRows").innerHTML =
+    `<div class="small" style="text-align:center">Highscores tijdelijk offline</div>`;
+
+  document.getElementById("countryTopRows").innerHTML =
+    `<div class="small" style="text-align:center">Nation stats tijdelijk offline</div>`;
 };
 
 respawnBtn.onclick = () => {
